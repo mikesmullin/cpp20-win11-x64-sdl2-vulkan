@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../lib/Logger.hpp"
-
 namespace mks {
 
 class Behavior {

@@ -1,5 +1,7 @@
 #include "Behavior.hpp"
 
+#include "../lib/Logger.hpp"
+
 namespace mks {
 
 Behavior::Behavior() {

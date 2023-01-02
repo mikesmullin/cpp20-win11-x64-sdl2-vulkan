@@ -1,20 +1,20 @@
 #pragma once
 
+#include <memory>
+
 #include "../components/Behavior.hpp"
-#include "Logger.hpp"
-#include "Vulkan.hpp"
 
 namespace mks {
 
 class Engine {
  public:
-  static Engine Engine::Init();
+  static std::unique_ptr<Engine> Engine::Init();
   Engine::Engine();
   Engine::~Engine();
 
   // void Log(char*);
   // void Info(char*);
-  Behavior GetObject(char* name);
+  std::unique_ptr<Behavior> GetObject(char* name);
   void Start(void* cb){};
   void Run(){};
   void Update(){};
@@ -23,9 +23,9 @@ class Engine {
   void DrawGUI(){};
   void Stop(){};
   void Shutdown(){};
-  void Bind(Behavior* obj){};
+  void Bind(std::unique_ptr<Behavior> obj){};
   void TriggerSync(char* event, ...){};
-  void TriggerObjectSync(char* event, Behavior* obj, ...){};
+  void TriggerObjectSync(char* event, std::unique_ptr<Behavior> obj, ...){};
   void Trigger(char* event, void* cb){};
 
  private:
