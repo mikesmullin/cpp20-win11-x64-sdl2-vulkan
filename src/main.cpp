@@ -1,11 +1,11 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "utils/string.hpp"
+#include "utils/log.hpp"
 
 int main() {
   try {
-    mks::Infof("Hello world!");
+    mks::Log::Infof("Hello world!");
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';
     return EXIT_FAILURE;

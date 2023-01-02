@@ -4,11 +4,11 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "../../src/utils/string.hpp"
+#include "../../src/utils/log.hpp"
 
 int main() {
   try {
-    mks::Infof("Begin sound test.");
+    mks::Log::Infof("Begin sound test.");
 
     mks::Audio a{};
     a.addMusic("../assets/music/napoleon.ogg");
@@ -26,7 +26,7 @@ int main() {
       std::cin.clear();
     }
 
-    mks::Infof("End of test.");
+    mks::Log::Infof("End of test.");
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';
     return EXIT_FAILURE;

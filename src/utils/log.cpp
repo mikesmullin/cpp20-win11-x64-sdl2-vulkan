@@ -1,4 +1,4 @@
-#include "string.hpp"
+#include "log.hpp"
 
 #include <cstdarg>
 #include <cstdio>
@@ -7,7 +7,7 @@
 
 namespace mks {
 
-std::runtime_error Errorf(const char* msg, ...) {
+std::runtime_error Log::Errorf(const char* msg, ...) {
   char buf[255];
   va_list args;
   va_start(args, msg);
@@ -19,7 +19,7 @@ std::runtime_error Errorf(const char* msg, ...) {
   return std::runtime_error(buf);
 }
 
-void Infof(const char* msg, ...) {
+void Log::Infof(const char* msg, ...) {
   char buf[255];
   va_list args;
   va_start(args, msg);
