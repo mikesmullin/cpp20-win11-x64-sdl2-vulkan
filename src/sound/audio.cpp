@@ -32,7 +32,7 @@ Audio::~Audio() {
 }
 
 void Audio::addSoundEffect(const char* path) {
-  Mix_Music* f = Mix_LoadMUS(path);
+  Mix_Chunk* f = Mix_LoadWAV(path);
   if (f != nullptr) {
     mSoundEffectBank.push_back(f);
     std::cout << (mSoundEffectBank.size() - 1) << " Sound is ready, path: " << path << std::endl;
@@ -49,7 +49,7 @@ void Audio::playSoundEffect(const unsigned int which) const {
     throw mks::Errorf("Sound out of range: %d, max: %d", which, l);
   }
 
-  int ok = Mix_PlayMusic(mSoundEffectBank[which], 0);
+  int ok = Mix_PlayChannel(-1, mSoundEffectBank[which], 0);
   if (ok == -1) {
     throw mks::Errorf("Unable to play sound: %u", which);
   }

@@ -20,7 +20,7 @@ class Audio {
   void playSoundEffect(const unsigned int which) const;
 
  private:
-  std::vector<Mix_Music*> mSoundEffectBank;
+  std::vector<Mix_Chunk*> mSoundEffectBank;
 };
 
 }
