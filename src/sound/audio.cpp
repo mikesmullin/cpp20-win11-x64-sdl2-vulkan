@@ -6,14 +6,14 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "../utils/string.hpp"
+#include "../utils/log.hpp"
 
 namespace mks {
 
 Audio::Audio() {
   int ok1 = SDL_Init(SDL_INIT_AUDIO);
   if (ok1 != 0) {
-    throw mks::Errorf("Failed to SDL_Init(). error: %s", SDL_GetError());
+    throw mks::Log::Errorf("Failed to SDL_Init(). error: %s", SDL_GetError());
   }
 
   const int audio_rate = 22050;
@@ -23,7 +23,7 @@ Audio::Audio() {
 
   int ok2 = Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers);
   if (ok2 != 0) {
-    throw mks::Errorf("Couldn't init audio: %s", Mix_GetError());
+    throw mks::Log::Errorf("Couldn't init audio: %s", Mix_GetError());
   }
 }
 
@@ -36,25 +36,25 @@ void Audio::addSoundEffect(const char* path) {
   if (f != nullptr) {
     mSoundEffectBank.push_back(f);
     unsigned int l = mSoundEffectBank.size() - 1;
-    mks::Infof("Sound effect loaded. idx: %u, path: %s", l, path);
+    mks::Log::Infof("Sound effect loaded. idx: %u, path: %s", l, path);
   } else {
     auto err = Mix_GetError();
     std::cout << err << std::endl;
-    throw mks::Errorf("Couldn't add sound effect. path: %s, error: %s", path, Mix_GetError());
+    throw mks::Log::Errorf("Couldn't add sound effect. path: %s, error: %s", path, Mix_GetError());
   }
 }
 
 void Audio::playSoundEffect(const unsigned int id) const {
   int l = mSoundEffectBank.size() - 1;
   if (id > l) {
-    throw mks::Errorf("Invalid sound efefct id: %d, max: %d", id, l);
+    throw mks::Log::Errorf("Invalid sound efefct id: %d, max: %d", id, l);
   }
 
   int ok = Mix_PlayChannel(-1, mSoundEffectBank[id], 0);
   if (ok == -1) {
-    throw mks::Errorf("Unable to play sound effect. id: %u, error: %s", id, Mix_GetError());
+    throw mks::Log::Errorf("Unable to play sound effect. id: %u, error: %s", id, Mix_GetError());
   }
-  mks::Infof("Playing sound: %u", id);
+  mks::Log::Infof("Playing sound: %u", id);
 }
 
 void Audio::addMusic(const char* path) {
@@ -62,23 +62,23 @@ void Audio::addMusic(const char* path) {
   if (f != nullptr) {
     mMusicBank.push_back(f);
     unsigned int l = mMusicBank.size() - 1;
-    mks::Infof("Music loaded. idx: %u, path: %s", l, path);
+    mks::Log::Infof("Music loaded. idx: %u, path: %s", l, path);
   } else {
-    throw mks::Errorf("Couldn't add music. path: %s, error: %s", path, Mix_GetError());
+    throw mks::Log::Errorf("Couldn't add music. path: %s, error: %s", path, Mix_GetError());
   }
 }
 
 void Audio::playMusic(const unsigned int id, const unsigned int loops) const {
   int l = mMusicBank.size() - 1;
   if (id > l) {
-    throw mks::Errorf("Invalid music id: %d, max: %d", id, l);
+    throw mks::Log::Errorf("Invalid music id: %d, max: %d", id, l);
   }
 
   int ok = Mix_PlayMusic(mMusicBank[id], loops);
   if (ok == -1) {
-    throw mks::Errorf("Unable to play music. id: %u, error: %s", id, Mix_GetError());
+    throw mks::Log::Errorf("Unable to play music. id: %u, error: %s", id, Mix_GetError());
   }
-  mks::Infof("Playing music: %u", id);
+  mks::Log::Infof("Playing music: %u", id);
 }
 
 }  // namespace mks
