@@ -35,25 +35,50 @@ void Audio::addSoundEffect(const char* path) {
   Mix_Chunk* f = Mix_LoadWAV(path);
   if (f != nullptr) {
     mSoundEffectBank.push_back(f);
-    std::cout << (mSoundEffectBank.size() - 1) << " Sound is ready, path: " << path << std::endl;
+    unsigned int l = mSoundEffectBank.size() - 1;
+    mks::Infof("Sound effect loaded. idx: %u, path: %s", l, path);
   } else {
     auto err = Mix_GetError();
     std::cout << err << std::endl;
-    throw mks::Errorf("Couldn't add sound effect: %s", err);
+    throw mks::Errorf("Couldn't add sound effect. path: %s, error: %s", path, Mix_GetError());
   }
 }
 
-void Audio::playSoundEffect(const unsigned int which) const {
+void Audio::playSoundEffect(const unsigned int id) const {
   int l = mSoundEffectBank.size() - 1;
-  if (which > l) {
-    throw mks::Errorf("Sound out of range: %d, max: %d", which, l);
+  if (id > l) {
+    throw mks::Errorf("Invalid sound efefct id: %d, max: %d", id, l);
   }
 
-  int ok = Mix_PlayChannel(-1, mSoundEffectBank[which], 0);
+  int ok = Mix_PlayChannel(-1, mSoundEffectBank[id], 0);
   if (ok == -1) {
-    throw mks::Errorf("Unable to play sound: %u", which);
+    throw mks::Errorf("Unable to play sound effect. id: %u, error: %s", id, Mix_GetError());
   }
-  mks::Infof("Played sound: %u", which);
+  mks::Infof("Playing sound: %u", id);
+}
+
+void Audio::addMusic(const char* path) {
+  Mix_Music* f = Mix_LoadMUS(path);
+  if (f != nullptr) {
+    mMusicBank.push_back(f);
+    unsigned int l = mMusicBank.size() - 1;
+    mks::Infof("Music loaded. idx: %u, path: %s", l, path);
+  } else {
+    throw mks::Errorf("Couldn't add music. path: %s, error: %s", path, Mix_GetError());
+  }
+}
+
+void Audio::playMusic(const unsigned int id, const unsigned int loops) const {
+  int l = mMusicBank.size() - 1;
+  if (id > l) {
+    throw mks::Errorf("Invalid music id: %d, max: %d", id, l);
+  }
+
+  int ok = Mix_PlayMusic(mMusicBank[id], loops);
+  if (ok == -1) {
+    throw mks::Errorf("Unable to play music. id: %u, error: %s", id, Mix_GetError());
+  }
+  mks::Infof("Playing music: %u", id);
 }
 
 }  // namespace mks
