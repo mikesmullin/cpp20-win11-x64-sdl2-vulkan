@@ -7,11 +7,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
+#include "Logger.hpp"
+
 namespace mks {
 
 class Vulkan {
  public:
-  static VkApplicationInfo* Vulkan::DescribeApplication(
+  static VkApplicationInfo Vulkan::DescribeApplication(
       const char* name,
       const unsigned int major,
       const unsigned int minor,
