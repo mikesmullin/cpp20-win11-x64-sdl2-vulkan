@@ -1,0 +1,9 @@
+{
+	BasedOnStyle: Google,
+	ColumnLimit: 100,
+	AlignAfterOpenBracket: AlwaysBreak,
+	AllowAllArgumentsOnNextLine: false,
+	BinPackParameters: false,
+	BinPackArguments: false,
+	DerivePointerAlignment: false,
+	PointerAlignment: Left }
