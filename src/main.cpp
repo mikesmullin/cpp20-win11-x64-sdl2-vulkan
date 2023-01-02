@@ -6,7 +6,7 @@
 
 int main() {
   try {
-    mks::Engine::Init();
+    auto e = mks::Engine::Init();
 
     mks::Logger::Infof("Hello world!");
   } catch (const std::exception& e) {

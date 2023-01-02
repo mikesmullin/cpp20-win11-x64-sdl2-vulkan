@@ -21,6 +21,7 @@ cpp:
     /I ../vendor/glm-0.9.9.8 \
     /I ../vendor/tinyobjloader/include \
     ../src/*.cpp \
+    ../src/components/*.cpp \
     ../src/lib/*.cpp \
     /Fegame.exe \
     /link user32.lib shell32.lib gdi32.lib \
