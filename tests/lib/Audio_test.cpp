@@ -1,14 +1,13 @@
-// #include <cstdlib>
-#include "../../src/sound/audio.hpp"
+#include "../../src/lib/Audio.hpp"
 
 #include <iostream>
 #include <stdexcept>
 
-#include "../../src/utils/log.hpp"
+#include "../../src/lib/Logger.hpp"
 
 int main() {
   try {
-    mks::Log::Infof("Begin sound test.");
+    mks::Logger::Infof("Begin sound test.");
 
     mks::Audio a{};
     a.addMusic("../assets/music/napoleon.ogg");
@@ -26,7 +25,7 @@ int main() {
       std::cin.clear();
     }
 
-    mks::Log::Infof("End of test.");
+    mks::Logger::Infof("End of test.");
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';
     return EXIT_FAILURE;
