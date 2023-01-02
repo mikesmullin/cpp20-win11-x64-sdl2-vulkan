@@ -4,7 +4,7 @@
 
 namespace mks {
 
-class Log {
+class Logger {
  public:
   static std::runtime_error Errorf(const char* msg, ...);
   static void Infof(const char* msg, ...);
