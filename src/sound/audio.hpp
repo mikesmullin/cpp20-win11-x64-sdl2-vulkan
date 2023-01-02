@@ -17,10 +17,10 @@ class Audio {
   ~Audio();
 
   void addSoundEffect(const char* path);
-  void playSoundEffect(const int which) const;
+  void playSoundEffect(const unsigned int which) const;
 
  private:
-  std::vector<Mix_Chunk*> mSoundEffectBank;
+  std::vector<Mix_Music*> mSoundEffectBank;
 };
 
 }

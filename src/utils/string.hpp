@@ -4,7 +4,7 @@
 
 namespace mks {
 
-std::runtime_error Fatalf(const char* msg, ...);
+std::runtime_error Errorf(const char* msg, ...);
 void Infof(const char* msg, ...);
 
 }  // namespace mks

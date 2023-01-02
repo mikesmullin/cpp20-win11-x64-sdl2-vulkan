@@ -8,6 +8,8 @@ shaders:
 
 cpp:
 	cd build/ && \
+  copy ..\\vendor\\sdl-2.26.1\\lib\\x64\\SDL2.dll . && \
+  copy ..\\vendor\\sdl-mixer-2.6.2\\lib\\x64\\SDL2_mixer.dll . && \
 	cl.exe \
 	  /nologo \
     /Zi \
