@@ -10,8 +10,18 @@ int main() {
     mks::Infof("Begin sound test.");
 
     mks::Audio a{};
-    a.addSoundEffect("..\\assets\\sfx\\monster_snarl.ogg");
-    a.playSoundEffect(0);
+    a.addSoundEffect("..\\assets\\sfx\\monster_snarl.wav");
+
+    int choice = 0;
+    while (choice != -1) {
+      choice = 0;
+      std::cout << "Cmd> ";
+      std::cin >> choice;
+      if (choice != -1) {
+        a.playSoundEffect(choice);
+      }
+      std::cin.clear();
+    }
 
     mks::Infof("End of test.");
   } catch (const std::exception& e) {
