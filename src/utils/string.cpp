@@ -8,10 +8,10 @@
 namespace mks {
 
 std::runtime_error Errorf(const char* msg, ...) {
-  char buf[100];
+  char buf[255];
   va_list args;
   va_start(args, msg);
-  int ok = sprintf(buf, msg, args);
+  int ok = vsprintf(buf, msg, args);
   va_end(args);
   if (ok < 1) {
     throw std::runtime_error("Unable to format error msg.");
@@ -20,10 +20,10 @@ std::runtime_error Errorf(const char* msg, ...) {
 }
 
 void Infof(const char* msg, ...) {
-  char buf[100];
+  char buf[255];
   va_list args;
   va_start(args, msg);
-  int ok = sprintf(buf, msg, args);
+  int ok = vsprintf(buf, msg, args);
   va_end(args);
   if (ok < 1) {
     throw std::runtime_error("Unable to format info msg.");
