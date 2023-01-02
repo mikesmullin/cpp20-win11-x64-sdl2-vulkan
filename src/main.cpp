@@ -10,7 +10,9 @@ int main() {
     mks::Infof("Begin sound test.");
 
     mks::Audio a{};
-    a.addSoundEffect("..\\assets\\sfx\\monster_snarl.wav");
+    a.addMusic("../assets/music/napoleon.ogg");
+    a.playMusic(0, 999);
+    a.addSoundEffect("../assets/sfx/monster_snarl.wav");
 
     int choice = 0;
     while (choice != -1) {
