@@ -46,7 +46,20 @@
     "set": "cpp",
     "unordered_set": "cpp",
     "xhash": "cpp",
-    "xtree": "cpp"
+    "xtree": "cpp",
+    "algorithm": "cpp",
+    "cstdarg": "cpp",
+    "ctime": "cpp",
+    "map": "cpp",
+    "unordered_map": "cpp",
+    "functional": "cpp",
+    "iomanip": "cpp",
+    "locale": "cpp",
+    "sstream": "cpp",
+    "xlocbuf": "cpp",
+    "xlocmes": "cpp",
+    "xlocmon": "cpp",
+    "xloctime": "cpp"
   },
   "cSpell.words": [
     "GLFW",
@@ -54,8 +67,10 @@
   ],
   "C_Cpp.default.includePath": [
     "C:/VulkanSDK/1.3.236.0/Include",
-    "vendor/glfw-3.3.8/include",
-    "vendor/glm-0.9.9.8"
+    "vendor/glm-0.9.9.8",
+    "vendor/sdl-2.26.1/include",
+    "vendor/sdl-mixer-2.6.2/include",
+    "vendor/tinyobjloader/include"
   ],
   "editor.formatOnSave": true
 }
