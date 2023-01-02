@@ -11,6 +11,7 @@ std::unique_ptr<Engine> Engine::Init() {
   auto e = std::make_unique<Engine>();
   e->Run();
   auto appInfo = mks::Vulkan::DescribeApplication("Game", 1, 0, 0);
+  mks::Vulkan::CreateInstance(std::move(appInfo));
   return e;
 }
 
