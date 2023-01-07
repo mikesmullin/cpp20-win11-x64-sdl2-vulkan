@@ -55,6 +55,7 @@ audio_test:
     /I ../vendor/glm-0.9.9.8 \
     /I ../vendor/tinyobjloader/include \
     ../tests/lib/*.cpp \
+    ../src/components/*.cpp \
     ../src/lib/*.cpp \
     /FeAudio_test.exe \
     /link user32.lib shell32.lib gdi32.lib \
@@ -62,4 +63,4 @@ audio_test:
     /LIBPATH:../vendor/sdl-2.26.1/lib/x64 SDL2.lib \
     /LIBPATH:../vendor/sdl-mixer-2.6.2/lib/x64 SDL2_mixer.lib \
     /LIBPATH:C:/VulkanSDK/1.3.236.0/Lib vulkan-1.lib && \
-  Audio_test.exe
+    Audio_test.exe

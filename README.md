@@ -10,8 +10,8 @@
 1. Start > Run... > "x64 Native Tools Command Prompt for VS 2019"
 2. Build with Makefile
    ```
-   cd "C:\Users\mikes\Desktop\VulkanGame"
-   nmake
+   cd "C:\Users\mikes\Desktop\Game2"
+   nmake all
    ```
 
 ## Debugging
