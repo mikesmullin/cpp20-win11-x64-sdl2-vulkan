@@ -16,13 +16,6 @@
 
 namespace mks {
 
-struct VulkanExtensionSupport {
-  bool allRequiredSupported;
-  std::vector<const char*> required;
-  std::vector<VkExtensionProperties> supported;
-  std::vector<const char*> missing;
-};
-
 class Vulkan {
  public:
   Vulkan();
@@ -59,8 +52,7 @@ class Vulkan {
    *
    * @return std::vector<VkExtensionProperties>
    */
-  VulkanExtensionSupport Vulkan::CheckSupportedExtensions(
-      std::vector<const char*> requiredExtensions);
+  bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions);
 
  private:
   VkInstance instance;
