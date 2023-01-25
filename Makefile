@@ -92,3 +92,18 @@ gamepad_test: clean copy_dlls
 	$(LINKER_ARGS) \
 	$(LIB_PATHS) && \
 	$(BIN3)
+
+.PHONY: window_test
+BIN3=Window_test.exe
+window_test: clean copy_dlls
+	cd $(BUILD_DIR) && \
+	$(CL_BIN) \
+	$(CL_ARGS) \
+	$(INCLUDE_PATHS) \
+	../tests/lib/Window_test.cpp \
+	$(IMPORTS) \
+	/Fe$(BIN3) \
+	/link $(LIBS) \
+	$(LINKER_ARGS) \
+	$(LIB_PATHS) && \
+	$(BIN3)
