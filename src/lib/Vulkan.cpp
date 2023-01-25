@@ -31,6 +31,39 @@ Vulkan::~Vulkan() {
   }
 }
 
+bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers) {
+  uint32_t layerCount;
+  if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS) {
+    throw Logger::Errorf("vkEnumerateInstanceLayerProperties() failed.");
+  }
+
+  std::vector<VkLayerProperties> availableLayers(layerCount);
+  if (vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()) != VK_SUCCESS) {
+    throw Logger::Errorf("vkEnumerateInstanceLayerProperties() failed. layerCount: %d", layerCount);
+  }
+
+  bool allRequiredSupported = true;
+  Logger::Debugf("validation layers:");
+  for (const auto& layer : availableLayers) {
+    Logger::Debugf("  reported %s v%d", layer.layerName, layer.specVersion);
+  }
+  bool found;
+  for (const auto& required : requiredLayers) {
+    found = false;
+    for (const auto& extension : availableLayers) {
+      if (strcmp(required, extension.layerName) == 0) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      allRequiredSupported = false;
+      Logger::Debugf("  missing %s", required);
+    }
+  }
+  return allRequiredSupported;
+}
+
 bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions) {
   // TODO: How does it know which device? or is it really from the driver only?
 
@@ -69,7 +102,9 @@ bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtension
 }
 
 void Vulkan::CreateInstance(
-    std::unique_ptr<VkApplicationInfo> appInfo, std::vector<const char*> extensionNames) {
+    std::unique_ptr<VkApplicationInfo> appInfo,
+    std::vector<const char*> requiredValidationLayers,
+    std::vector<const char*> requiredExtensionNames) {
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkInstanceCreateInfo.html
   auto createInfo = std::make_unique<VkInstanceCreateInfo>();
 
@@ -87,8 +122,9 @@ void Vulkan::CreateInstance(
   // implementations recognize behavior inherent to classes of applications.
   createInfo->pApplicationInfo = appInfo.get();
 
+#ifdef DEBUG_VULKAN
   // the number of global layers to enable.
-  // createInfo->enabledLayerCount = 0;
+  createInfo->enabledLayerCount = requiredValidationLayers.size();
 
   // a pointer to an array of enabledLayerCount null-terminated UTF-8 strings containing the
   // names of layers to enable for the created instance. The layers are loaded in the order they are
@@ -96,14 +132,18 @@ void Vulkan::CreateInstance(
   // the last array element being the closest to the driver. See the
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#extendingvulkan-layers
   // section for further details.
-  // createInfo->ppEnabledLayerNames = nullptr;
+  createInfo->ppEnabledLayerNames = requiredValidationLayers.data();
+#else
+  createInfo->enabledLayerCount = 0;          // default
+  createInfo->ppEnabledLayerNames = nullptr;  // default
+#endif
 
   // the number of global extensions to enable
-  createInfo->enabledExtensionCount = extensionNames.size();
+  createInfo->enabledExtensionCount = requiredExtensionNames.size();
 
   // a pointer to an array of enabledExtensionCount null-terminated UTF-8 strings containing the
   // names of extensions to enable.
-  createInfo->ppEnabledExtensionNames = extensionNames.data();
+  createInfo->ppEnabledExtensionNames = requiredExtensionNames.data();
 
   // Create a new Vulkan instance
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCreateInstance.html
