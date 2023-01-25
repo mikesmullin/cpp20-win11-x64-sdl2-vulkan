@@ -38,7 +38,7 @@ copy_dlls:
 
 BIN1=game.exe
 .PHONY: cpp
-cpp: copy_dlls
+cpp: clean copy_dlls
 	cd $(BUILD_DIR) && \
 	$(CL_BIN) \
 	$(CL_ARGS) \
@@ -64,16 +64,31 @@ clean:
 test: audio_test
 
 .PHONY: audio_test
-BIN2=audio_test.exe
-audio_test: copy_dlls
+BIN2=Audio_test.exe
+audio_test: clean copy_dlls
 	cd $(BUILD_DIR) && \
-	echo $(CL_BIN) \
+	$(CL_BIN) \
 	$(CL_ARGS) \
 	$(INCLUDE_PATHS) \
-	../tests/lib/*.cpp \
+	../tests/lib/Audio_test.cpp \
 	$(IMPORTS) \
 	/Fe$(BIN2) \
 	/link $(LIBS) \
 	$(LINKER_ARGS) \
 	$(LIB_PATHS) && \
 	$(BIN2)
+
+.PHONY: gamepad_test
+BIN3=Gamepad_test.exe
+gamepad_test: clean copy_dlls
+	cd $(BUILD_DIR) && \
+	$(CL_BIN) \
+	$(CL_ARGS) \
+	$(INCLUDE_PATHS) \
+	../tests/lib/Gamepad_test.cpp \
+	$(IMPORTS) \
+	/Fe$(BIN3) \
+	/link $(LIBS) \
+	$(LINKER_ARGS) \
+	$(LIB_PATHS) && \
+	$(BIN3)

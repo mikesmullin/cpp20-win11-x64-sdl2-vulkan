@@ -4,12 +4,17 @@
 #include <stdexcept>
 
 #include "../../src/lib/Logger.hpp"
+#include "../../src/lib/SDL.hpp"
 
 int main() {
   try {
-    mks::Logger::Infof("Begin sound test.");
+    mks::Logger::Infof("Begin audio test.");
+
+    mks::SDL::defaultInstance.enableAudio();
+    mks::SDL::defaultInstance.init();
 
     mks::Audio a{};
+    a.init();
     a.addMusic("../assets/music/napoleon.ogg");
     a.playMusic(0, 999);
     a.addSoundEffect("../assets/sfx/monster_snarl.wav");

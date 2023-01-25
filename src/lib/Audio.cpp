@@ -1,5 +1,5 @@
 
-#include "audio.hpp"
+#include "Audio.hpp"
 
 #include <SDL.h>
 
@@ -7,15 +7,17 @@
 #include <stdexcept>
 
 #include "Logger.hpp"
+#include "SDL.hpp"
 
 namespace mks {
 
 Audio::Audio() {
-  int ok1 = SDL_Init(SDL_INIT_AUDIO);
-  if (ok1 != 0) {
-    throw mks::Logger::Errorf("Failed to SDL_Init(). error: %s", SDL_GetError());
-  }
+}
 
+Audio::~Audio() {
+}
+
+void Audio::init() {
   const int audio_rate = 22050;
   const Uint16 audio_format = AUDIO_S16SYS;
   const int audio_channels = 2;
@@ -25,10 +27,6 @@ Audio::Audio() {
   if (ok2 != 0) {
     throw mks::Logger::Errorf("Couldn't init audio: %s", Mix_GetError());
   }
-}
-
-Audio::~Audio() {
-  SDL_Quit();
 }
 
 void Audio::addSoundEffect(const char* path) {

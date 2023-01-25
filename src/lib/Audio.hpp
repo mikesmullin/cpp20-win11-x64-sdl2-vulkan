@@ -16,6 +16,7 @@ class Audio {
   Audio();
   ~Audio();
 
+  void init();
   void addSoundEffect(const char* path);
   void playSoundEffect(const unsigned int which) const;
   void addMusic(const char* path);
@@ -26,4 +27,4 @@ class Audio {
   std::vector<Mix_Music*> mMusicBank;
 };
 
-}
+}  // namespace mks
