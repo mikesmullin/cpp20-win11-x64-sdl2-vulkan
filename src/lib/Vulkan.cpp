@@ -21,6 +21,7 @@ const unsigned int ENGINE_MINOR = 1;
 const unsigned int ENGINE_HOTFIX = 1;
 
 Vulkan::Vulkan() {
+  this->instance = nullptr;
 }
 
 Vulkan::~Vulkan() {
@@ -30,8 +31,7 @@ Vulkan::~Vulkan() {
   }
 }
 
-VulkanExtensionSupport Vulkan::CheckSupportedExtensions(
-    std::vector<const char*> requiredExtensions) {
+bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions) {
   // TODO: How does it know which device? or is it really from the driver only?
 
   uint32_t extensionCount = 0;
@@ -46,11 +46,7 @@ VulkanExtensionSupport Vulkan::CheckSupportedExtensions(
         extensionCount);
   }
 
-  auto result = VulkanExtensionSupport{};
-  result.allRequiredSupported = true;
-  result.required = requiredExtensions;
-  result.supported = extensions;
-
+  bool allRequiredSupported = true;
   Logger::Debugf("device extensions:");
   for (const auto& extension : extensions) {
     Logger::Debugf("  reported %s v%d", extension.extensionName, extension.specVersion);
@@ -65,13 +61,11 @@ VulkanExtensionSupport Vulkan::CheckSupportedExtensions(
       }
     }
     if (!found) {
-      result.allRequiredSupported = false;
-      result.missing.push_back(required);
-      Logger::Errorf("  missing %s", required);
+      allRequiredSupported = false;
+      Logger::Debugf("  missing %s", required);
     }
   }
-
-  return result;
+  return allRequiredSupported;
 }
 
 void Vulkan::CreateInstance(

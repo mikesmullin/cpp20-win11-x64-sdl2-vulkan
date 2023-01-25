@@ -27,20 +27,17 @@ int main() {
         600,
         SDL_WINDOW_VULKAN /* | SDL_WINDOW_SHOWN*/);
     if (!window) {
-      std::cout << "Failed to create window\n";
-      return -1;
+      throw mks::Logger::Errorf("Failed to create window");
     }
 
     SDL_Surface* window_surface = SDL_GetWindowSurface(window);
 
     if (!window_surface) {
-      std::cout << "Failed to get the surface from the window\n";
-      return -1;
+      throw mks::Logger::Errorf("Failed to get the surface from the window");
     }
 
     // TODO: bind vulkan to sdl window handle
     auto v = mks::Vulkan{};
-
     auto appInfo = v.DescribeApplication("Vulkan_test", 1, 0, 0);
     unsigned int extensionCount = 0;
     SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
@@ -48,6 +45,9 @@ int main() {
     SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, extensionNames.data());
 
     auto supported = v.CheckSupportedExtensions(extensionNames);
+    if (!supported) {
+      throw mks::Logger::Errorf("Missing required Vulkan extensions.");
+    }
 
     v.CreateInstance(std::move(appInfo), extensionNames);
 
@@ -72,8 +72,11 @@ int main() {
     SDL_DestroyWindow(window);
 
     mks::Logger::Infof("End of test.");
-  } catch (const std::exception& e) {
-    std::cerr << e.what() << '\n';
+  } catch (const std::runtime_error& e) {
+    std::cerr << "Fatal: " << e.what() << '\n';
+    return EXIT_FAILURE;
+  } catch (...) {
+    std::cerr << "Unexpected error\n";
     return EXIT_FAILURE;
   }
 
