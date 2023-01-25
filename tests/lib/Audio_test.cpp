@@ -8,7 +8,7 @@
 
 int main() {
   try {
-    mks::Logger::Infof("Begin audio test.");
+    mks::Logger::Infof("Begin Audio test.");
 
     mks::SDL::defaultInstance.enableAudio();
     mks::SDL::defaultInstance.init();

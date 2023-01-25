@@ -12,7 +12,7 @@
 
 int main() {
   try {
-    mks::Logger::Infof("Begin gamepad test.");
+    mks::Logger::Infof("Begin Gamepad test.");
 
     mks::SDL::defaultInstance.enableGamepad();
     mks::Gamepad g{};

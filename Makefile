@@ -107,3 +107,18 @@ window_test: clean copy_dlls
 	$(LINKER_ARGS) \
 	$(LIB_PATHS) && \
 	$(BIN3)
+
+.PHONY: vulkan_test
+BIN3=Vulkan_test.exe
+vulkan_test: clean copy_dlls
+	cd $(BUILD_DIR) && \
+	$(CL_BIN) \
+	$(CL_ARGS) \
+	$(INCLUDE_PATHS) \
+	../tests/lib/Vulkan_test.cpp \
+	$(IMPORTS) \
+	/Fe$(BIN3) \
+	/link $(LIBS) \
+	$(LINKER_ARGS) \
+	$(LIB_PATHS) && \
+	$(BIN3)
