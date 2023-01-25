@@ -22,9 +22,9 @@ void SDL::init() {
   if (this->useGamepad) {
     flags = flags | SDL_INIT_JOYSTICK;
   }
-  // if (this->useVideo) {
-  //   flags = flags | SDL_INIT_VIDEO;
-  // }
+  if (this->useVideo) {
+    flags = flags | SDL_INIT_VIDEO;
+  }
   int ok1 = SDL_Init(flags);
   if (ok1 != 0) {
     throw mks::Logger::Errorf("Failed to SDL_Init(). error: %s", SDL_GetError());
