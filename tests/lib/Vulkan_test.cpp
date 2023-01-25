@@ -39,17 +39,37 @@ int main() {
     // TODO: bind vulkan to sdl window handle
     auto v = mks::Vulkan{};
     auto appInfo = v.DescribeApplication("Vulkan_test", 1, 0, 0);
+    bool supported = false;
+
+#ifdef DEBUG_VULKAN
+    // list required validation layers, according to developer debug preferences
+    const std::vector<const char*> requiredValidationLayers = {
+        // all of the useful standard validation is bundled into a layer included in the SDK
+        "VK_LAYER_KHRONOS_validation"};
+    supported = v.CheckSupportedLayers(requiredValidationLayers);
+    if (!supported) {
+      throw mks::Logger::Errorf("Missing required Vulkan validation layers.");
+    }
+
+    // TODO: Device-specific layer validation is deprecated. However,
+    //   the specification document still recommends that you enable validation layers at device
+    //   level as well for compatibility, and it's required by some implementations. we'll see this
+    //   code later on:
+    //   https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Logical_device_and_queues
+#endif
+
+    // list required extensions, according to SDL window manager
     unsigned int extensionCount = 0;
     SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
-    std::vector<const char*> extensionNames(extensionCount);
-    SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, extensionNames.data());
+    std::vector<const char*> requiredExtensionNames(extensionCount);
+    SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, requiredExtensionNames.data());
 
-    auto supported = v.CheckSupportedExtensions(extensionNames);
+    supported = v.CheckSupportedExtensions(requiredExtensionNames);
     if (!supported) {
       throw mks::Logger::Errorf("Missing required Vulkan extensions.");
     }
 
-    v.CreateInstance(std::move(appInfo), extensionNames);
+    v.CreateInstance(std::move(appInfo), requiredValidationLayers, requiredExtensionNames);
 
     bool quit = false;
     SDL_Event e;

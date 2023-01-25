@@ -29,7 +29,9 @@ class Vulkan {
    * @param appInfo - Application info struct returned by CreateInstance().
    */
   void Vulkan::CreateInstance(
-      std::unique_ptr<VkApplicationInfo> appInfo, std::vector<const char*> extensionNames);
+      std::unique_ptr<VkApplicationInfo> appInfo,
+      std::vector<const char*> requiredValidationLayers,
+      std::vector<const char*> requiredExtensionNames);
 
   /**
    * Define struct specifying some details about your application.
@@ -48,9 +50,16 @@ class Vulkan {
       const unsigned int hotfix);
 
   /**
+   * Query the driver for a list of validation layers it supports.
+   *
+   * @return bool
+   */
+  bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers);
+
+  /**
    * Query the device for a list of extensions it supports.
    *
-   * @return std::vector<VkExtensionProperties>
+   * @return bool
    */
   bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions);
 
