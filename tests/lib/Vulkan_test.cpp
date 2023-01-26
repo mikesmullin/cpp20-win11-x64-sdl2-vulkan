@@ -71,6 +71,11 @@ int main() {
 
     v.CreateInstance(std::move(appInfo), requiredValidationLayers, requiredExtensionNames);
 
+    supported = v.CheckDevices(0);
+    if (!supported) {
+      throw mks::Logger::Errorf("Missing required Vulkan-compatible GPU device.");
+    }
+
     bool quit = false;
     SDL_Event e;
     while (!quit) {

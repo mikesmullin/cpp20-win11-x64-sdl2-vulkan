@@ -63,7 +63,10 @@ class Vulkan {
    */
   bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions);
 
+  const bool Vulkan::CheckDevices(const int deviceIndex);
+
  private:
-  VkInstance instance;
+  VkInstance instance = nullptr;
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 };
 }  // namespace mks
