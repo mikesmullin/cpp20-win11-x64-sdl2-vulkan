@@ -27,10 +27,11 @@ Vulkan::~Vulkan() {
   if (instance) {
     Logger::Infof("shutting down Vulkan.");
     vkDestroyInstance(instance, nullptr);
+    // NOTICE: physicalDevice is destroyed implicitly with instance.
   }
 }
 
-const bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers) {
+const bool Vulkan::CheckLayers(std::vector<const char*> requiredLayers) {
   uint32_t layerCount;
   if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumerateInstanceLayerProperties() failed.");
@@ -42,15 +43,26 @@ const bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers)
   }
 
   bool allRequiredSupported = true;
+  bool found;
   Logger::Debugf("validation layers:");
   for (const auto& layer : availableLayers) {
-    Logger::Debugf("  reported %s v%d", layer.layerName, layer.specVersion);
+    found = false;
+    for (const auto& required : requiredLayers) {
+      if (strcmp(required, layer.layerName) == 0) {
+        found = true;
+        break;
+      }
+    }
+    Logger::Debugf(
+        "  %s%s",
+        layer.layerName,
+        // layer.specVersion,
+        found ? " (required)" : "");
   }
-  bool found;
   for (const auto& required : requiredLayers) {
     found = false;
-    for (const auto& extension : availableLayers) {
-      if (strcmp(required, extension.layerName) == 0) {
+    for (const auto& layer : availableLayers) {
+      if (strcmp(required, layer.layerName) == 0) {
         found = true;
         break;
       }
@@ -63,7 +75,7 @@ const bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers)
   return allRequiredSupported;
 }
 
-const bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions) {
+const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions) {
   // TODO: How does it know which device? or is it really from the driver only?
 
   uint32_t extensionCount = 0;
@@ -80,10 +92,21 @@ const bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExt
 
   bool allRequiredSupported = true;
   Logger::Debugf("device extensions:");
-  for (const auto& extension : extensions) {
-    Logger::Debugf("  reported %s v%d", extension.extensionName, extension.specVersion);
-  }
   bool found;
+  for (const auto& extension : extensions) {
+    found = false;
+    for (const auto& required : requiredExtensions) {
+      if (strcmp(required, extension.extensionName) == 0) {
+        found = true;
+        break;
+      }
+    }
+    Logger::Debugf(
+        "  %s%s",
+        extension.extensionName,
+        // extension.specVersion,
+        found ? " (required)" : "");
+  }
   for (const auto& required : requiredExtensions) {
     found = false;
     for (const auto& extension : extensions) {
@@ -100,7 +123,7 @@ const bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExt
   return allRequiredSupported;
 }
 
-const bool Vulkan::CheckDevices(const int requiredDeviceIndex) {
+const bool Vulkan::UseDevice(const int requiredDeviceIndex) {
   uint32_t deviceCount = 0;
   if (vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumeratePhysicalDevices() failed.");
@@ -119,14 +142,47 @@ const bool Vulkan::CheckDevices(const int requiredDeviceIndex) {
     VkPhysicalDeviceProperties props;
     vkGetPhysicalDeviceProperties(device, &props);
 
-    Logger::Debugf("  %u: %s", i, props.deviceName);
+    Logger::Debugf(
+        "  %u: %s%s",
+        i,
+        props.deviceName,
+        i == requiredDeviceIndex ? " (selected)" : "");
   }
 
   if (requiredDeviceIndex < devices.size()) {
+    physicalDevice = devices[requiredDeviceIndex];
     return true;
   }
   Logger::Debugf("  missing device index %d", requiredDeviceIndex);
   return false;
+}
+
+void Vulkan::CheckQueues() const {
+  uint32_t queueFamilyCount = 0;
+  vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+
+  std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+  vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+
+  Logger::Debugf("device queue families:");
+  for (unsigned int i = 0; i < queueFamilies.size(); i++) {
+    const auto& queueFamily = queueFamilies[i];
+    Logger::Debugf(
+        "  %u: flags:%s%s%s%s%s%s",
+        i,
+        (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) ? " GRAPHICS" : "",
+        (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) ? " COMPUTE" : "",
+        (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) ? " TRANSFER" : "",
+        (queueFamily.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) ? " SPARSE_BINDING" : "",
+        (queueFamily.queueFlags & VK_QUEUE_PROTECTED_BIT) ? " PROTECTED" : "",
+        (queueFamily.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV) ? " OPTICAL_FLOW" : "");
+    // if VK_KHR_video_decode_queue extension:
+    // VK_QUEUE_VIDEO_DECODE_BIT_KHR
+    // ifdef VK_ENABLE_BETA_EXTENSIONS:
+    // VK_QUEUE_VIDEO_ENCODE_BIT_KHR
+  }
+
+  // TODO: add logic to validate which/whether device+queue combinations we want to use
 }
 
 void Vulkan::CreateInstance(
@@ -155,9 +211,9 @@ void Vulkan::CreateInstance(
   createInfo->enabledLayerCount = requiredValidationLayers.size();
 
   // a pointer to an array of enabledLayerCount null-terminated UTF-8 strings containing the
-  // names of layers to enable for the created instance. The layers are loaded in the order they are
-  // listed in this array, with the first array element being the closest to the application, and
-  // the last array element being the closest to the driver. See the
+  // names of layers to enable for the created instance. The layers are loaded in the order they
+  // are listed in this array, with the first array element being the closest to the application,
+  // and the last array element being the closest to the driver. See the
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#extendingvulkan-layers
   // section for further details.
   createInfo->ppEnabledLayerNames = requiredValidationLayers.data();

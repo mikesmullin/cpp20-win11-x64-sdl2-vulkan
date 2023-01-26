@@ -45,7 +45,7 @@ int main() {
     const std::vector<const char*> requiredValidationLayers = {
         // all of the useful standard validation is bundled into a layer included in the SDK
         "VK_LAYER_KHRONOS_validation"};
-    supported = mks::Vulkan::CheckSupportedLayers(requiredValidationLayers);
+    supported = mks::Vulkan::CheckLayers(requiredValidationLayers);
     if (!supported) {
       throw mks::Logger::Errorf("Missing required Vulkan validation layers.");
     }
@@ -63,7 +63,7 @@ int main() {
     std::vector<const char*> requiredExtensionNames(extensionCount);
     SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, requiredExtensionNames.data());
 
-    supported = mks::Vulkan::CheckSupportedExtensions(requiredExtensionNames);
+    supported = mks::Vulkan::CheckExtensions(requiredExtensionNames);
     if (!supported) {
       throw mks::Logger::Errorf("Missing required Vulkan extensions.");
     }
@@ -71,10 +71,12 @@ int main() {
     auto v = mks::Vulkan{};
     v.CreateInstance(std::move(appInfo), requiredValidationLayers, requiredExtensionNames);
 
-    supported = v.CheckDevices(0);
+    supported = v.UseDevice(0);
     if (!supported) {
       throw mks::Logger::Errorf("Missing required Vulkan-compatible GPU device.");
     }
+
+    v.CheckQueues();
 
     bool quit = false;
     SDL_Event e;

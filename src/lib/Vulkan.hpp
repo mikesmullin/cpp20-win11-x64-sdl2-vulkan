@@ -54,16 +54,17 @@ class Vulkan {
    *
    * @return bool
    */
-  static const bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers);
+  static const bool Vulkan::CheckLayers(std::vector<const char*> requiredLayers);
 
   /**
    * Query the device for a list of extensions it supports.
    *
    * @return const bool
    */
-  static const bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions);
+  static const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions);
 
-  const bool Vulkan::CheckDevices(const int deviceIndex);
+  const bool Vulkan::UseDevice(const int deviceIndex);
+  void Vulkan::CheckQueues() const;
 
  private:
   VkInstance instance = nullptr;
