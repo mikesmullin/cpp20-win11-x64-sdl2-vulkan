@@ -30,7 +30,7 @@ Vulkan::~Vulkan() {
   }
 }
 
-bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers) {
+const bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers) {
   uint32_t layerCount;
   if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumerateInstanceLayerProperties() failed.");
@@ -63,7 +63,7 @@ bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers) {
   return allRequiredSupported;
 }
 
-bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions) {
+const bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions) {
   // TODO: How does it know which device? or is it really from the driver only?
 
   uint32_t extensionCount = 0;

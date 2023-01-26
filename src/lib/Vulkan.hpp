@@ -43,7 +43,7 @@ class Vulkan {
    * @param hotfix  - Application hotfix version number
    * @return std::unique_ptr<VkApplicationInfo>
    */
-  std::unique_ptr<VkApplicationInfo> Vulkan::DescribeApplication(
+  static std::unique_ptr<VkApplicationInfo> Vulkan::DescribeApplication(
       const char* name,
       const unsigned int major,
       const unsigned int minor,
@@ -54,14 +54,14 @@ class Vulkan {
    *
    * @return bool
    */
-  bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers);
+  static const bool Vulkan::CheckSupportedLayers(std::vector<const char*> requiredLayers);
 
   /**
    * Query the device for a list of extensions it supports.
    *
-   * @return bool
+   * @return const bool
    */
-  bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions);
+  static const bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtensions);
 
   const bool Vulkan::CheckDevices(const int deviceIndex);
 
