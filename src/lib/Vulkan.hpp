@@ -22,16 +22,18 @@ class Vulkan {
   ~Vulkan();
 
   /**
-   * The very first thing you need to do is initialize the Vulkan library by creating an instance.
-   * The instance is the connection between your application and the Vulkan library and creating it
-   * involves specifying some details about your application to the driver.
+   * Query the driver for a list of validation layers it supports.
    *
-   * @param appInfo - Application info struct returned by CreateInstance().
+   * @return bool
    */
-  void Vulkan::CreateInstance(
-      std::unique_ptr<VkApplicationInfo> appInfo,
-      std::vector<const char*> requiredValidationLayers,
-      std::vector<const char*> requiredExtensionNames);
+  static const bool Vulkan::CheckLayers(std::vector<const char*> requiredLayers);
+
+  /**
+   * Query the device for a list of extensions it supports.
+   *
+   * @return const bool
+   */
+  static const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions);
 
   /**
    * Define struct specifying some details about your application.
@@ -50,18 +52,16 @@ class Vulkan {
       const unsigned int hotfix);
 
   /**
-   * Query the driver for a list of validation layers it supports.
+   * The very first thing you need to do is initialize the Vulkan library by creating an instance.
+   * The instance is the connection between your application and the Vulkan library and creating it
+   * involves specifying some details about your application to the driver.
    *
-   * @return bool
+   * @param appInfo - Application info struct returned by CreateInstance().
    */
-  static const bool Vulkan::CheckLayers(std::vector<const char*> requiredLayers);
-
-  /**
-   * Query the device for a list of extensions it supports.
-   *
-   * @return const bool
-   */
-  static const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions);
+  void Vulkan::CreateInstance(
+      std::unique_ptr<VkApplicationInfo> appInfo,
+      std::vector<const char*> requiredValidationLayers,
+      std::vector<const char*> requiredExtensionNames);
 
   const bool Vulkan::UseDevice(const int deviceIndex);
   void Vulkan::CheckQueues() const;
@@ -69,5 +69,7 @@ class Vulkan {
  private:
   VkInstance instance = nullptr;
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+  VkDevice logicalDevice = nullptr;
+  VkQueue graphicsQueue = nullptr;
 };
 }  // namespace mks

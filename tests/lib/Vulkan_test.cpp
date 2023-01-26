@@ -37,7 +37,6 @@ int main() {
     }
 
     // TODO: bind vulkan to sdl window handle
-    auto appInfo = mks::Vulkan::DescribeApplication("Vulkan_test", 1, 0, 0);
     bool supported = false;
 
 #ifdef DEBUG_VULKAN
@@ -68,6 +67,7 @@ int main() {
       throw mks::Logger::Errorf("Missing required Vulkan extensions.");
     }
 
+    auto appInfo = mks::Vulkan::DescribeApplication("Vulkan_test", 1, 0, 0);
     auto v = mks::Vulkan{};
     v.CreateInstance(std::move(appInfo), requiredValidationLayers, requiredExtensionNames);
 
