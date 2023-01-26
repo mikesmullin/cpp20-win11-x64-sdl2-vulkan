@@ -21,7 +21,6 @@ const unsigned int ENGINE_MINOR = 1;
 const unsigned int ENGINE_HOTFIX = 1;
 
 Vulkan::Vulkan() {
-  this->instance = nullptr;
 }
 
 Vulkan::~Vulkan() {
@@ -99,6 +98,35 @@ bool Vulkan::CheckSupportedExtensions(std::vector<const char*> requiredExtension
     }
   }
   return allRequiredSupported;
+}
+
+const bool Vulkan::CheckDevices(const int requiredDeviceIndex) {
+  uint32_t deviceCount = 0;
+  if (vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) != VK_SUCCESS) {
+    throw Logger::Errorf("vkEnumeratePhysicalDevices() failed.");
+  }
+  if (deviceCount == 0) {
+    throw Logger::Errorf("Failed to locate GPU device with Vulkan support.");
+  }
+  std::vector<VkPhysicalDevice> devices(deviceCount);
+  if (vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()) != VK_SUCCESS) {
+    throw Logger::Errorf("vkEnumeratePhysicalDevices() failed. deviceCount: %d", deviceCount);
+  }
+
+  Logger::Debugf("devices:");
+  for (unsigned int i = 0; i < devices.size(); i++) {
+    const auto& device = devices[i];
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(device, &props);
+
+    Logger::Debugf("  %u: %s", i, props.deviceName);
+  }
+
+  if (requiredDeviceIndex < devices.size()) {
+    return true;
+  }
+  Logger::Debugf("  missing device index %d", requiredDeviceIndex);
+  return false;
 }
 
 void Vulkan::CreateInstance(
