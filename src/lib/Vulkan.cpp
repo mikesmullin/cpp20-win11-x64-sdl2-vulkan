@@ -252,7 +252,7 @@ const bool Vulkan::UseDevice(const int requiredDeviceIndex) {
   return false;
 }
 
-void Vulkan::CheckQueues() const {
+const int Vulkan::CheckQueues(const VkQueueFlags requiredFlags) const {
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
@@ -260,24 +260,61 @@ void Vulkan::CheckQueues() const {
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
   Logger::Debugf("device queue families:");
+  int firstCompatibleQueue = -1;
   for (unsigned int i = 0; i < queueFamilies.size(); i++) {
     const auto& queueFamily = queueFamilies[i];
+    if (-1 == firstCompatibleQueue && (queueFamily.queueFlags & requiredFlags)) {
+      firstCompatibleQueue = i;
+    }
     Logger::Debugf(
-        "  %u: flags:%s%s%s%s%s%s",
+        "  %u: flags:%s%s%s%s%s%s%s",
         i,
         (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) ? " GRAPHICS" : "",
         (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) ? " COMPUTE" : "",
         (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) ? " TRANSFER" : "",
         (queueFamily.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) ? " SPARSE_BINDING" : "",
         (queueFamily.queueFlags & VK_QUEUE_PROTECTED_BIT) ? " PROTECTED" : "",
-        (queueFamily.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV) ? " OPTICAL_FLOW" : "");
+        (queueFamily.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV) ? " OPTICAL_FLOW" : "",
+        i == firstCompatibleQueue ? " (selected)" : "");
     // if VK_KHR_video_decode_queue extension:
     // VK_QUEUE_VIDEO_DECODE_BIT_KHR
     // ifdef VK_ENABLE_BETA_EXTENSIONS:
     // VK_QUEUE_VIDEO_ENCODE_BIT_KHR
   }
 
-  // TODO: add logic to validate which/whether device+queue combinations we want to use
+  return firstCompatibleQueue;
+}
+
+void Vulkan::UseLogicalDevice(
+    const std::vector<const char*> requiredValidationLayers, const int queueFamilyIndex) {
+  VkDeviceQueueCreateInfo queueCreateInfo{};
+  queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  queueCreateInfo.queueFamilyIndex = queueFamilyIndex;
+  queueCreateInfo.queueCount = 1;
+  float queuePriority = 1.0f;
+  queueCreateInfo.pQueuePriorities = &queuePriority;
+
+  VkPhysicalDeviceFeatures deviceFeatures{};
+
+  VkDeviceCreateInfo createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  createInfo.pQueueCreateInfos = &queueCreateInfo;
+  createInfo.queueCreateInfoCount = 1;
+  createInfo.pEnabledFeatures = &deviceFeatures;
+  createInfo.enabledExtensionCount = 0;
+
+#ifdef DEBUG_VULKAN
+  createInfo.enabledLayerCount = static_cast<uint32_t>(requiredValidationLayers.size());
+  createInfo.ppEnabledLayerNames = requiredValidationLayers.data();
+#else
+  createInfo.enabledLayerCount = 0;
+#endif
+
+  if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS) {
+    throw Logger::Errorf("vkCreateDevice failed.");
+  }
+
+  vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &graphicsQueue);
 }
 
 }  // namespace mks

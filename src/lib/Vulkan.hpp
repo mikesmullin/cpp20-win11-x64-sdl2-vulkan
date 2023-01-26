@@ -26,14 +26,14 @@ class Vulkan {
    *
    * @return bool
    */
-  static const bool Vulkan::CheckLayers(std::vector<const char*> requiredLayers);
+  static const bool CheckLayers(std::vector<const char*> requiredLayers);
 
   /**
    * Query the device for a list of extensions it supports.
    *
    * @return const bool
    */
-  static const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions);
+  static const bool CheckExtensions(std::vector<const char*> requiredExtensions);
 
   /**
    * Define struct specifying some details about your application.
@@ -45,7 +45,7 @@ class Vulkan {
    * @param hotfix  - Application hotfix version number
    * @return std::unique_ptr<VkApplicationInfo>
    */
-  static std::unique_ptr<VkApplicationInfo> Vulkan::DescribeApplication(
+  static std::unique_ptr<VkApplicationInfo> DescribeApplication(
       const char* name,
       const unsigned int major,
       const unsigned int minor,
@@ -58,13 +58,15 @@ class Vulkan {
    *
    * @param appInfo - Application info struct returned by CreateInstance().
    */
-  void Vulkan::CreateInstance(
+  void CreateInstance(
       std::unique_ptr<VkApplicationInfo> appInfo,
       std::vector<const char*> requiredValidationLayers,
       std::vector<const char*> requiredExtensionNames);
 
-  const bool Vulkan::UseDevice(const int deviceIndex);
-  void Vulkan::CheckQueues() const;
+  const bool UseDevice(const int deviceIndex);
+  const int CheckQueues(const VkQueueFlags requiredFlags) const;
+  void UseLogicalDevice(
+      const std::vector<const char*> requiredValidationLayers, const int queueFamilyIndex);
 
  private:
   VkInstance instance = nullptr;
