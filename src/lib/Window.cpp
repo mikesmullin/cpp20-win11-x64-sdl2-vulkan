@@ -78,12 +78,14 @@ void Window::init() {
 
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
 
+  v.pdqfs.graphics.required = true;
+  v.pdqfs.present.required = true;
   supported = v.CheckQueues();
   if (!supported) {
     throw mks::Logger::Errorf(
         "Missing queue families on physical device. graphics: %u, present: %u",
-        v.pdqfs.graphics.found,
-        v.pdqfs.present.found);
+        v.pdqfs.graphics.selectedIndex.has_value(),
+        v.pdqfs.present.selectedIndex.has_value());
   }
 
   v.UseLogicalDevice(requiredValidationLayers);

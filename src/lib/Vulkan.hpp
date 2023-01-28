@@ -17,6 +17,24 @@
 
 namespace mks {
 
+struct PhysicalDeviceQueueFamily {
+  bool required;
+  bool supported;
+  std::optional<uint32_t> selectedIndex;
+  std::vector<uint32_t> supportedIndices;
+  VkQueue queue;
+};
+
+struct PhysicalDeviceQueueFamilies {
+  PhysicalDeviceQueueFamily graphics;
+  PhysicalDeviceQueueFamily compute;
+  PhysicalDeviceQueueFamily transfer;
+  PhysicalDeviceQueueFamily sparse;
+  PhysicalDeviceQueueFamily protect;
+  PhysicalDeviceQueueFamily optical;
+  PhysicalDeviceQueueFamily present;
+};
+
 class Vulkan {
  public:
   /**
@@ -79,23 +97,6 @@ class Vulkan {
  private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice logicalDevice = nullptr;
-};
-
-struct PhysicalDeviceQueueFamily {
-  bool required;
-  bool supported;
-  std::optional<uint32_t> selectedIndex;
-  std::vector<uint32_t> supportedIndices;
-};
-
-struct PhysicalDeviceQueueFamilies {
-  PhysicalDeviceQueueFamily graphics;
-  PhysicalDeviceQueueFamily compute;
-  PhysicalDeviceQueueFamily transfer;
-  PhysicalDeviceQueueFamily sparse;
-  PhysicalDeviceQueueFamily protect;
-  PhysicalDeviceQueueFamily optical;
-  PhysicalDeviceQueueFamily present;
 };
 
 }  // namespace mks
