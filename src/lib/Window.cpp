@@ -73,12 +73,18 @@ void Window::init() {
 
   supported = v.UsePhysicalDevice(0);
   if (!supported) {
-    throw mks::Logger::Errorf("Missing required Vulkan-compatible GPU device.");
+    throw mks::Logger::Errorf("Missing required Vulkan-compatible physical device.");
   }
 
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
 
-  v.CheckQueues();
+  supported = v.CheckQueues();
+  if (!supported) {
+    throw mks::Logger::Errorf(
+        "Missing queue families on physical device. graphics: %u, present: %u",
+        v.pdqfs.graphics.found,
+        v.pdqfs.present.found);
+  }
 
   v.UseLogicalDevice(requiredValidationLayers);
 
