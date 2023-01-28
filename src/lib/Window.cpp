@@ -69,9 +69,7 @@ void Window::init() {
     throw mks::Logger::Errorf("Missing required Vulkan extensions.");
   }
 
-  auto appInfo = mks::Vulkan::DescribeApplication("Vulkan_test", 1, 0, 0);
-  auto v = mks::Vulkan{};
-  v.CreateInstance(std::move(appInfo), requiredValidationLayers, requiredExtensionNames);
+  auto v = mks::Vulkan{"Vulkan_test", 1, 0, 0, requiredValidationLayers, requiredExtensionNames};
 
   supported = v.UsePhysicalDevice(0);
   if (!supported) {

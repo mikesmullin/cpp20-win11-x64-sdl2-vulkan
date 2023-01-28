@@ -19,53 +19,55 @@ namespace mks {
 
 class Vulkan {
  public:
-  Vulkan();
-  ~Vulkan();
-
   /**
    * Query the driver for a list of validation layers it supports.
    *
    * @return bool
    */
-  static const bool CheckLayers(std::vector<const char*> requiredLayers);
+  static const bool CheckLayers(const std::vector<const char*> requiredLayers);
 
   /**
-   * Query the device for a list of extensions it supports.
+   * Query the driver for a list of extensions it supports.
    *
    * @return const bool
    */
-  static const bool CheckExtensions(std::vector<const char*> requiredExtensions);
-
-  /**
-   * Define struct specifying some details about your application.
-   * To be passed to the driver via CreateInstance().
-   *
-   * @param name - Application name
-   * @param major - Application major version number
-   * @param minor - Application minor version number
-   * @param hotfix  - Application hotfix version number
-   * @return std::unique_ptr<VkApplicationInfo>
-   */
-  static std::unique_ptr<VkApplicationInfo> DescribeApplication(
-      const char* name,
-      const unsigned int major,
-      const unsigned int minor,
-      const unsigned int hotfix);
+  static const bool CheckExtensions(const std::vector<const char*> requiredExtensions);
 
   /**
    * The very first thing you need to do is initialize the Vulkan library by creating an instance.
    * The instance is the connection between your application and the Vulkan library and creating it
    * involves specifying some details about your application to the driver.
    *
-   * @param appInfo - Application info struct returned by CreateInstance().
+   * @param name - Application name
+   * @param major - Application major version number
+   * @param minor - Application minor version number
+   * @param hotfix  - Application hotfix version number
+   * @param requiredValidationLayers - list of validation layer names to validate and enable.
+   * @param requiredExtensionNames - list of physical device extension names to validate and enable.
    */
-  void CreateInstance(
-      std::unique_ptr<VkApplicationInfo> appInfo,
-      std::vector<const char*> requiredValidationLayers,
-      std::vector<const char*> requiredExtensionNames);
+  Vulkan(
+      const char* name,
+      const unsigned int major,
+      const unsigned int minor,
+      const unsigned int hotfix,
+      const std::vector<const char*> requiredValidationLayers,
+      const std::vector<const char*> requiredExtensionNames);
 
-  const bool UsePhysicalDevice(const int deviceIndex);
+  ~Vulkan();
+
+  /**
+   * Select the physical device we will use for subsequent calls.
+   *
+   * @param deviceIndex - Which GPU to choose.
+   * @return - Whether device exists, and was found to be compatible.
+   */
+  const bool UsePhysicalDevice(const unsigned int deviceIndex);
+
+  /**
+   * Validate desired queue families are supported by the current physical device.
+   */
   void CheckQueues();
+
   void UseLogicalDevice(const std::vector<const char*> requiredValidationLayers);
   void CreateWindowSurface();
   const bool CheckPhysicalDeviceSurfaceSupports() const;
