@@ -16,39 +16,27 @@
 
 namespace mks {
 
-const char* ENGINE_NAME = "MKS";
-const unsigned int ENGINE_MAJOR = 1;
-const unsigned int ENGINE_MINOR = 1;
-const unsigned int ENGINE_HOTFIX = 1;
+const bool Vulkan::CheckLayers(const std::vector<const char*> requiredLayers) {
+  // BACKGROUND: There were formerly two different types of validation layers in Vulkan: instance
+  // and device specific. The idea was that instance layers would only check calls related to global
+  // Vulkan objects like instances, and device specific layers would only check calls related to a
+  // specific GPU. Device specific layers have now been deprecated, which means that instance
+  // validation layers apply to all Vulkan calls.
 
-Vulkan::Vulkan() {
-}
-
-Vulkan::~Vulkan() {
-  Logger::Infof("shutting down Vulkan.");
-  if (logicalDevice) {
-    vkDestroyDevice(logicalDevice, nullptr);
-  }
-  if (instance) {
-    if (surface) {
-      vkDestroySurfaceKHR(instance, surface, nullptr);
-    }
-    // NOTICE: physicalDevice is destroyed implicitly with instance.
-    vkDestroyInstance(instance, nullptr);
-  }
-}
-
-const bool Vulkan::CheckLayers(std::vector<const char*> requiredLayers) {
+  // list which validation layers are supported by driver
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkEnumerateInstanceLayerProperties.html
   uint32_t layerCount;
+
   if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumerateInstanceLayerProperties() failed.");
   }
-
   std::vector<VkLayerProperties> availableLayers(layerCount);
+  // Returns up to requested number of global layer properties
   if (vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data()) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumerateInstanceLayerProperties() failed. layerCount: %d", layerCount);
   }
 
+  // debug: print list of validation layers to console
   bool allRequiredSupported = true;
   bool found;
   Logger::Debugf("validation layers:");
@@ -60,12 +48,9 @@ const bool Vulkan::CheckLayers(std::vector<const char*> requiredLayers) {
         break;
       }
     }
-    Logger::Debugf(
-        "  %s%s",
-        layer.layerName,
-        // layer.specVersion,
-        found ? " (required)" : "");
+    Logger::Debugf("  %s%s", layer.layerName, found ? " (required)" : "");
   }
+  // validate the required validation layers are all found
   for (const auto& required : requiredLayers) {
     found = false;
     for (const auto& layer : availableLayers) {
@@ -82,14 +67,15 @@ const bool Vulkan::CheckLayers(std::vector<const char*> requiredLayers) {
   return allRequiredSupported;
 }
 
-const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions) {
-  // TODO: How does it know which device? or is it really from the driver only?
-
+const bool Vulkan::CheckExtensions(const std::vector<const char*> requiredExtensions) {
+  // list the extensions supported by this driver
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkEnumerateInstanceExtensionProperties.html
   uint32_t extensionCount = 0;
   if (vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumerateInstanceExtensionProperties() failed.");
   }
   std::vector<VkExtensionProperties> extensions(extensionCount);
+  // Returns up to requested number of global extension properties
   if (vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data()) !=
       VK_SUCCESS) {
     throw Logger::Errorf(
@@ -97,6 +83,7 @@ const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions) 
         extensionCount);
   }
 
+  // debug: print list of extensions to console
   bool allRequiredSupported = true;
   Logger::Debugf("device extensions:");
   bool found;
@@ -108,12 +95,10 @@ const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions) 
         break;
       }
     }
-    Logger::Debugf(
-        "  %s%s",
-        extension.extensionName,
-        // extension.specVersion,
-        found ? " (required)" : "");
+    Logger::Debugf("  %s%s", extension.extensionName, found ? " (required)" : "");
   }
+
+  // validate the required extensions are all found
   for (const auto& required : requiredExtensions) {
     found = false;
     for (const auto& extension : extensions) {
@@ -130,11 +115,13 @@ const bool Vulkan::CheckExtensions(std::vector<const char*> requiredExtensions) 
   return allRequiredSupported;
 }
 
-std::unique_ptr<VkApplicationInfo> Vulkan::DescribeApplication(
+Vulkan::Vulkan(
     const char* name,
     const unsigned int major,
     const unsigned int minor,
-    const unsigned int hotfix) {
+    const unsigned int hotfix,
+    const std::vector<const char*> requiredValidationLayers,
+    const std::vector<const char*> requiredExtensionNames) {
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkApplicationInfo.html
   auto appInfo = std::make_unique<VkApplicationInfo>();
 
@@ -155,11 +142,11 @@ std::unique_ptr<VkApplicationInfo> Vulkan::DescribeApplication(
 
   // NULL or is a pointer to a null-terminated UTF-8 string containing the name of the engine (if
   // any) used to create the application.
-  appInfo->pEngineName = ENGINE_NAME;
+  appInfo->pEngineName = "MKS";
 
   // an unsigned integer variable containing the developer-supplied version number of the engine
   // used to create the application.
-  appInfo->engineVersion = VK_MAKE_VERSION(ENGINE_MAJOR, ENGINE_MINOR, ENGINE_HOTFIX);
+  appInfo->engineVersion = VK_MAKE_VERSION(1, 0, 0);
 
   // must be the highest version of Vulkan that the application is designed to use, encoded as
   // described in
@@ -168,13 +155,6 @@ std::unique_ptr<VkApplicationInfo> Vulkan::DescribeApplication(
   // Only the major and minor versions of the instance must match those requested in apiVersion.
   appInfo->apiVersion = VK_API_VERSION_1_3;
 
-  return appInfo;
-}
-
-void Vulkan::CreateInstance(
-    std::unique_ptr<VkApplicationInfo> appInfo,
-    std::vector<const char*> requiredValidationLayers,
-    std::vector<const char*> requiredExtensionNames) {
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkInstanceCreateInfo.html
   auto createInfo = std::make_unique<VkInstanceCreateInfo>();
 
@@ -217,13 +197,29 @@ void Vulkan::CreateInstance(
 
   // Create a new Vulkan instance
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCreateInstance.html
-  if (vkCreateInstance(createInfo.get(), nullptr, &this->instance) != VK_SUCCESS) {
+  if (vkCreateInstance(createInfo.get(), nullptr, &instance) != VK_SUCCESS) {
     throw mks::Logger::Errorf("Failed to create Vulkan instance.");
   }
 }
 
-const bool Vulkan::UsePhysicalDevice(const int requiredDeviceIndex) {
+Vulkan::~Vulkan() {
+  Logger::Infof("shutting down Vulkan.");
+  if (logicalDevice) {
+    vkDestroyDevice(logicalDevice, nullptr);
+  }
+  if (instance) {
+    if (surface) {
+      vkDestroySurfaceKHR(instance, surface, nullptr);
+    }
+    // NOTICE: physicalDevice is destroyed implicitly with instance.
+    vkDestroyInstance(instance, nullptr);
+  }
+}
+
+const bool Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {
+  // list GPUs
   uint32_t deviceCount = 0;
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkEnumeratePhysicalDevices.html
   if (vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumeratePhysicalDevices() failed.");
   }
@@ -231,21 +227,34 @@ const bool Vulkan::UsePhysicalDevice(const int requiredDeviceIndex) {
     throw Logger::Errorf("Failed to locate GPU device with Vulkan support.");
   }
   std::vector<VkPhysicalDevice> devices(deviceCount);
+  // Enumerates the physical devices accessible to a Vulkan instance
   if (vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data()) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumeratePhysicalDevices() failed. deviceCount: %d", deviceCount);
   }
 
+  // debug: print all GPUs found
   Logger::Debugf("devices:");
   for (unsigned int i = 0; i < devices.size(); i++) {
     const auto& device = devices[i];
+    // Structure specifying physical device properties
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPhysicalDeviceProperties.html
     VkPhysicalDeviceProperties deviceProperties;
+    // Returns properties of a physical device
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetPhysicalDeviceProperties.html
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+    // Structure describing the fine-grained features that can be supported by an implementation
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPhysicalDeviceFeatures.html
     VkPhysicalDeviceFeatures deviceFeatures;
+    // Reports capabilities of a physical device
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetPhysicalDeviceFeatures.html
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
+    // assumption: we only want the type of GPU device used to render video games
     const bool discrete = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
     const bool geometry = deviceFeatures.geometryShader;
 
+    // debug: list each GPU device found
     Logger::Debugf(
         "  %u: %s%s%s%s",
         i,
@@ -254,17 +263,19 @@ const bool Vulkan::UsePhysicalDevice(const int requiredDeviceIndex) {
         discrete ? " DISCRETE" : "",
         geometry ? " GEOMETRY_SHADER" : "");
 
+    // select one GPU to be the active/default/current for all subsequent Vulkan methods;
+    // it must meet certain minimum requirements
     if (i == requiredDeviceIndex && discrete && geometry) {
       physicalDevice = device;
       return true;
     }
   }
-
   Logger::Debugf("  missing device index %d", requiredDeviceIndex);
   return false;
 }
 
 void Vulkan::CheckQueues() {
+  // validate state
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
   }
@@ -273,16 +284,25 @@ void Vulkan::CheckQueues() {
   }
 
   uint32_t queueFamilyCount = 0;
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetPhysicalDeviceQueueFamilyProperties.html
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
   std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+  // Reports properties of the queues of the specified physical device
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
+  // debug: list all queue families found on the current physical device
   Logger::Debugf("device queue families:");
   for (uint32_t i = 0; i < queueFamilies.size(); i++) {
     const auto& queueFamily = queueFamilies[i];
+
+    // assumption: we only want device queues used to render graphics
     const bool selectGraphics = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+
+    // assumption: we only want device queues able to present to window surface
     VkBool32 _selectPresent = false;
+    // Query if presentation is supported
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetPhysicalDeviceSurfaceSupportKHR.html
     if (vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &_selectPresent) !=
         VK_SUCCESS) {
       Logger::Debugf("vkGetPhysicalDeviceSurfaceSupportKHR() failed. queueFamilyIndex: %u", i);
@@ -305,9 +325,11 @@ void Vulkan::CheckQueues() {
         selectGraphics ? " (select graphics)" : "",
         selectPresent ? " (select present)" : "");
 
+    // state: remember which queue is for graphics
     if (selectGraphics) {
       graphicsQueueFamilyIndex = i;
     }
+    // state: remember which queue is for presentation (may be same as above)
     if (selectPresent) {
       presentQueueFamilyIndex = i;
     }
@@ -324,6 +346,7 @@ void Vulkan::CheckQueues() {
   //       details.formats.data());
   // }
 
+  // assumption: validate requirements for video game rendering
   if (!graphicsQueueFamilyIndex.has_value()) {
     throw Logger::Errorf("Couldn't locate a graphics queue family on current physical device.");
   }
