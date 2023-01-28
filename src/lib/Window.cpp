@@ -81,12 +81,15 @@ void Window::init() {
   v.pdqfs.graphics.required = true;
   v.pdqfs.present.required = true;
   supported = v.CheckQueues();
-  if (!supported) {
-    throw mks::Logger::Errorf(
-        "Missing queue families on physical device. graphics: %u, present: %u",
-        v.pdqfs.graphics.selectedIndex.has_value(),
-        v.pdqfs.present.selectedIndex.has_value());
-  }
+  // if (!supported) {
+  //   throw mks::Logger::Errorf(
+  //       "Missing queue families on physical device.");
+  // }
+
+  v.BeginGetLogicalDeviceQueues({
+      v.pdqfs.graphics,
+      v.pdqfs.present,
+  });
 
   v.UseLogicalDevice(requiredValidationLayers);
 

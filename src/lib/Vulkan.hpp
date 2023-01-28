@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <optional>
+#include <set>
 #include <vector>
 
 /**
@@ -17,22 +18,38 @@
 
 namespace mks {
 
-struct PhysicalDeviceQueueFamily {
+/**
+ * One possible type of queue, and
+ * the queue family indices where it was found
+ * on the current physical device.
+ */
+struct PhysicalDeviceQueue {
   bool required;
-  bool supported;
-  std::optional<uint32_t> selectedIndex;
-  std::vector<uint32_t> supportedIndices;
+  const bool supported() const {
+    return familyIndices.size() > 0;
+  };
+  const bool valid() const {
+    return !required || supported();
+  };
+  unsigned int selected = 0;
+  const uint32_t selectedFamilyIndex() const {
+    return supported() ? familyIndices[selected] : 0;
+  }
+  const bool selectedFamilyIndexEqual(const uint32_t idx) const {
+    return supported() && idx == familyIndices[selected];
+  };
+  std::vector<uint32_t> familyIndices;
   VkQueue queue;
 };
 
-struct PhysicalDeviceQueueFamilies {
-  PhysicalDeviceQueueFamily graphics;
-  PhysicalDeviceQueueFamily compute;
-  PhysicalDeviceQueueFamily transfer;
-  PhysicalDeviceQueueFamily sparse;
-  PhysicalDeviceQueueFamily protect;
-  PhysicalDeviceQueueFamily optical;
-  PhysicalDeviceQueueFamily present;
+struct PhysicalDeviceQueues {
+  PhysicalDeviceQueue graphics;
+  PhysicalDeviceQueue compute;
+  PhysicalDeviceQueue transfer;
+  PhysicalDeviceQueue sparse;
+  PhysicalDeviceQueue protect;
+  PhysicalDeviceQueue optical;
+  PhysicalDeviceQueue present;
 };
 
 class Vulkan {
@@ -85,6 +102,8 @@ class Vulkan {
    * Validate desired queue families are supported by the current physical device.
    */
   const bool CheckQueues();
+  void BeginGetLogicalDeviceQueues(const std::set<PhysicalDeviceQueue> queues) const;
+  const bool EndGetLogicalDeviceQueue(const PhysicalDeviceQueue queue);
 
   void UseLogicalDevice(const std::vector<const char*> requiredValidationLayers);
   void CreateWindowSurface();
@@ -92,7 +111,7 @@ class Vulkan {
 
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
-  PhysicalDeviceQueueFamilies pdqfs = PhysicalDeviceQueueFamilies{};
+  PhysicalDeviceQueues pdqfs = PhysicalDeviceQueues{};
 
  private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
