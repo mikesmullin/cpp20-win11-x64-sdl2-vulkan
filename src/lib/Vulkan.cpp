@@ -314,54 +314,27 @@ const bool Vulkan::CheckQueues() {
       Logger::Debugf("vkGetPhysicalDeviceSurfaceSupportKHR() failed. queueFamilyIndex: %u", i);
     }
 
+    // build map of where queue types were found, by queue family index.
     if (graphics) {
-      pdqfs.graphics.supported = true;
-      if (!pdqfs.graphics.selectedIndex) {
-        pdqfs.graphics.selectedIndex = i;
-      }
-      pdqfs.graphics.supportedIndices.push_back(i);
+      pdqfs.graphics.familyIndices.push_back(i);
     }
     if (compute) {
-      pdqfs.compute.supported = true;
-      if (!pdqfs.compute.selectedIndex) {
-        pdqfs.compute.selectedIndex = i;
-      }
-      pdqfs.compute.supportedIndices.push_back(i);
+      pdqfs.compute.familyIndices.push_back(i);
     }
     if (transfer) {
-      pdqfs.transfer.supported = true;
-      if (!pdqfs.transfer.selectedIndex) {
-        pdqfs.transfer.selectedIndex = i;
-      }
-      pdqfs.transfer.supportedIndices.push_back(i);
+      pdqfs.transfer.familyIndices.push_back(i);
     }
     if (sparse) {
-      pdqfs.sparse.supported = true;
-      if (!pdqfs.sparse.selectedIndex) {
-        pdqfs.sparse.selectedIndex = i;
-      }
-      pdqfs.sparse.supportedIndices.push_back(i);
+      pdqfs.sparse.familyIndices.push_back(i);
     }
     if (protect) {
-      pdqfs.protect.supported = true;
-      if (!pdqfs.protect.selectedIndex) {
-        pdqfs.protect.selectedIndex = i;
-      }
-      pdqfs.protect.supportedIndices.push_back(i);
+      pdqfs.protect.familyIndices.push_back(i);
     }
     if (optical) {
-      pdqfs.optical.supported = true;
-      if (!pdqfs.optical.selectedIndex) {
-        pdqfs.optical.selectedIndex = i;
-      }
-      pdqfs.optical.supportedIndices.push_back(i);
+      pdqfs.optical.familyIndices.push_back(i);
     }
     if (present) {
-      pdqfs.present.supported = true;
-      if (!pdqfs.present.selectedIndex) {
-        pdqfs.present.selectedIndex = i;
-      }
-      pdqfs.present.supportedIndices.push_back(i);
+      pdqfs.present.familyIndices.push_back(i);
     }
 
     Logger::Debugf(
@@ -374,8 +347,8 @@ const bool Vulkan::CheckQueues() {
         sparse ? " SPARSE" : "",
         protect ? " PROTECTED" : "",
         optical ? " OPTICAL_FLOW" : "",
-        i == pdqfs.present.selectedIndex ? " (select present)" : "",
-        i == pdqfs.graphics.selectedIndex ? " (select graphics)" : "");
+        pdqfs.present.selectedFamilyIndexEqual(i) ? " (select present)" : "",
+        pdqfs.graphics.selectedFamilyIndexEqual(i) ? " (select graphics)" : "");
   }
 
   // uint32_t formatCount;
@@ -389,40 +362,47 @@ const bool Vulkan::CheckQueues() {
   //       details.formats.data());
   // }
 
-  // true if: not any required that aren't supported
-  return !(
-      (pdqfs.graphics.required && !pdqfs.graphics.supported) ||
-      (pdqfs.compute.required && !pdqfs.compute.supported) ||
-      (pdqfs.transfer.required && !pdqfs.transfer.supported) ||
-      (pdqfs.sparse.required && !pdqfs.sparse.supported) ||
-      (pdqfs.protect.required && !pdqfs.protect.supported) ||
-      (pdqfs.optical.required && !pdqfs.optical.supported) ||
-      (pdqfs.present.required && !pdqfs.present.supported));
+  return pdqfs.graphics.valid() && pdqfs.compute.valid() && pdqfs.transfer.valid() &&
+         pdqfs.sparse.valid() && pdqfs.protect.valid() && pdqfs.optical.valid() &&
+         pdqfs.present.valid();
+}
+
+void Vulkan::BeginGetLogicalDeviceQueues(const std::set<PhysicalDeviceQueue> queues) const {
+  if (VK_NULL_HANDLE == physicalDevice) {
+    throw Logger::Errorf("physicalDevice is null.");
+  }
+  if (!queue.valid()) {
+    throw Logger::Errorf("Requested queue not found in any queue family on the physical device.");
+  }
+
+  float queuePriority = 1.0f;
+  VkDeviceQueueCreateInfo createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+  createInfo.queueFamilyIndex = queue.selectedFamilyIndex();
+  createInfo.queueCount = 1;
+  createInfo.pQueuePriorities = &queuePriority;
+}
+
+const bool Vulkan::EndGetLogicalDeviceQueue(const PhysicalDeviceQueue queue) {
+  if (!logicalDevice) {
+    throw Logger::Errorf("logicalDevice is null.");
+  }
+
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetDeviceQueue.html
+  vkGetDeviceQueue(logicalDevice, queue.selectedFamilyIndex(), 0, &queue.queue);
 }
 
 void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationLayers) {
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
   }
-  if (!pdqfs.graphics.selectedIndex.has_value()) {
-    throw Logger::Errorf("graphicsQueueFamilyIndex is null.");
-  }
-  if (!pdqfs.present.selectedIndex.has_value()) {
-    throw Logger::Errorf("presentQueueFamilyIndex is null.");
-  }
 
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
   std::set<uint32_t> uniqueQueueFamilies = {
-      pdqfs.graphics.selectedIndex.value(),
-      pdqfs.present.selectedIndex.value()};
-  float queuePriority = 1.0f;
+      pdqfs.graphics.selectedFamilyIndex(),
+      pdqfs.present.selectedFamilyIndex()};
   for (uint32_t queueFamily : uniqueQueueFamilies) {
-    VkDeviceQueueCreateInfo queueCreateInfo{};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = queueFamily;
-    queueCreateInfo.queueCount = 1;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
-    queueCreateInfos.push_back(queueCreateInfo);
+    createInfos.push_back(queueCreateInfo);
   }
 
   VkPhysicalDeviceFeatures deviceFeatures{};
@@ -444,9 +424,6 @@ void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationL
   if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS) {
     throw Logger::Errorf("vkCreateDevice failed.");
   }
-
-  vkGetDeviceQueue(logicalDevice, pdqfs.graphics.selectedIndex.value(), 0, &pdqfs.graphics.queue);
-  vkGetDeviceQueue(logicalDevice, pdqfs.present.selectedIndex.value(), 0, &pdqfs.present.queue);
 }
 
 }  // namespace mks
