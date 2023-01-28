@@ -1,4 +1,3 @@
-
 #include "../../src/lib/Vulkan.hpp"
 
 #define SDL_MAIN_HANDLED
@@ -31,7 +30,6 @@ int main() {
     }
 
     SDL_Surface* window_surface = SDL_GetWindowSurface(window);
-
     if (!window_surface) {
       throw mks::Logger::Errorf("Failed to get the surface from the window");
     }
@@ -71,16 +69,16 @@ int main() {
     auto v = mks::Vulkan{};
     v.CreateInstance(std::move(appInfo), requiredValidationLayers, requiredExtensionNames);
 
-    supported = v.UseDevice(0);
+    supported = v.UsePhysicalDevice(0);
     if (!supported) {
       throw mks::Logger::Errorf("Missing required Vulkan-compatible GPU device.");
     }
 
-    const int queueFamilyIndex = v.CheckQueues(VK_QUEUE_GRAPHICS_BIT);
-    if (-1 == queueFamilyIndex) {
+    const int graphicsQueueFamilyIndex = v.CheckQueues(VK_QUEUE_GRAPHICS_BIT);
+    if (-1 == graphicsQueueFamilyIndex) {
       throw mks::Logger::Errorf("Missing graphics queue family.");
     }
-    v.UseLogicalDevice(requiredValidationLayers, queueFamilyIndex);
+    v.UseLogicalDevice(requiredValidationLayers, graphicsQueueFamilyIndex);
 
     bool quit = false;
     SDL_Event e;
