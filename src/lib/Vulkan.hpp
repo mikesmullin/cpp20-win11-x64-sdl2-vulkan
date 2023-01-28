@@ -8,7 +8,7 @@
 
 /**
  * Enables Vulkan validation layer handler
- * (performance penalty) and correspoding stderr log output.
+ * (performance penalty) and corresponding stderr log output.
  *
  * NOTICE: Validation layers can only be used if they have been installed onto the system. For
  * example, the LunarG validation layers are only available on PCs with the Vulkan SDK installed.
@@ -66,7 +66,7 @@ class Vulkan {
   /**
    * Validate desired queue families are supported by the current physical device.
    */
-  void CheckQueues();
+  const bool CheckQueues();
 
   void UseLogicalDevice(const std::vector<const char*> requiredValidationLayers);
   void CreateWindowSurface();
@@ -74,13 +74,28 @@ class Vulkan {
 
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
+  PhysicalDeviceQueueFamilies pdqfs = PhysicalDeviceQueueFamilies{};
 
  private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice logicalDevice = nullptr;
-  std::optional<uint32_t> graphicsQueueFamilyIndex = std::nullopt;
-  std::optional<uint32_t> presentQueueFamilyIndex = std::nullopt;
-  VkQueue graphicsQueue = nullptr;
-  VkQueue presentQueue = nullptr;
 };
+
+struct PhysicalDeviceQueueFamily {
+  bool required;
+  bool supported;
+  std::optional<uint32_t> selectedIndex;
+  std::vector<uint32_t> supportedIndices;
+};
+
+struct PhysicalDeviceQueueFamilies {
+  PhysicalDeviceQueueFamily graphics;
+  PhysicalDeviceQueueFamily compute;
+  PhysicalDeviceQueueFamily transfer;
+  PhysicalDeviceQueueFamily sparse;
+  PhysicalDeviceQueueFamily protect;
+  PhysicalDeviceQueueFamily optical;
+  PhysicalDeviceQueueFamily present;
+};
+
 }  // namespace mks

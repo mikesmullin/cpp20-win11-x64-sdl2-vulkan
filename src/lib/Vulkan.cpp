@@ -274,7 +274,16 @@ const bool Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {
   return false;
 }
 
-void Vulkan::CheckQueues() {
+#define INIT_QUEUE_FAMILY(V)               \
+  (if (V) {                                \
+    pdqfs.V.supported = true;              \
+    if (!pdqfs.V.selectedIndex) {          \
+      pdqfs.V.selectedIndex = i;           \
+    }                                      \
+    pdqfs.V.supportedIndices.push_back(i); \
+  })
+
+const bool Vulkan::CheckQueues() {
   // validate state
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
@@ -296,43 +305,56 @@ void Vulkan::CheckQueues() {
   for (uint32_t i = 0; i < queueFamilies.size(); i++) {
     const auto& queueFamily = queueFamilies[i];
 
-    // assumption: we only want device queues used to render graphics
-    const bool selectGraphics = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+#define GET_QUEUE(QUEUE_LOWER, QUEUE_UPPER, QUEUE_SUFFIX) \
+  pdqfs.QUEUE_LOWER.supported = queueFamily.queueFlags & VK_QUEUE_##QUEUE_UPPER##_BIT##QUEUE_SUFFIX;
 
-    // assumption: we only want device queues able to present to window surface
-    VkBool32 _selectPresent = false;
+    GET_QUEUE(graphics, GRAPHICS, )
+    GET_QUEUE(compute, COMPUTE, )
+    GET_QUEUE(transfer, TRANSFER, )
+    GET_QUEUE(sparse, SPARSE_BINDING, )
+    GET_QUEUE(protect, PROTECTED, )
+    // if VK_KHR_video_decode_queue extension:
+    // GET_QUEUE(video_decode, VIDEO_DECODE,)
+    // ifdef VK_ENABLE_BETA_EXTENSIONS:
+    // GET_QUEUE(video_encode, VIDEO_ENCODE,)
+    GET_QUEUE(optical, OPTICAL_FLOW, _NV)
+
+    VkBool32 present = false;
     // Query if presentation is supported
     // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetPhysicalDeviceSurfaceSupportKHR.html
-    if (vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &_selectPresent) !=
-        VK_SUCCESS) {
+    if (vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &present) != VK_SUCCESS) {
       Logger::Debugf("vkGetPhysicalDeviceSurfaceSupportKHR() failed. queueFamilyIndex: %u", i);
     }
-    const bool selectPresent = _selectPresent && !presentQueueFamilyIndex.has_value();
+    pdqfs.present.supported = present;
+
+#define CAS_QUEUE(QUEUE)                       \
+  if (pdqfs.QUEUE.supported) {                 \
+    if (!pdqfs.QUEUE.selectedIndex) {          \
+      pdqfs.QUEUE.selectedIndex = i;           \
+    }                                          \
+    pdqfs.QUEUE.supportedIndices.push_back(i); \
+  }
+
+    CAS_QUEUE(graphics)
+    CAS_QUEUE(compute)
+    CAS_QUEUE(transfer)
+    CAS_QUEUE(sparse)
+    CAS_QUEUE(protect)
+    CAS_QUEUE(optical)
+    CAS_QUEUE(present)
 
     Logger::Debugf(
-        "  %u: flags:%s%s%s%s%s%s%s%s",
+        "  %u: flags:%s%s%s%s%s%s%s%s%s",
         i,
-        (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) ? " GRAPHICS" : "",
-        (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) ? " COMPUTE" : "",
-        (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) ? " TRANSFER" : "",
-        (queueFamily.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) ? " SPARSE_BINDING" : "",
-        (queueFamily.queueFlags & VK_QUEUE_PROTECTED_BIT) ? " PROTECTED" : "",
-        // if VK_KHR_video_decode_queue extension:
-        // VK_QUEUE_VIDEO_DECODE_BIT_KHR
-        // ifdef VK_ENABLE_BETA_EXTENSIONS:
-        // VK_QUEUE_VIDEO_ENCODE_BIT_KHR
-        (queueFamily.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV) ? " OPTICAL_FLOW" : "",
+        pdqfs ? " GRAPHICS" : "",
+        compute ? " COMPUTE" : "",
+        transfer ? " TRANSFER" : "",
+        sparse ? " SPARSE" : "",
+        protect ? " PROTECTED" : "",
+        optical ? " OPTICAL_FLOW" : "",
+        present ? " PRESENT" : "",
         selectGraphics ? " (select graphics)" : "",
         selectPresent ? " (select present)" : "");
-
-    // state: remember which queue is for graphics
-    if (selectGraphics) {
-      graphicsQueueFamilyIndex = i;
-    }
-    // state: remember which queue is for presentation (may be same as above)
-    if (selectPresent) {
-      presentQueueFamilyIndex = i;
-    }
   }
 
   // uint32_t formatCount;
@@ -345,17 +367,6 @@ void Vulkan::CheckQueues() {
   //       &formatCount,
   //       details.formats.data());
   // }
-
-  // assumption: validate requirements for video game rendering
-  if (!graphicsQueueFamilyIndex.has_value()) {
-    throw Logger::Errorf("Couldn't locate a graphics queue family on current physical device.");
-  }
-
-  if (!presentQueueFamilyIndex.has_value()) {
-    throw Logger::Errorf(
-        "Couldn't locate a present queue family compatible with current window surface and "
-        "physical device.");
-  }
 }
 
 void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationLayers) {
