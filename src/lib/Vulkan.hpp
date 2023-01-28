@@ -63,7 +63,7 @@ class Vulkan {
       std::vector<const char*> requiredValidationLayers,
       std::vector<const char*> requiredExtensionNames);
 
-  const bool UseDevice(const int deviceIndex);
+  const bool UsePhysicalDevice(const int deviceIndex);
   const int CheckQueues(const VkQueueFlags requiredFlags) const;
   void UseLogicalDevice(
       const std::vector<const char*> requiredValidationLayers, const int queueFamilyIndex);
@@ -73,5 +73,6 @@ class Vulkan {
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice logicalDevice = nullptr;
   VkQueue graphicsQueue = nullptr;
+  VkSurfaceKHR surface = nullptr;
 };
 }  // namespace mks

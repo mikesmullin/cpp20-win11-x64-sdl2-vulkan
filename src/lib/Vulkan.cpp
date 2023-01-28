@@ -29,6 +29,9 @@ Vulkan::~Vulkan() {
     vkDestroyDevice(logicalDevice, nullptr);
   }
   if (instance) {
+    if (surface) {
+      vkDestroySurfaceKHR(instance, surface, nullptr);
+    }
     // NOTICE: physicalDevice is destroyed implicitly with instance.
     vkDestroyInstance(instance, nullptr);
   }
@@ -218,7 +221,7 @@ void Vulkan::CreateInstance(
   }
 }
 
-const bool Vulkan::UseDevice(const int requiredDeviceIndex) {
+const bool Vulkan::UsePhysicalDevice(const int requiredDeviceIndex) {
   uint32_t deviceCount = 0;
   if (vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumeratePhysicalDevices() failed.");
@@ -274,14 +277,13 @@ const int Vulkan::CheckQueues(const VkQueueFlags requiredFlags) const {
         (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) ? " TRANSFER" : "",
         (queueFamily.queueFlags & VK_QUEUE_SPARSE_BINDING_BIT) ? " SPARSE_BINDING" : "",
         (queueFamily.queueFlags & VK_QUEUE_PROTECTED_BIT) ? " PROTECTED" : "",
+        // if VK_KHR_video_decode_queue extension:
+        // VK_QUEUE_VIDEO_DECODE_BIT_KHR
+        // ifdef VK_ENABLE_BETA_EXTENSIONS:
+        // VK_QUEUE_VIDEO_ENCODE_BIT_KHR
         (queueFamily.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV) ? " OPTICAL_FLOW" : "",
         i == firstCompatibleQueue ? " (selected)" : "");
-    // if VK_KHR_video_decode_queue extension:
-    // VK_QUEUE_VIDEO_DECODE_BIT_KHR
-    // ifdef VK_ENABLE_BETA_EXTENSIONS:
-    // VK_QUEUE_VIDEO_ENCODE_BIT_KHR
   }
-
   return firstCompatibleQueue;
 }
 
