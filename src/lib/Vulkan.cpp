@@ -313,6 +313,17 @@ void Vulkan::CheckQueues() {
     }
   }
 
+  // uint32_t formatCount;
+  // vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+  // if (formatCount != 0) {
+  //   details.formats.resize(formatCount);
+  //   vkGetPhysicalDeviceSurfaceFormatsKHR(
+  //       physicalDevice,
+  //       surface,
+  //       &formatCount,
+  //       details.formats.data());
+  // }
+
   if (!graphicsQueueFamilyIndex.has_value()) {
     throw Logger::Errorf("Couldn't locate a graphics queue family on current physical device.");
   }
