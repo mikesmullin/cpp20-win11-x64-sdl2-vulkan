@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "Logger.hpp"
@@ -237,25 +238,40 @@ const bool Vulkan::UsePhysicalDevice(const int requiredDeviceIndex) {
   Logger::Debugf("devices:");
   for (unsigned int i = 0; i < devices.size(); i++) {
     const auto& device = devices[i];
-    VkPhysicalDeviceProperties props;
-    vkGetPhysicalDeviceProperties(device, &props);
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+    const bool discrete = deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    const bool geometry = deviceFeatures.geometryShader;
 
     Logger::Debugf(
-        "  %u: %s%s",
+        "  %u: %s%s%s%s",
         i,
-        props.deviceName,
-        i == requiredDeviceIndex ? " (selected)" : "");
+        deviceProperties.deviceName,
+        i == requiredDeviceIndex ? " (selected)" : "",
+        discrete ? " DISCRETE" : "",
+        geometry ? " GEOMETRY_SHADER" : "");
+
+    if (i == requiredDeviceIndex && discrete && geometry) {
+      physicalDevice = device;
+      return true;
+    }
   }
 
-  if (requiredDeviceIndex < devices.size()) {
-    physicalDevice = devices[requiredDeviceIndex];
-    return true;
-  }
   Logger::Debugf("  missing device index %d", requiredDeviceIndex);
   return false;
 }
 
-const int Vulkan::CheckQueues(const VkQueueFlags requiredFlags) const {
+void Vulkan::CheckQueues() {
+  if (VK_NULL_HANDLE == physicalDevice) {
+    throw Logger::Errorf("physicalDevice is null.");
+  }
+  if (!surface) {
+    throw Logger::Errorf("surface is null.");
+  }
+
   uint32_t queueFamilyCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
 
@@ -263,14 +279,18 @@ const int Vulkan::CheckQueues(const VkQueueFlags requiredFlags) const {
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
 
   Logger::Debugf("device queue families:");
-  int firstCompatibleQueue = -1;
-  for (unsigned int i = 0; i < queueFamilies.size(); i++) {
+  for (uint32_t i = 0; i < queueFamilies.size(); i++) {
     const auto& queueFamily = queueFamilies[i];
-    if (-1 == firstCompatibleQueue && (queueFamily.queueFlags & requiredFlags)) {
-      firstCompatibleQueue = i;
+    const bool selectGraphics = queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+    VkBool32 _selectPresent = false;
+    if (vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &_selectPresent) !=
+        VK_SUCCESS) {
+      Logger::Debugf("vkGetPhysicalDeviceSurfaceSupportKHR() failed. queueFamilyIndex: %u", i);
     }
+    const bool selectPresent = _selectPresent && !presentQueueFamilyIndex.has_value();
+
     Logger::Debugf(
-        "  %u: flags:%s%s%s%s%s%s%s",
+        "  %u: flags:%s%s%s%s%s%s%s%s",
         i,
         (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) ? " GRAPHICS" : "",
         (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT) ? " COMPUTE" : "",
@@ -282,26 +302,59 @@ const int Vulkan::CheckQueues(const VkQueueFlags requiredFlags) const {
         // ifdef VK_ENABLE_BETA_EXTENSIONS:
         // VK_QUEUE_VIDEO_ENCODE_BIT_KHR
         (queueFamily.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV) ? " OPTICAL_FLOW" : "",
-        i == firstCompatibleQueue ? " (selected)" : "");
+        selectGraphics ? " (select graphics)" : "",
+        selectPresent ? " (select present)" : "");
+
+    if (selectGraphics) {
+      graphicsQueueFamilyIndex = i;
+    }
+    if (selectPresent) {
+      presentQueueFamilyIndex = i;
+    }
   }
-  return firstCompatibleQueue;
+
+  if (!graphicsQueueFamilyIndex.has_value()) {
+    throw Logger::Errorf("Couldn't locate a graphics queue family on current physical device.");
+  }
+
+  if (!presentQueueFamilyIndex.has_value()) {
+    throw Logger::Errorf(
+        "Couldn't locate a present queue family compatible with current window surface and "
+        "physical device.");
+  }
 }
 
-void Vulkan::UseLogicalDevice(
-    const std::vector<const char*> requiredValidationLayers, const int queueFamilyIndex) {
-  VkDeviceQueueCreateInfo queueCreateInfo{};
-  queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queueCreateInfo.queueFamilyIndex = queueFamilyIndex;
-  queueCreateInfo.queueCount = 1;
+void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationLayers) {
+  if (VK_NULL_HANDLE == physicalDevice) {
+    throw Logger::Errorf("physicalDevice is null.");
+  }
+  if (!graphicsQueueFamilyIndex.has_value()) {
+    throw Logger::Errorf("graphicsQueueFamilyIndex is null.");
+  }
+  if (!presentQueueFamilyIndex.has_value()) {
+    throw Logger::Errorf("presentQueueFamilyIndex is null.");
+  }
+
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+  std::set<uint32_t> uniqueQueueFamilies = {
+      graphicsQueueFamilyIndex.value(),
+      presentQueueFamilyIndex.value()};
   float queuePriority = 1.0f;
-  queueCreateInfo.pQueuePriorities = &queuePriority;
+  for (uint32_t queueFamily : uniqueQueueFamilies) {
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = queueFamily;
+    queueCreateInfo.queueCount = 1;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+    queueCreateInfos.push_back(queueCreateInfo);
+  }
 
   VkPhysicalDeviceFeatures deviceFeatures{};
 
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  createInfo.pQueueCreateInfos = &queueCreateInfo;
-  createInfo.queueCreateInfoCount = 1;
+  createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+  createInfo.pQueueCreateInfos = queueCreateInfos.data();
   createInfo.pEnabledFeatures = &deviceFeatures;
   createInfo.enabledExtensionCount = 0;
 
@@ -316,7 +369,8 @@ void Vulkan::UseLogicalDevice(
     throw Logger::Errorf("vkCreateDevice failed.");
   }
 
-  vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &graphicsQueue);
+  vkGetDeviceQueue(logicalDevice, graphicsQueueFamilyIndex.value(), 0, &graphicsQueue);
+  vkGetDeviceQueue(logicalDevice, presentQueueFamilyIndex.value(), 0, &presentQueue);
 }
 
 }  // namespace mks

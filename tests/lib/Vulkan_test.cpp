@@ -74,11 +74,11 @@ int main() {
       throw mks::Logger::Errorf("Missing required Vulkan-compatible GPU device.");
     }
 
-    const int graphicsQueueFamilyIndex = v.CheckQueues(VK_QUEUE_GRAPHICS_BIT);
-    if (-1 == graphicsQueueFamilyIndex) {
-      throw mks::Logger::Errorf("Missing graphics queue family.");
-    }
-    v.UseLogicalDevice(requiredValidationLayers, graphicsQueueFamilyIndex);
+    SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
+
+    v.CheckQueues();
+
+    v.UseLogicalDevice(requiredValidationLayers);
 
     bool quit = false;
     SDL_Event e;

@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 /**
@@ -64,15 +65,20 @@ class Vulkan {
       std::vector<const char*> requiredExtensionNames);
 
   const bool UsePhysicalDevice(const int deviceIndex);
-  const int CheckQueues(const VkQueueFlags requiredFlags) const;
-  void UseLogicalDevice(
-      const std::vector<const char*> requiredValidationLayers, const int queueFamilyIndex);
+  void CheckQueues();
+  void UseLogicalDevice(const std::vector<const char*> requiredValidationLayers);
+  void CreateWindowSurface();
+  const bool CheckPhysicalDeviceSurfaceSupports() const;
+
+  VkInstance instance = nullptr;
+  VkSurfaceKHR surface = nullptr;
 
  private:
-  VkInstance instance = nullptr;
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice logicalDevice = nullptr;
+  std::optional<uint32_t> graphicsQueueFamilyIndex = std::nullopt;
+  std::optional<uint32_t> presentQueueFamilyIndex = std::nullopt;
   VkQueue graphicsQueue = nullptr;
-  VkSurfaceKHR surface = nullptr;
+  VkQueue presentQueue = nullptr;
 };
 }  // namespace mks
