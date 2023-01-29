@@ -108,7 +108,7 @@ class Vulkan {
    *
    * @return - Whether support was found.
    */
-  const bool CheckSwapChainSupport() const;
+  const bool CheckSwapChainSupport();
 
   /**
    * Set the current logical device, which will use the current physical device.
@@ -121,13 +121,27 @@ class Vulkan {
       const std::vector<const char*> requiredValidationLayers,
       std::vector<const char*> requiredPhysicalDeviceExtensions);
 
+  /**
+   * Construct the swap chain.
+   */
+  void CreateSwapChain();
+
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
   PhysicalDeviceQueues pdqs = PhysicalDeviceQueues{};
+  uint32_t width, height = 0;
 
  private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice logicalDevice = nullptr;
+
+  // TODO: swap chain stuff should get its own struct
+  SwapChainSupportDetails swapChainSupport = {};
+  VkSwapchainKHR swapChain = nullptr;
+  std::vector<VkImage> swapChainImages = {};
+  VkFormat swapChainImageFormat = {};
+  VkExtent2D swapChainExtent = {};
+  std::vector<VkImageView> swapChainImageViews = {};
 };
 
 }  // namespace mks

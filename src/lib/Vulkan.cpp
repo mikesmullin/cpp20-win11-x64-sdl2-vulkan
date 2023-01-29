@@ -2,6 +2,7 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <memory>
@@ -211,12 +212,18 @@ Vulkan::Vulkan(
 
 Vulkan::~Vulkan() {
   Logger::Infof("shutting down Vulkan.");
-  if (logicalDevice) {
-    vkDestroyDevice(logicalDevice, nullptr);
-  }
   if (instance) {
-    if (surface) {
-      vkDestroySurfaceKHR(instance, surface, nullptr);
+    if (logicalDevice) {
+      if (swapChain) {
+        for (auto imageView : swapChainImageViews) {
+          vkDestroyImageView(logicalDevice, imageView, nullptr);
+        }
+        vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
+      }
+      vkDestroyDevice(logicalDevice, nullptr);
+      if (surface) {
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+      }
     }
     // NOTICE: physicalDevice is destroyed implicitly with instance.
     vkDestroyInstance(instance, nullptr);
@@ -392,7 +399,7 @@ const bool Vulkan::CheckPhysicalDeviceExtensions(
   return allRequiredSupported;
 }
 
-const bool Vulkan::CheckSwapChainSupport() const {
+const bool Vulkan::CheckSwapChainSupport() {
   const std::vector<const char*> requiredPhysicalDeviceExtensions = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME};
   const bool extensionsSupported = CheckPhysicalDeviceExtensions(requiredPhysicalDeviceExtensions);
@@ -400,9 +407,10 @@ const bool Vulkan::CheckSwapChainSupport() const {
     throw Logger::Errorf("Missing VK_KHR_swapchain extension on physical device.");
   }
 
-  SwapChainSupportDetails details;
-  if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities) !=
-      VK_SUCCESS) {
+  if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+          physicalDevice,
+          surface,
+          &swapChainSupport.capabilities) != VK_SUCCESS) {
     throw Logger::Errorf("vkGetPhysicalDeviceSurfaceCapabilitiesKHR() failed.");
   }
 
@@ -412,12 +420,12 @@ const bool Vulkan::CheckSwapChainSupport() const {
     throw Logger::Errorf("vkGetPhysicalDeviceSurfaceFormatsKHR() failed.");
   }
   if (formatCount != 0) {
-    details.formats.resize(formatCount);
+    swapChainSupport.formats.resize(formatCount);
     if (vkGetPhysicalDeviceSurfaceFormatsKHR(
             physicalDevice,
             surface,
             &formatCount,
-            details.formats.data()) != VK_SUCCESS) {
+            swapChainSupport.formats.data()) != VK_SUCCESS) {
       throw Logger::Errorf(
           "vkGetPhysicalDeviceSurfaceFormatsKHR() failed. formatCount: %u",
           formatCount);
@@ -433,19 +441,20 @@ const bool Vulkan::CheckSwapChainSupport() const {
     throw Logger::Errorf("vkGetPhysicalDeviceSurfacePresentModesKHR() failed.");
   }
   if (presentModeCount != 0) {
-    details.presentModes.resize(presentModeCount);
+    swapChainSupport.presentModes.resize(presentModeCount);
     if (vkGetPhysicalDeviceSurfacePresentModesKHR(
             physicalDevice,
             surface,
             &presentModeCount,
-            details.presentModes.data()) != VK_SUCCESS) {
+            swapChainSupport.presentModes.data()) != VK_SUCCESS) {
       throw Logger::Errorf(
           "vkGetPhysicalDeviceSurfacePresentModesKHR() failed. presentModeCount: %u",
           presentModeCount);
     }
   }
 
-  return extensionsSupported && !details.formats.empty() && !details.presentModes.empty();
+  return extensionsSupported && !swapChainSupport.formats.empty() &&
+         !swapChainSupport.presentModes.empty();
 }
 
 void Vulkan::UseLogicalDevice(
@@ -563,6 +572,141 @@ void Vulkan::UseLogicalDevice(
   vkGetDeviceQueue(logicalDevice, pdqs.graphics.index.value(), 0, &pdqs.graphics.queue);
   if (!same) {
     vkGetDeviceQueue(logicalDevice, pdqs.present.index.value(), 0, &pdqs.present.queue);
+  }
+}
+
+void Vulkan::CreateSwapChain() {
+  bool found1 = false;
+  VkSurfaceFormatKHR format;
+  for (const auto& availableFormat : swapChainSupport.formats) {
+    if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+        availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+      format = availableFormat;
+      found1 = true;
+      break;
+    }
+  }
+  if (!found1) {
+    throw Logger::Errorf(
+        "Couldn't locate physical device support for the swap chain format we wanted. format: "
+        "VK_FORMAT_B8G8R8A8_SRGB, colorSpace: VK_COLOR_SPACE_SRGB_NONLINEAR_KHR");
+  }
+
+  bool found2 = false;
+  VkPresentModeKHR mode;
+  for (const auto& availablePresentMode : swapChainSupport.presentModes) {
+    if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+      mode = availablePresentMode;
+      found2 = true;
+      break;
+    }
+  }
+  if (!found2) {
+    mode = VK_PRESENT_MODE_FIFO_KHR;
+  }
+
+  VkExtent2D extent;
+  if (swapChainSupport.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+    extent = swapChainSupport.capabilities.currentExtent;
+  } else {
+    extent.width = std::clamp(
+        width,
+        swapChainSupport.capabilities.minImageExtent.width,
+        swapChainSupport.capabilities.maxImageExtent.width);
+    extent.height = std::clamp(
+        height,
+        swapChainSupport.capabilities.minImageExtent.height,
+        swapChainSupport.capabilities.maxImageExtent.height);
+  }
+
+  const uint32_t imageCount = std::clamp(
+      swapChainSupport.capabilities.minImageCount + 1,
+      swapChainSupport.capabilities.minImageCount,
+      swapChainSupport.capabilities.maxImageCount);
+
+  VkSwapchainCreateInfoKHR createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+  createInfo.surface = surface;
+  createInfo.minImageCount = imageCount;
+  createInfo.imageFormat = format.format;
+  createInfo.imageColorSpace = format.colorSpace;
+  createInfo.imageExtent = extent;
+  createInfo.imageArrayLayers = 1;
+  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  if (pdqs.graphics.index == pdqs.present.index) {
+    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.queueFamilyIndexCount = 0;      // default
+    createInfo.pQueueFamilyIndices = nullptr;  // default
+  } else {
+    createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+    createInfo.queueFamilyIndexCount = 2;
+    const std::vector<uint32_t> indicies = {
+        pdqs.graphics.index.value(),
+        pdqs.present.index.value(),
+    };
+    createInfo.pQueueFamilyIndices = indicies.data();
+  }
+  createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+  createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+  createInfo.presentMode = mode;
+  createInfo.clipped = VK_TRUE;
+  // TODO: accept this as param
+  createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+  if (vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+    throw Logger::Errorf("vkCreateSwapchainKHR failed.");
+  }
+
+  uint32_t receivedImageCount;
+  if (vkGetSwapchainImagesKHR(logicalDevice, swapChain, &receivedImageCount, nullptr) !=
+      VK_SUCCESS) {
+    throw Logger::Errorf("vkGetSwapchainImagesKHR() failed");
+  }
+  if (receivedImageCount < imageCount) {
+    throw Logger::Errorf(
+        "Mismatch in swap chain image count. requested: %u, received: %u",
+        imageCount,
+        receivedImageCount);
+  }
+  swapChainImages.resize(receivedImageCount);
+  if (vkGetSwapchainImagesKHR(
+          logicalDevice,
+          swapChain,
+          &receivedImageCount,
+          swapChainImages.data()) != VK_SUCCESS) {
+    throw Logger::Errorf("vkGetSwapchainImagesKHR() failed. imageCount: %u", receivedImageCount);
+  }
+
+  swapChainImageFormat = format.format;
+  swapChainExtent = extent;
+
+  Logger::Debugf("swap chain:");
+  Logger::Debugf(
+      "  width: %u, height: %u, imageCount: %u",
+      extent.width,
+      extent.height,
+      receivedImageCount);
+
+  swapChainImageViews.resize(swapChainImages.size());
+  for (size_t i = 0; i < swapChainImages.size(); i++) {
+    VkImageViewCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    createInfo.image = swapChainImages[i];
+    createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    createInfo.format = swapChainImageFormat;
+    createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+    createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    createInfo.subresourceRange.baseMipLevel = 0;
+    createInfo.subresourceRange.levelCount = 1;
+    createInfo.subresourceRange.baseArrayLayer = 0;
+    createInfo.subresourceRange.layerCount = 1;
+    if (vkCreateImageView(logicalDevice, &createInfo, nullptr, &swapChainImageViews[i]) !=
+        VK_SUCCESS) {
+      throw Logger::Errorf("vkCreateImageView failed. i: %u", i);
+    }
   }
 }
 

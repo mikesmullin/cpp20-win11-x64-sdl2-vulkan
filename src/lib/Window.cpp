@@ -77,6 +77,10 @@ void Window::init() {
   }
 
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
+  int width, height = 0;
+  SDL_Vulkan_GetDrawableSize(window, &width, &height);
+  v.width = static_cast<uint32_t>(width);
+  v.height = static_cast<uint32_t>(height);
 
   const std::vector<const char*> requiredPhysicalDeviceExtensions = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME};
@@ -86,6 +90,8 @@ void Window::init() {
   }
 
   v.UseLogicalDevice(requiredValidationLayers, requiredPhysicalDeviceExtensions);
+
+  v.CreateSwapChain();
 
   bool quit = false;
   SDL_Event e;
