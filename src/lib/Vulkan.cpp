@@ -26,9 +26,11 @@ const bool Vulkan::CheckInstanceLayers(const std::vector<const char*> requiredLa
   // list which validation layers are supported by driver
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkEnumerateInstanceLayerProperties.html
   uint32_t layerCount;
-
   if (vkEnumerateInstanceLayerProperties(&layerCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumerateInstanceLayerProperties() failed.");
+  }
+  if (layerCount == 0) {
+    throw Logger::Errorf("Failed to locate instance validation layer support.");
   }
   std::vector<VkLayerProperties> availableLayers(layerCount);
   // Returns up to requested number of global layer properties
@@ -73,6 +75,9 @@ const bool Vulkan::CheckInstanceExtensions(const std::vector<const char*> requir
   uint32_t extensionCount = 0;
   if (vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumerateInstanceExtensionProperties() failed.");
+  }
+  if (extensionCount == 0) {
+    throw Logger::Errorf("Failed to locate instance extension support.");
   }
   std::vector<VkExtensionProperties> supportedExtensions(extensionCount);
   // Returns up to requested number of global extension properties
@@ -344,17 +349,6 @@ void Vulkan::LocateQueueFamilies() {
   }
 
   Logger::Debugf("  selected: graphics: %u, present: %u", pdqs.graphics.index, pdqs.present.index);
-
-  // uint32_t formatCount;
-  // vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
-  // if (formatCount != 0) {
-  //   details.formats.resize(formatCount);
-  //   vkGetPhysicalDeviceSurfaceFormatsKHR(
-  //       physicalDevice,
-  //       surface,
-  //       &formatCount,
-  //       details.formats.data());
-  // }
 }
 
 const bool Vulkan::CheckPhysicalDeviceExtensions(
@@ -398,7 +392,65 @@ const bool Vulkan::CheckPhysicalDeviceExtensions(
   return allRequiredSupported;
 }
 
-void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationLayers) {
+const bool Vulkan::CheckSwapChainSupport() const {
+  const std::vector<const char*> requiredPhysicalDeviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+  const bool extensionsSupported = CheckPhysicalDeviceExtensions(requiredPhysicalDeviceExtensions);
+  if (!extensionsSupported) {
+    throw Logger::Errorf("Missing VK_KHR_swapchain extension on physical device.");
+  }
+
+  SwapChainSupportDetails details;
+  if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities) !=
+      VK_SUCCESS) {
+    throw Logger::Errorf("vkGetPhysicalDeviceSurfaceCapabilitiesKHR() failed.");
+  }
+
+  uint32_t formatCount;
+  if (vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr) !=
+      VK_SUCCESS) {
+    throw Logger::Errorf("vkGetPhysicalDeviceSurfaceFormatsKHR() failed.");
+  }
+  if (formatCount != 0) {
+    details.formats.resize(formatCount);
+    if (vkGetPhysicalDeviceSurfaceFormatsKHR(
+            physicalDevice,
+            surface,
+            &formatCount,
+            details.formats.data()) != VK_SUCCESS) {
+      throw Logger::Errorf(
+          "vkGetPhysicalDeviceSurfaceFormatsKHR() failed. formatCount: %u",
+          formatCount);
+    }
+  }
+
+  uint32_t presentModeCount;
+  if (vkGetPhysicalDeviceSurfacePresentModesKHR(
+          physicalDevice,
+          surface,
+          &presentModeCount,
+          nullptr) != VK_SUCCESS) {
+    throw Logger::Errorf("vkGetPhysicalDeviceSurfacePresentModesKHR() failed.");
+  }
+  if (presentModeCount != 0) {
+    details.presentModes.resize(presentModeCount);
+    if (vkGetPhysicalDeviceSurfacePresentModesKHR(
+            physicalDevice,
+            surface,
+            &presentModeCount,
+            details.presentModes.data()) != VK_SUCCESS) {
+      throw Logger::Errorf(
+          "vkGetPhysicalDeviceSurfacePresentModesKHR() failed. presentModeCount: %u",
+          presentModeCount);
+    }
+  }
+
+  return extensionsSupported && !details.formats.empty() && !details.presentModes.empty();
+}
+
+void Vulkan::UseLogicalDevice(
+    const std::vector<const char*> requiredValidationLayers,
+    std::vector<const char*> requiredPhysicalDeviceExtensions) {
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
   }
@@ -491,11 +543,11 @@ void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationL
 #endif
 
   // number of device extensions to enable.
-  createInfo.enabledExtensionCount = 0;
+  createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredPhysicalDeviceExtensions.size());
 
   // pointer to an array of enabledExtensionCount null-terminated UTF-8 strings containing the names
   // of extensions to enable for the created device.
-  createInfo.ppEnabledExtensionNames = NULL;
+  createInfo.ppEnabledExtensionNames = requiredPhysicalDeviceExtensions.data();
 
   // NULL or a pointer to a VkPhysicalDeviceFeatures structure containing boolean indicators of all
   // the features to be enabled.
