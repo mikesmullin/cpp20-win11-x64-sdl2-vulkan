@@ -46,7 +46,7 @@ void Window::init() {
   const std::vector<const char*> requiredValidationLayers = {
       // all of the useful standard validation is bundled into a layer included in the SDK
       "VK_LAYER_KHRONOS_validation"};
-  supported = mks::Vulkan::CheckLayers(requiredValidationLayers);
+  supported = mks::Vulkan::CheckInstanceLayers(requiredValidationLayers);
   if (!supported) {
     throw mks::Logger::Errorf("Missing required Vulkan validation layers.");
   }
@@ -63,9 +63,8 @@ void Window::init() {
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
   std::vector<const char*> requiredExtensionNames(extensionCount);
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, requiredExtensionNames.data());
-  const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-  supported = mks::Vulkan::CheckExtensions(requiredExtensionNames);
+  supported = mks::Vulkan::CheckInstanceExtensions(requiredExtensionNames);
   if (!supported) {
     throw mks::Logger::Errorf("Missing required Vulkan extensions.");
   }
@@ -79,6 +78,7 @@ void Window::init() {
 
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
   v.UseLogicalDevice(requiredValidationLayers);
+  supported = v.CheckPhysicalDeviceExtensions({VK_KHR_SWAPCHAIN_EXTENSION_NAME});
 
   bool quit = false;
   SDL_Event e;

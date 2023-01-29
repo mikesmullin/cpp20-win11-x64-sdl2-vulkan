@@ -44,14 +44,14 @@ class Vulkan {
    *
    * @return bool
    */
-  static const bool CheckLayers(const std::vector<const char*> requiredLayers);
+  static const bool CheckInstanceLayers(const std::vector<const char*> requiredLayers);
 
   /**
    * Query the driver for a list of extensions it supports.
    *
    * @return const bool
    */
-  static const bool CheckExtensions(const std::vector<const char*> requiredExtensions);
+  static const bool CheckInstanceExtensions(const std::vector<const char*> requiredExtensions);
 
   /**
    * The very first thing you need to do is initialize the Vulkan library by creating an instance.
@@ -89,6 +89,8 @@ class Vulkan {
    */
   void LocateQueueFamilies();
 
+  const bool CheckPhysicalDeviceExtensions(const std::vector<const char*> requiredExtensions) const;
+
   /**
    * Set the current logical device, which will use the current physical device.
    *
@@ -99,8 +101,6 @@ class Vulkan {
   void UseLogicalDevice(const std::vector<const char*> requiredValidationLayers);
 
   void CreateWindowSurface();
-
-  const bool CheckPhysicalDeviceSurfaceSupports() const;
 
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
