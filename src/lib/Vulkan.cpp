@@ -16,7 +16,7 @@
 
 namespace mks {
 
-const bool Vulkan::CheckLayers(const std::vector<const char*> requiredLayers) {
+const bool Vulkan::CheckInstanceLayers(const std::vector<const char*> requiredLayers) {
   // BACKGROUND: There were formerly two different types of validation layers in Vulkan: instance
   // and device specific. The idea was that instance layers would only check calls related to global
   // Vulkan objects like instances, and device specific layers would only check calls related to a
@@ -67,17 +67,19 @@ const bool Vulkan::CheckLayers(const std::vector<const char*> requiredLayers) {
   return allRequiredSupported;
 }
 
-const bool Vulkan::CheckExtensions(const std::vector<const char*> requiredExtensions) {
+const bool Vulkan::CheckInstanceExtensions(const std::vector<const char*> requiredExtensions) {
   // list the extensions supported by this driver
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkEnumerateInstanceExtensionProperties.html
   uint32_t extensionCount = 0;
   if (vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr) != VK_SUCCESS) {
     throw Logger::Errorf("vkEnumerateInstanceExtensionProperties() failed.");
   }
-  std::vector<VkExtensionProperties> extensions(extensionCount);
+  std::vector<VkExtensionProperties> supportedExtensions(extensionCount);
   // Returns up to requested number of global extension properties
-  if (vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data()) !=
-      VK_SUCCESS) {
+  if (vkEnumerateInstanceExtensionProperties(
+          nullptr,
+          &extensionCount,
+          supportedExtensions.data()) != VK_SUCCESS) {
     throw Logger::Errorf(
         "vkEnumerateInstanceExtensionProperties() failed. extensionCount: %d",
         extensionCount);
@@ -85,9 +87,9 @@ const bool Vulkan::CheckExtensions(const std::vector<const char*> requiredExtens
 
   // debug: print list of extensions to console
   bool allRequiredSupported = true;
-  Logger::Debugf("device extensions:");
+  Logger::Debugf("instance extensions:");
   bool found;
-  for (const auto& extension : extensions) {
+  for (const auto& extension : supportedExtensions) {
     found = false;
     for (const auto& required : requiredExtensions) {
       if (strcmp(required, extension.extensionName) == 0) {
@@ -101,7 +103,7 @@ const bool Vulkan::CheckExtensions(const std::vector<const char*> requiredExtens
   // validate the required extensions are all found
   for (const auto& required : requiredExtensions) {
     found = false;
-    for (const auto& extension : extensions) {
+    for (const auto& extension : supportedExtensions) {
       if (strcmp(required, extension.extensionName) == 0) {
         found = true;
         break;
@@ -353,6 +355,47 @@ void Vulkan::LocateQueueFamilies() {
   //       &formatCount,
   //       details.formats.data());
   // }
+}
+
+const bool Vulkan::CheckPhysicalDeviceExtensions(
+    const std::vector<const char*> requiredExtensions) const {
+  // list the extensions supported by this physical device
+  uint32_t extensionCount;
+  if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr) !=
+      VK_SUCCESS) {
+    throw Logger::Errorf("vkEnumerateDeviceExtensionProperties() failed.");
+  }
+
+  std::vector<VkExtensionProperties> supportedExtensions(extensionCount);
+  if (vkEnumerateDeviceExtensionProperties(
+          physicalDevice,
+          nullptr,
+          &extensionCount,
+          supportedExtensions.data()) != VK_SUCCESS) {
+    throw Logger::Errorf(
+        "vkEnumerateDeviceExtensionProperties() failed. extensionCount: %d",
+        extensionCount);
+  }
+
+  // debug: print list of extensions to console
+  bool allRequiredSupported = true;
+  Logger::Debugf("required device extensions:");
+  // validate the required extensions are all found
+  bool found;
+  for (const auto& required : requiredExtensions) {
+    found = false;
+    for (const auto& extension : supportedExtensions) {
+      if (strcmp(required, extension.extensionName) == 0) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      allRequiredSupported = false;
+    }
+    Logger::Debugf("  %s%s", required, found ? " (required)" : " (missing)");
+  }
+  return allRequiredSupported;
 }
 
 void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationLayers) {
