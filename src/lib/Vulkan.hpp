@@ -25,37 +25,16 @@ namespace mks {
  * on the current physical device.
  */
 struct PhysicalDeviceQueue {
-  const std::string name;
-  PhysicalDeviceQueue(const std::string name) : name{name} {};
-  const bool supported() const {
-    return familyIndices.size() > 0;
-  };
-  uint32_t selected = 0;
-  const uint32_t selectedIndex() const {
-    return supported() ? familyIndices[selected] : 0;
-  }
-  void selectFewestFamilies(const std::vector<PhysicalDeviceQueue> queues) {
-    std::set<uint32_t> fewest;
-    for (auto& queue : queues) {
-    }
-  }
-
-  std::vector<uint32_t> familyIndices;
+  /**
+   * Selected queue family index.
+   */
+  std::optional<uint32_t> index;
   VkQueue queue = nullptr;
-
-  bool operator<(const PhysicalDeviceQueue& q) const {
-    return selectedIndex() < q.selectedIndex();
-  };
 };
 
 struct PhysicalDeviceQueues {
-  PhysicalDeviceQueue graphics{"GRAPHICS"};
-  PhysicalDeviceQueue compute{"COMPUTE"};
-  PhysicalDeviceQueue transfer{"TRANSFER"};
-  PhysicalDeviceQueue sparse{"SPARSE"};
-  PhysicalDeviceQueue protect{"PROTECTED"};
-  PhysicalDeviceQueue optical{"OPTICAL"};
-  PhysicalDeviceQueue present{"PRESENT"};
+  PhysicalDeviceQueue graphics;
+  PhysicalDeviceQueue present;
 };
 
 class Vulkan {
@@ -117,9 +96,7 @@ class Vulkan {
    * backward-compatibility).
    * @param requiredQueues - Get a reference to these queue families, by queue type.
    */
-  void UseLogicalDevice(
-      const std::vector<const char*> requiredValidationLayers,
-      std::set<PhysicalDeviceQueue*> requiredQueues);
+  void UseLogicalDevice(const std::vector<const char*> requiredValidationLayers);
 
   void CreateWindowSurface();
 
@@ -127,7 +104,7 @@ class Vulkan {
 
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
-  PhysicalDeviceQueues pdqfs = PhysicalDeviceQueues{};
+  PhysicalDeviceQueues pdqs = PhysicalDeviceQueues{};
 
  private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
