@@ -66,7 +66,7 @@ void Window::init() {
 
   supported = mks::Vulkan::CheckInstanceExtensions(requiredExtensionNames);
   if (!supported) {
-    throw mks::Logger::Errorf("Missing required Vulkan extensions.");
+    throw mks::Logger::Errorf("Vulkan driver is missing required Vulkan extensions.");
   }
 
   auto v = mks::Vulkan{"Vulkan_test", 1, 0, 0, requiredValidationLayers, requiredExtensionNames};
@@ -77,8 +77,15 @@ void Window::init() {
   }
 
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
-  v.UseLogicalDevice(requiredValidationLayers);
-  supported = v.CheckPhysicalDeviceExtensions({VK_KHR_SWAPCHAIN_EXTENSION_NAME});
+
+  const std::vector<const char*> requiredPhysicalDeviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+  supported = v.CheckSwapChainSupport();
+  if (!supported) {
+    throw mks::Logger::Errorf("Missing swap chain support on physical device.");
+  }
+
+  v.UseLogicalDevice(requiredValidationLayers, requiredPhysicalDeviceExtensions);
 
   bool quit = false;
   SDL_Event e;

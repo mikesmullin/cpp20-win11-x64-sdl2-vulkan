@@ -37,17 +37,23 @@ struct PhysicalDeviceQueues {
   PhysicalDeviceQueue present;
 };
 
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
+};
+
 class Vulkan {
  public:
   /**
-   * Query the driver for a list of validation layers it supports.
+   * Query the instance for a list of validation layers it supports.
    *
    * @return bool
    */
   static const bool CheckInstanceLayers(const std::vector<const char*> requiredLayers);
 
   /**
-   * Query the driver for a list of extensions it supports.
+   * Query the instance for a list of extensions it supports.
    *
    * @return const bool
    */
@@ -89,18 +95,31 @@ class Vulkan {
    */
   void LocateQueueFamilies();
 
+  /**
+   * Verify required extensions are present on current physical device.
+   *
+   * @param requiredExtensions - List of extension names.
+   * @return - Whether support was found for all in list.
+   */
   const bool CheckPhysicalDeviceExtensions(const std::vector<const char*> requiredExtensions) const;
+
+  /**
+   * Verify whether physical device supports Swap Chain feature.
+   *
+   * @return - Whether support was found.
+   */
+  const bool CheckSwapChainSupport() const;
 
   /**
    * Set the current logical device, which will use the current physical device.
    *
    * @param requiredValidationLayers - Enable these validation layers on the device (for
    * backward-compatibility).
-   * @param requiredQueues - Get a reference to these queue families, by queue type.
+   * @param requiredPhysicalDeviceExtensions - Enable these device extensions.
    */
-  void UseLogicalDevice(const std::vector<const char*> requiredValidationLayers);
-
-  void CreateWindowSurface();
+  void UseLogicalDevice(
+      const std::vector<const char*> requiredValidationLayers,
+      std::vector<const char*> requiredPhysicalDeviceExtensions);
 
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
