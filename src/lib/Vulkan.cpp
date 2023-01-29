@@ -274,7 +274,7 @@ const bool Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {
   return false;
 }
 
-const bool Vulkan::CheckQueues() {
+void Vulkan::LocateQueueFamilies() {
   // validate state
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
@@ -338,18 +338,18 @@ const bool Vulkan::CheckQueues() {
     }
 
     Logger::Debugf(
-        "  %u: flags:%s%s%s%s%s%s%s%s%s",
+        "  %u: flags: %s %s %s %s %s %s %s",
         i,
-        present ? " PRESENT" : "",
-        graphics ? " GRAPHICS" : "",
-        compute ? " COMPUTE" : "",
-        transfer ? " TRANSFER" : "",
-        sparse ? " SPARSE" : "",
-        protect ? " PROTECTED" : "",
-        optical ? " OPTICAL_FLOW" : "",
-        pdqfs.present.selectedFamilyIndexEqual(i) ? " (select present)" : "",
-        pdqfs.graphics.selectedFamilyIndexEqual(i) ? " (select graphics)" : "");
+        present ? pdqfs.present.name : "",
+        graphics ? pdqfs.graphics.name : "",
+        compute ? pdqfs.compute.name : "",
+        transfer ? pdqfs.transfer.name : "",
+        sparse ? pdqfs.sparse.name : "",
+        protect ? pdqfs.protect.name : "",
+        optical ? pdqfs.optical.name : "");
   }
+
+  // TODO: if PRESENT + GRAPHICS were index 3, we should prefer to select that on both
 
   // uint32_t formatCount;
   // vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
@@ -361,59 +361,85 @@ const bool Vulkan::CheckQueues() {
   //       &formatCount,
   //       details.formats.data());
   // }
-
-  return pdqfs.graphics.valid() && pdqfs.compute.valid() && pdqfs.transfer.valid() &&
-         pdqfs.sparse.valid() && pdqfs.protect.valid() && pdqfs.optical.valid() &&
-         pdqfs.present.valid();
 }
 
-void Vulkan::BeginGetLogicalDeviceQueues(const std::set<PhysicalDeviceQueue> queues) const {
-  if (VK_NULL_HANDLE == physicalDevice) {
-    throw Logger::Errorf("physicalDevice is null.");
-  }
-  if (!queue.valid()) {
-    throw Logger::Errorf("Requested queue not found in any queue family on the physical device.");
-  }
-
-  float queuePriority = 1.0f;
-  VkDeviceQueueCreateInfo createInfo{};
-  createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  createInfo.queueFamilyIndex = queue.selectedFamilyIndex();
-  createInfo.queueCount = 1;
-  createInfo.pQueuePriorities = &queuePriority;
-}
-
-const bool Vulkan::EndGetLogicalDeviceQueue(const PhysicalDeviceQueue queue) {
-  if (!logicalDevice) {
-    throw Logger::Errorf("logicalDevice is null.");
-  }
-
-  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetDeviceQueue.html
-  vkGetDeviceQueue(logicalDevice, queue.selectedFamilyIndex(), 0, &queue.queue);
-}
-
-void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationLayers) {
+void Vulkan::UseLogicalDevice(
+    const std::vector<const char*> requiredValidationLayers,
+    const std::set<PhysicalDeviceQueue*> requiredQueues) {
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
   }
 
+  // enumerate the queue families on current physical device
+  LocateQueueFamilies();
+
+  // for each unique queue family index,
+  // construct a request for pointer to its VkQueue
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-  std::set<uint32_t> uniqueQueueFamilies = {
-      pdqfs.graphics.selectedFamilyIndex(),
-      pdqfs.present.selectedFamilyIndex()};
-  for (uint32_t queueFamily : uniqueQueueFamilies) {
-    createInfos.push_back(queueCreateInfo);
+  for (const auto& queue : requiredQueues) {
+    if (!queue->supported()) {
+      throw Logger::Errorf(
+          "%s queue not found within queue families of physical device.",
+          queue->name);
+    }
+
+    // Structure specifying parameters of a newly created device queue
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDeviceQueueCreateInfo.html
+    VkDeviceQueueCreateInfo createInfo{};
+
+    // the type of this structure.
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+
+    // NULL or a pointer to a structure extending this structure.
+    // createInfo.pNext = NULL;
+
+    // a bitmask indicating behavior of the queues.
+    // createInfo.flags = 0;
+
+    // an unsigned integer indicating the index of the queue family in which to create the queues on
+    // this device. This index corresponds to the index of an element of the pQueueFamilyProperties
+    // array, and that was returned by vkGetPhysicalDeviceQueueFamilyProperties.
+    createInfo.queueFamilyIndex = queue->familyIndices[queue->selected];
+
+    // an unsigned integer specifying the number of queues to create in the queue family indicated
+    // by queueFamilyIndex, and with the behavior specified by flags.
+    createInfo.queueCount = 1;
+
+    // a pointer to an array of queueCount normalized floating point values, specifying priorities
+    // of work that will be submitted to each created queue.
+    const float queuePriority = 1.0f;
+    createInfo.pQueuePriorities = &queuePriority;
+
+    // one request per unique queue family index
+    queueCreateInfos.push_back(createInfo);
   }
 
+  // Structure describing the fine-grained features that can be supported by an implementation
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkPhysicalDeviceFeatures.html
   VkPhysicalDeviceFeatures deviceFeatures{};
 
+  // Structure specifying parameters of a newly created [logical] device
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDeviceCreateInfo.html
   VkDeviceCreateInfo createInfo{};
+  // the type of this structure.
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-  createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-  createInfo.pQueueCreateInfos = queueCreateInfos.data();
-  createInfo.pEnabledFeatures = &deviceFeatures;
-  createInfo.enabledExtensionCount = 0;
 
+  // NULL or a pointer to a structure extending this structure.
+  createInfo.pNext = NULL;
+
+  // reserved for future use.
+  createInfo.flags = static_cast<uint32_t>(0);
+
+  // unsigned integer size of the pQueueCreateInfos array.
+  createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+
+  // pointer to an array of VkDeviceQueueCreateInfo structures describing the queues that are
+  // requested to be created along with the logical device.
+  createInfo.pQueueCreateInfos = queueCreateInfos.data();
+
+  // define validation layers to be used, per-device.
+  // deprecated, because we also defined it on the VkInstance,
+  // but recommended to also keep here for backward-compatibility.
 #ifdef DEBUG_VULKAN
   createInfo.enabledLayerCount = static_cast<uint32_t>(requiredValidationLayers.size());
   createInfo.ppEnabledLayerNames = requiredValidationLayers.data();
@@ -421,8 +447,26 @@ void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationL
   createInfo.enabledLayerCount = 0;
 #endif
 
+  // number of device extensions to enable.
+  createInfo.enabledExtensionCount = 0;
+
+  // pointer to an array of enabledExtensionCount null-terminated UTF-8 strings containing the names
+  // of extensions to enable for the created device.
+  createInfo.ppEnabledExtensionNames = NULL;
+
+  // NULL or a pointer to a VkPhysicalDeviceFeatures structure containing boolean indicators of all
+  // the features to be enabled.
+  createInfo.pEnabledFeatures = &deviceFeatures;
+
+  // Create a new [logical] device instance
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCreateDevice.html
   if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &logicalDevice) != VK_SUCCESS) {
-    throw Logger::Errorf("vkCreateDevice failed.");
+    throw Logger::Errorf("vkCreateDevice() failed.");
+  }
+
+  for (auto& queue : requiredQueues) {
+    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetDeviceQueue.html
+    vkGetDeviceQueue(logicalDevice, queue->familyIndices[queue->selected], 0, &(queue->queue));
   }
 }
 

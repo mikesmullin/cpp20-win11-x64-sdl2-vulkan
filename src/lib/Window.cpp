@@ -4,6 +4,7 @@
 #include <SDL.h>
 #include <SDL_vulkan.h>
 
+#include <set>
 #include <vector>
 
 #include "Logger.hpp"
@@ -77,21 +78,7 @@ void Window::init() {
   }
 
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
-
-  v.pdqfs.graphics.required = true;
-  v.pdqfs.present.required = true;
-  supported = v.CheckQueues();
-  // if (!supported) {
-  //   throw mks::Logger::Errorf(
-  //       "Missing queue families on physical device.");
-  // }
-
-  v.BeginGetLogicalDeviceQueues({
-      v.pdqfs.graphics,
-      v.pdqfs.present,
-  });
-
-  v.UseLogicalDevice(requiredValidationLayers);
+  v.UseLogicalDevice(requiredValidationLayers, {&v.pdqfs.graphics, &v.pdqfs.present});
 
   bool quit = false;
   SDL_Event e;
