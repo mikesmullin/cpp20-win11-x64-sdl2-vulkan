@@ -293,6 +293,7 @@ void Vulkan::LocateQueueFamilies() {
 
   // debug: list all queue families found on the current physical device
   Logger::Debugf("device queue families:");
+  bool same = false;
   for (uint32_t i = 0; i < queueFamilies.size(); i++) {
     const auto& queueFamily = queueFamilies[i];
 
@@ -314,42 +315,33 @@ void Vulkan::LocateQueueFamilies() {
       Logger::Debugf("vkGetPhysicalDeviceSurfaceSupportKHR() failed. queueFamilyIndex: %u", i);
     }
 
-    // build map of where queue types were found, by queue family index.
-    if (graphics) {
-      pdqfs.graphics.familyIndices.push_back(i);
-    }
-    if (compute) {
-      pdqfs.compute.familyIndices.push_back(i);
-    }
-    if (transfer) {
-      pdqfs.transfer.familyIndices.push_back(i);
-    }
-    if (sparse) {
-      pdqfs.sparse.familyIndices.push_back(i);
-    }
-    if (protect) {
-      pdqfs.protect.familyIndices.push_back(i);
-    }
-    if (optical) {
-      pdqfs.optical.familyIndices.push_back(i);
-    }
-    if (present) {
-      pdqfs.present.familyIndices.push_back(i);
+    // strategy: select fewest family indices where required queues are present
+    if (!same) {
+      if (graphics && present) {
+        // prioritize any queue with both
+        same = true;
+        pdqs.graphics.index = i;
+        pdqs.present.index = i;
+      } else if (graphics) {
+        pdqs.graphics.index = i;
+      } else if (present) {
+        pdqs.present.index = i;
+      }
     }
 
     Logger::Debugf(
-        "  %u: flags: %s %s %s %s %s %s %s",
+        "  %u: flags:%s%s%s%s%s%s%s",
         i,
-        present ? pdqfs.present.name : "",
-        graphics ? pdqfs.graphics.name : "",
-        compute ? pdqfs.compute.name : "",
-        transfer ? pdqfs.transfer.name : "",
-        sparse ? pdqfs.sparse.name : "",
-        protect ? pdqfs.protect.name : "",
-        optical ? pdqfs.optical.name : "");
+        present ? " PRESENT" : "",
+        graphics ? " GRAPHICS" : "",
+        compute ? " COMPUTE" : "",
+        transfer ? " TRANSFER" : "",
+        sparse ? " SPARSE" : "",
+        protect ? " PROTECT" : "",
+        optical ? " OPTICAL" : "");
   }
 
-  // TODO: if PRESENT + GRAPHICS were index 3, we should prefer to select that on both
+  Logger::Debugf("  selected: graphics: %u, present: %u", pdqs.graphics.index, pdqs.present.index);
 
   // uint32_t formatCount;
   // vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
@@ -363,9 +355,7 @@ void Vulkan::LocateQueueFamilies() {
   // }
 }
 
-void Vulkan::UseLogicalDevice(
-    const std::vector<const char*> requiredValidationLayers,
-    const std::set<PhysicalDeviceQueue*> requiredQueues) {
+void Vulkan::UseLogicalDevice(const std::vector<const char*> requiredValidationLayers) {
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
   }
@@ -375,14 +365,15 @@ void Vulkan::UseLogicalDevice(
 
   // for each unique queue family index,
   // construct a request for pointer to its VkQueue
+  if (!pdqs.graphics.index.has_value()) {
+    throw Logger::Errorf("GRAPHICS queue not found within queue families of physical device.");
+  }
+  if (!pdqs.present.index.has_value()) {
+    throw Logger::Errorf("PRESENT queue not found within queue families of physical device.");
+  }
+  const bool same = pdqs.graphics.index.value() == pdqs.present.index.value();
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-  for (const auto& queue : requiredQueues) {
-    if (!queue->supported()) {
-      throw Logger::Errorf(
-          "%s queue not found within queue families of physical device.",
-          queue->name);
-    }
-
+  {
     // Structure specifying parameters of a newly created device queue
     // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkDeviceQueueCreateInfo.html
     VkDeviceQueueCreateInfo createInfo{};
@@ -399,10 +390,10 @@ void Vulkan::UseLogicalDevice(
     // an unsigned integer indicating the index of the queue family in which to create the queues on
     // this device. This index corresponds to the index of an element of the pQueueFamilyProperties
     // array, and that was returned by vkGetPhysicalDeviceQueueFamilyProperties.
-    createInfo.queueFamilyIndex = queue->familyIndices[queue->selected];
+    createInfo.queueFamilyIndex = pdqs.graphics.index.value();
 
-    // an unsigned integer specifying the number of queues to create in the queue family indicated
-    // by queueFamilyIndex, and with the behavior specified by flags.
+    // an unsigned integer specifying the number of queues to create in the queue family
+    // indicated by queueFamilyIndex, and with the behavior specified by flags.
     createInfo.queueCount = 1;
 
     // a pointer to an array of queueCount normalized floating point values, specifying priorities
@@ -411,6 +402,15 @@ void Vulkan::UseLogicalDevice(
     createInfo.pQueuePriorities = &queuePriority;
 
     // one request per unique queue family index
+    queueCreateInfos.push_back(createInfo);
+  }
+  if (!same) {
+    VkDeviceQueueCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    createInfo.queueFamilyIndex = pdqs.present.index.value();
+    createInfo.queueCount = 1;
+    const float queuePriority = 1.0f;
+    createInfo.pQueuePriorities = &queuePriority;
     queueCreateInfos.push_back(createInfo);
   }
 
@@ -437,9 +437,9 @@ void Vulkan::UseLogicalDevice(
   // requested to be created along with the logical device.
   createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
-  // define validation layers to be used, per-device.
-  // deprecated, because we also defined it on the VkInstance,
-  // but recommended to also keep here for backward-compatibility.
+// define validation layers to be used, per-device.
+// deprecated, because we also defined it on the VkInstance,
+// but recommended to also keep here for backward-compatibility.
 #ifdef DEBUG_VULKAN
   createInfo.enabledLayerCount = static_cast<uint32_t>(requiredValidationLayers.size());
   createInfo.ppEnabledLayerNames = requiredValidationLayers.data();
@@ -464,9 +464,10 @@ void Vulkan::UseLogicalDevice(
     throw Logger::Errorf("vkCreateDevice() failed.");
   }
 
-  for (auto& queue : requiredQueues) {
-    // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetDeviceQueue.html
-    vkGetDeviceQueue(logicalDevice, queue->familyIndices[queue->selected], 0, &(queue->queue));
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkGetDeviceQueue.html
+  vkGetDeviceQueue(logicalDevice, pdqs.graphics.index.value(), 0, &pdqs.graphics.queue);
+  if (!same) {
+    vkGetDeviceQueue(logicalDevice, pdqs.present.index.value(), 0, &pdqs.present.queue);
   }
 }
 

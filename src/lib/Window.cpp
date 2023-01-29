@@ -78,7 +78,7 @@ void Window::init() {
   }
 
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
-  v.UseLogicalDevice(requiredValidationLayers, {&v.pdqfs.graphics, &v.pdqfs.present});
+  v.UseLogicalDevice(requiredValidationLayers);
 
   bool quit = false;
   SDL_Event e;
