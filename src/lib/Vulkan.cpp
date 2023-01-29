@@ -710,4 +710,19 @@ void Vulkan::CreateSwapChain() {
   }
 }
 
+void Vulkan::createShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule) const {
+  VkShaderModuleCreateInfo createInfo{};
+  createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  createInfo.codeSize = code.size();
+  createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+  if (vkCreateShaderModule(logicalDevice, &createInfo, nullptr, shaderModule) != VK_SUCCESS) {
+    throw Logger::Errorf("vkCreateShaderModule failed.");
+  }
+  // TODO: need to keep a global reference to these, and cleanup on shutdown
+}
+
+void Vulkan::destroyShaderModule(const VkShaderModule* shaderModule) const {
+  vkDestroyShaderModule(logicalDevice, *shaderModule, nullptr);
+}
+
 }  // namespace mks

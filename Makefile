@@ -38,7 +38,7 @@ copy_dlls:
 
 BIN1=game.exe
 .PHONY: cpp
-cpp: clean copy_dlls
+cpp: clean copy_dlls shaders
 	cd $(BUILD_DIR) && \
 	$(CL_BIN) \
 	$(CL_ARGS) \
@@ -65,7 +65,7 @@ test: audio_test
 
 .PHONY: audio_test
 BIN2=Audio_test.exe
-audio_test: clean copy_dlls
+audio_test: clean copy_dlls shaders
 	cd $(BUILD_DIR) && \
 	$(CL_BIN) \
 	$(CL_ARGS) \
@@ -80,7 +80,7 @@ audio_test: clean copy_dlls
 
 .PHONY: gamepad_test
 BIN3=Gamepad_test.exe
-gamepad_test: clean copy_dlls
+gamepad_test: clean copy_dlls shaders
 	cd $(BUILD_DIR) && \
 	$(CL_BIN) \
 	$(CL_ARGS) \
@@ -95,7 +95,7 @@ gamepad_test: clean copy_dlls
 
 .PHONY: window_test
 BIN3=Window_test.exe
-window_test: clean copy_dlls
+window_test: clean copy_dlls shaders
 	cd $(BUILD_DIR) && \
 	$(CL_BIN) \
 	$(CL_ARGS) \
@@ -110,7 +110,7 @@ window_test: clean copy_dlls
 
 .PHONY: vulkan_test
 BIN3=Vulkan_test.exe
-vulkan_test: clean copy_dlls
+vulkan_test: clean copy_dlls shaders
 	cd $(BUILD_DIR) && \
 	$(CL_BIN) \
 	$(CL_ARGS) \
