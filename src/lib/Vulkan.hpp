@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <vector>
 
 /**
@@ -24,32 +25,37 @@ namespace mks {
  * on the current physical device.
  */
 struct PhysicalDeviceQueue {
-  bool required;
+  const std::string name;
+  PhysicalDeviceQueue(const std::string name) : name{name} {};
   const bool supported() const {
     return familyIndices.size() > 0;
   };
-  const bool valid() const {
-    return !required || supported();
-  };
-  unsigned int selected = 0;
-  const uint32_t selectedFamilyIndex() const {
+  uint32_t selected = 0;
+  const uint32_t selectedIndex() const {
     return supported() ? familyIndices[selected] : 0;
   }
-  const bool selectedFamilyIndexEqual(const uint32_t idx) const {
-    return supported() && idx == familyIndices[selected];
-  };
+  void selectFewestFamilies(const std::vector<PhysicalDeviceQueue> queues) {
+    std::set<uint32_t> fewest;
+    for (auto& queue : queues) {
+    }
+  }
+
   std::vector<uint32_t> familyIndices;
-  VkQueue queue;
+  VkQueue queue = nullptr;
+
+  bool operator<(const PhysicalDeviceQueue& q) const {
+    return selectedIndex() < q.selectedIndex();
+  };
 };
 
 struct PhysicalDeviceQueues {
-  PhysicalDeviceQueue graphics;
-  PhysicalDeviceQueue compute;
-  PhysicalDeviceQueue transfer;
-  PhysicalDeviceQueue sparse;
-  PhysicalDeviceQueue protect;
-  PhysicalDeviceQueue optical;
-  PhysicalDeviceQueue present;
+  PhysicalDeviceQueue graphics{"GRAPHICS"};
+  PhysicalDeviceQueue compute{"COMPUTE"};
+  PhysicalDeviceQueue transfer{"TRANSFER"};
+  PhysicalDeviceQueue sparse{"SPARSE"};
+  PhysicalDeviceQueue protect{"PROTECTED"};
+  PhysicalDeviceQueue optical{"OPTICAL"};
+  PhysicalDeviceQueue present{"PRESENT"};
 };
 
 class Vulkan {
@@ -99,14 +105,24 @@ class Vulkan {
   const bool UsePhysicalDevice(const unsigned int deviceIndex);
 
   /**
-   * Validate desired queue families are supported by the current physical device.
+   * Locate all instances of each queue type,
+   * across all queue families on the current physical device.
    */
-  const bool CheckQueues();
-  void BeginGetLogicalDeviceQueues(const std::set<PhysicalDeviceQueue> queues) const;
-  const bool EndGetLogicalDeviceQueue(const PhysicalDeviceQueue queue);
+  void LocateQueueFamilies();
 
-  void UseLogicalDevice(const std::vector<const char*> requiredValidationLayers);
+  /**
+   * Set the current logical device, which will use the current physical device.
+   *
+   * @param requiredValidationLayers - Enable these validation layers on the device (for
+   * backward-compatibility).
+   * @param requiredQueues - Get a reference to these queue families, by queue type.
+   */
+  void UseLogicalDevice(
+      const std::vector<const char*> requiredValidationLayers,
+      std::set<PhysicalDeviceQueue*> requiredQueues);
+
   void CreateWindowSurface();
+
   const bool CheckPhysicalDeviceSurfaceSupports() const;
 
   VkInstance instance = nullptr;
