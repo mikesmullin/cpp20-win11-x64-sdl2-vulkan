@@ -126,6 +126,9 @@ class Vulkan {
    */
   void CreateSwapChain();
 
+  void createShaderModule(const std::vector<char>& code, VkShaderModule* mod) const;
+  void destroyShaderModule(const VkShaderModule* shaderModule) const;
+
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
   PhysicalDeviceQueues pdqs = PhysicalDeviceQueues{};
