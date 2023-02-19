@@ -94,6 +94,10 @@ void Window::init() {
   v.CreateSwapChain();
   v.CreateRenderPass();
   v.CreateGraphicsPipeline();
+  v.CreateFrameBuffers();
+  v.CreateCommandPool();
+  v.CreateCommandBuffer();
+  v.CreateSyncObjects();
 
   bool quit = false;
   SDL_Event e;
@@ -107,11 +111,14 @@ void Window::init() {
           break;
       }
 
-      // TODO: execute vulkan pipeline
-
-      SDL_UpdateWindowSurface(window);
+      // SDL_UpdateWindowSurface(window);
     }
+
+    // vulkan draw frame
+    v.DrawFrame();
   }
+
+  v.DeviceWaitIdle();
 
   SDL_DestroyWindow(window);
 }
