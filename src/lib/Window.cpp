@@ -9,7 +9,6 @@
 
 #include "Logger.hpp"
 #include "SDL.hpp"
-#include "Shader.hpp"
 #include "Vulkan.hpp"
 
 namespace mks {
@@ -93,17 +92,8 @@ void Window::init() {
   v.UseLogicalDevice(requiredValidationLayers, requiredPhysicalDeviceExtensions);
 
   v.CreateSwapChain();
-
-  Shader s = {};
-  auto shader1 = s.readFile("../assets/shaders/simple_shader.frag.spv");
-  auto shader2 = s.readFile("../assets/shaders/simple_shader.vert.spv");
-
-  VkShaderModule vertShaderModule, fragShaderModule;
-  v.createShaderModule(shader1, &vertShaderModule);
-  v.createShaderModule(shader2, &fragShaderModule);
-
-  v.destroyShaderModule(&fragShaderModule);
-  v.destroyShaderModule(&vertShaderModule);
+  v.CreateRenderPass();
+  v.CreateGraphicsPipeline();
 
   bool quit = false;
   SDL_Event e;

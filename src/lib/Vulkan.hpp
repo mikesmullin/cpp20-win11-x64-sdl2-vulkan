@@ -126,8 +126,12 @@ class Vulkan {
    */
   void CreateSwapChain();
 
-  void createShaderModule(const std::vector<char>& code, VkShaderModule* mod) const;
-  void destroyShaderModule(const VkShaderModule* shaderModule) const;
+  void CreateShaderModule(const std::vector<char>& code, VkShaderModule* mod) const;
+  void DestroyShaderModule(const VkShaderModule* shaderModule) const;
+
+  void CreateImageViews();
+  void CreateRenderPass();
+  void CreateGraphicsPipeline();
 
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
@@ -145,6 +149,9 @@ class Vulkan {
   VkFormat swapChainImageFormat = {};
   VkExtent2D swapChainExtent = {};
   std::vector<VkImageView> swapChainImageViews = {};
+  VkRenderPass renderPass = {};
+  VkPipelineLayout pipelineLayout = {};
+  VkPipeline graphicsPipeline = {};
 };
 
 }  // namespace mks
