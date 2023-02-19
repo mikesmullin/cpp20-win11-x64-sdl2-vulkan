@@ -8,9 +8,9 @@ namespace mks {
 
 class Engine {
  public:
-  static std::unique_ptr<Engine> Engine::Init();
-  Engine::Engine();
-  Engine::~Engine();
+  static std::unique_ptr<Engine> Init();
+  Engine();
+  ~Engine();
 
   // void Log(char*);
   // void Info(char*);
