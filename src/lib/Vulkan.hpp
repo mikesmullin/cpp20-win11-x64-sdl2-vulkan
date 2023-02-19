@@ -132,6 +132,13 @@ class Vulkan {
   void CreateImageViews();
   void CreateRenderPass();
   void CreateGraphicsPipeline();
+  void CreateFrameBuffers();
+  void CreateCommandPool();
+  void CreateCommandBuffer();
+  void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+  void CreateSyncObjects();
+  void DrawFrame();
+  void DeviceWaitIdle();
 
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = nullptr;
@@ -141,7 +148,6 @@ class Vulkan {
  private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice logicalDevice = nullptr;
-
   // TODO: swap chain stuff should get its own struct
   SwapChainSupportDetails swapChainSupport = {};
   VkSwapchainKHR swapChain = nullptr;
@@ -152,6 +158,12 @@ class Vulkan {
   VkRenderPass renderPass = {};
   VkPipelineLayout pipelineLayout = {};
   VkPipeline graphicsPipeline = {};
+  std::vector<VkFramebuffer> swapChainFramebuffers = {};
+  VkCommandPool commandPool = {};
+  VkCommandBuffer commandBuffer = {};
+  VkSemaphore imageAvailableSemaphore;
+  VkSemaphore renderFinishedSemaphore;
+  VkFence inFlightFence;
 };
 
 }  // namespace mks
