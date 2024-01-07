@@ -4,7 +4,8 @@
 #include <SDL.h>
 #include <SDL_vulkan.h>
 
-#include <set>
+#include <chrono>
+#include <thread>
 #include <vector>
 
 #include "Logger.hpp"
@@ -96,12 +97,18 @@ void Window::init() {
   v.CreateGraphicsPipeline();
   v.CreateFrameBuffers();
   v.CreateCommandPool();
-  v.CreateCommandBuffer();
+  v.CreateCommandBuffers();
   v.CreateSyncObjects();
+
+  const int FPS = 60;  // Target frames per second
+  const std::chrono::duration<double, std::milli> frameDelay(1000.0 / FPS);
 
   bool quit = false;
   SDL_Event e;
   while (!quit) {
+    auto frameStart = std::chrono::high_resolution_clock::now();
+
+    // input handling
     while (SDL_PollEvent(&e) > 0) {
       switch (e.type) {
           // TODO: implement window resizing
@@ -114,8 +121,15 @@ void Window::init() {
       // SDL_UpdateWindowSurface(window);
     }
 
-    // vulkan draw frame
+    // rendering
     v.DrawFrame();
+
+    // frame rate limiter
+    auto frameEnd = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsedTime = frameEnd - frameStart;
+    std::this_thread::sleep_for(frameDelay - elapsedTime);
+
+    // TODO: wait remaining ms to target frame rate
   }
 
   v.DeviceWaitIdle();

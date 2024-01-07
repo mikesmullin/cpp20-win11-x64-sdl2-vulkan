@@ -2,10 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <memory>
 #include <optional>
-#include <set>
-#include <string>
 #include <vector>
 
 /**
@@ -47,15 +44,14 @@ class Vulkan {
  public:
   /**
    * Query the instance for a list of validation layers it supports.
-   *
-   * @return bool
    */
   static const bool CheckInstanceLayers(const std::vector<const char*> requiredLayers);
 
   /**
-   * Query the instance for a list of extensions it supports.
+   * Query the instance to verify it supports our list of required extensions.
    *
-   * @return const bool
+   * @param requiredExtensions - list of required extensions
+   * @return whether all required extensions are supported
    */
   static const bool CheckInstanceExtensions(const std::vector<const char*> requiredExtensions);
 
@@ -134,23 +130,24 @@ class Vulkan {
   void CreateGraphicsPipeline();
   void CreateFrameBuffers();
   void CreateCommandPool();
-  void CreateCommandBuffer();
+  void CreateCommandBuffers();
   void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
   void CreateSyncObjects();
   void DrawFrame();
   void DeviceWaitIdle();
 
   VkInstance instance = nullptr;
-  VkSurfaceKHR surface = nullptr;
+  VkSurfaceKHR surface = 0;
   PhysicalDeviceQueues pdqs = PhysicalDeviceQueues{};
   uint32_t width, height = 0;
 
  private:
+  uint8_t currentFrame = 0;
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice logicalDevice = nullptr;
   // TODO: swap chain stuff should get its own struct
   SwapChainSupportDetails swapChainSupport = {};
-  VkSwapchainKHR swapChain = nullptr;
+  VkSwapchainKHR swapChain = 0;
   std::vector<VkImage> swapChainImages = {};
   VkFormat swapChainImageFormat = {};
   VkExtent2D swapChainExtent = {};
@@ -160,10 +157,10 @@ class Vulkan {
   VkPipeline graphicsPipeline = {};
   std::vector<VkFramebuffer> swapChainFramebuffers = {};
   VkCommandPool commandPool = {};
-  VkCommandBuffer commandBuffer = {};
-  VkSemaphore imageAvailableSemaphore;
-  VkSemaphore renderFinishedSemaphore;
-  VkFence inFlightFence;
+  std::vector<VkCommandBuffer> commandBuffers = {};
+  std::vector<VkSemaphore> imageAvailableSemaphores;
+  std::vector<VkSemaphore> renderFinishedSemaphores;
+  std::vector<VkFence> inFlightFences;
 };
 
 }  // namespace mks
