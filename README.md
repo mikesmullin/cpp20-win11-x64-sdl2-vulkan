@@ -66,6 +66,7 @@ This project was inspired by the following materials:
   - learn how to name objects for debugging in RenderDoc
     https://www.saschawillems.de/blog/2016/05/28/tutorial-on-using-vulkans-vk_ext_debug_marker-with-renderdoc/
 
+- Use class RAII to manage vk object lifetimes, and refactor long source files into reusable modules
 - Understand whether to adopt the DAG/terraform type of interface for my Vulkan wrapper
   - learn how to draw a complex scene while reducing draw calls
     - using Unity's frame debugger https://www.youtube.com/watch?v=vU3au56UV_E

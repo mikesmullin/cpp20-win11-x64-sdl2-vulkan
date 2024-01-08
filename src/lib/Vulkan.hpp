@@ -64,8 +64,6 @@ class Vulkan {
    * @param major - Application major version number
    * @param minor - Application minor version number
    * @param hotfix  - Application hotfix version number
-   * @param requiredValidationLayers - list of validation layer names to validate and enable.
-   * @param requiredExtensionNames - list of physical device extension names to validate and enable.
    */
   Vulkan(
       const char* name,
@@ -77,13 +75,29 @@ class Vulkan {
 
   ~Vulkan();
 
+  // list of required validation layers, according to developer debug preferences
+  std::vector<const char*> requiredValidationLayers;
+
+  /**
+   * Abort unless all required Vulkan validation layers
+   * are supported by the Vulkan driver.
+   */
+  void AssertDriverValidationLayersSupported();
+
+  /**
+   * Abort unless all extensions requested by the window surface
+   * are supported by the Vulkan driver.
+   *
+   * @param requiredExtensionNames - list of required extensions.
+   */
+  void AssertDriverExtensionsSupported(std::vector<const char*> requiredExtensionNames);
+
   /**
    * Select the physical device we will use for subsequent calls.
    *
    * @param deviceIndex - Which GPU to choose.
-   * @return - Whether device exists, and was found to be compatible.
    */
-  const bool UsePhysicalDevice(const unsigned int deviceIndex);
+  const void UsePhysicalDevice(const unsigned int deviceIndex);
 
   /**
    * Locate all instances of each queue type,
@@ -91,31 +105,25 @@ class Vulkan {
    */
   void LocateQueueFamilies();
 
+  // list physical device extensions, according to developer preference
+  std::vector<const char*> requiredPhysicalDeviceExtensions;
+
   /**
    * Verify required extensions are present on current physical device.
    *
-   * @param requiredExtensions - List of extension names.
    * @return - Whether support was found for all in list.
    */
-  const bool CheckPhysicalDeviceExtensions(const std::vector<const char*> requiredExtensions) const;
+  const bool CheckPhysicalDeviceExtensions() const;
 
   /**
    * Verify whether physical device supports Swap Chain feature.
-   *
-   * @return - Whether support was found.
    */
-  const bool CheckSwapChainSupport();
+  const void AssertSwapChainSupport();
 
   /**
    * Set the current logical device, which will use the current physical device.
-   *
-   * @param requiredValidationLayers - Enable these validation layers on the device (for
-   * backward-compatibility).
-   * @param requiredPhysicalDeviceExtensions - Enable these device extensions.
    */
-  void UseLogicalDevice(
-      const std::vector<const char*> requiredValidationLayers,
-      std::vector<const char*> requiredPhysicalDeviceExtensions);
+  void UseLogicalDevice();
 
   /**
    * Construct the swap chain.
@@ -133,6 +141,7 @@ class Vulkan {
   void CreateCommandBuffers();
   void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
   void CreateSyncObjects();
+  void CreateBullshitVertices();
   void DrawFrame();
   void DeviceWaitIdle();
   void RecreateSwapChain();

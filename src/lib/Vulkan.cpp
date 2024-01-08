@@ -5,6 +5,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <algorithm>
+#include <array>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <memory>
@@ -13,9 +14,69 @@
 #include "Logger.hpp"
 #include "Shader.hpp"
 
-static const int MAX_FRAMES_IN_FLIGHT = 2;
+namespace {
+
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
+struct Vertex {
+  glm::vec2 pos;
+  glm::vec3 color;
+
+  static VkVertexInputBindingDescription getBindingDescription() {
+    VkVertexInputBindingDescription bindingDescription{};
+    bindingDescription.binding = 0;
+    bindingDescription.stride = sizeof(Vertex);
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    return bindingDescription;
+  }
+
+  static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+    attributeDescriptions[0].binding = 0;
+    attributeDescriptions[0].location = 0;
+    attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+    attributeDescriptions[1].binding = 0;
+    attributeDescriptions[1].location = 1;
+    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+    return attributeDescriptions;
+  }
+};
+
+}  // namespace
 
 namespace mks {
+
+void Vulkan::AssertDriverValidationLayersSupported() {
+#ifdef DEBUG_VULKAN
+  requiredValidationLayers.resize(1);
+  // SDK-provided layer conveniently bundles all useful standard validation
+  requiredValidationLayers[0] = "VK_LAYER_KHRONOS_validation";
+
+  bool supported = Vulkan::CheckInstanceLayers(Vulkan::requiredValidationLayers);
+  if (!supported) {
+    throw Logger::Errorf("Missing required Vulkan validation layers.");
+  }
+
+  // TODO: Device-specific layer validation is deprecated. However,
+  //   the specification document still recommends that you enable validation layers at device
+  //   level as well for compatibility, and it's required by some implementations. we'll see this
+  //   code later on:
+  //   https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Logical_device_and_queues
+#endif
+}
+
+void Vulkan::AssertDriverExtensionsSupported(std::vector<const char*> requiredExtensionNames) {
+  bool supported = false;
+  supported = Vulkan::CheckInstanceExtensions(requiredExtensionNames);
+  if (!supported) {
+    throw Logger::Errorf("Vulkan driver is missing required Vulkan extensions.");
+  }
+}
 
 const bool Vulkan::CheckInstanceLayers(const std::vector<const char*> requiredLayers) {
   // BACKGROUND: There were formerly two different types of validation layers in Vulkan: instance
@@ -206,16 +267,14 @@ Vulkan::Vulkan(
   // Create a new Vulkan instance
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCreateInstance.html
   if (vkCreateInstance(createInfo.get(), nullptr, &instance) != VK_SUCCESS) {
-    throw mks::Logger::Errorf("Failed to create Vulkan instance.");
+    throw Logger::Errorf("Failed to create Vulkan instance.");
   }
 }
 
 Vulkan::~Vulkan() {
-  Logger::Infof("shutting down Vulkan.");
-  Cleanup();
 }
 
-const bool Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {
+const void Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {
   // list GPUs
   uint32_t deviceCount = 0;
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkEnumeratePhysicalDevices.html
@@ -266,11 +325,10 @@ const bool Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {
     // it must meet certain minimum requirements
     if (i == requiredDeviceIndex && discrete && geometry) {
       physicalDevice = device;
-      return true;
+      return;
     }
   }
-  Logger::Debugf("  missing device index %d", requiredDeviceIndex);
-  return false;
+  Logger::Debugf("  missing physical device index %d", requiredDeviceIndex);
 }
 
 void Vulkan::LocateQueueFamilies() {
@@ -343,8 +401,7 @@ void Vulkan::LocateQueueFamilies() {
   Logger::Debugf("  selected: graphics: %u, present: %u", pdqs.graphics.index, pdqs.present.index);
 }
 
-const bool Vulkan::CheckPhysicalDeviceExtensions(
-    const std::vector<const char*> requiredExtensions) const {
+const bool Vulkan::CheckPhysicalDeviceExtensions() const {
   // list the extensions supported by this physical device
   uint32_t extensionCount;
   if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr) !=
@@ -368,7 +425,7 @@ const bool Vulkan::CheckPhysicalDeviceExtensions(
   Logger::Debugf("required device extensions:");
   // validate the required extensions are all found
   bool found;
-  for (const auto& required : requiredExtensions) {
+  for (const auto& required : requiredPhysicalDeviceExtensions) {
     found = false;
     for (const auto& extension : supportedExtensions) {
       if (strcmp(required, extension.extensionName) == 0) {
@@ -384,10 +441,10 @@ const bool Vulkan::CheckPhysicalDeviceExtensions(
   return allRequiredSupported;
 }
 
-const bool Vulkan::CheckSwapChainSupport() {
-  const std::vector<const char*> requiredPhysicalDeviceExtensions = {
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-  const bool extensionsSupported = CheckPhysicalDeviceExtensions(requiredPhysicalDeviceExtensions);
+const void Vulkan::AssertSwapChainSupport() {
+  requiredPhysicalDeviceExtensions.resize(1);
+  requiredPhysicalDeviceExtensions[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+  const bool extensionsSupported = CheckPhysicalDeviceExtensions();
   if (!extensionsSupported) {
     throw Logger::Errorf("Missing VK_KHR_swapchain extension on physical device.");
   }
@@ -438,13 +495,14 @@ const bool Vulkan::CheckSwapChainSupport() {
     }
   }
 
-  return extensionsSupported && !swapChainSupport.formats.empty() &&
-         !swapChainSupport.presentModes.empty();
+  bool supported = extensionsSupported && !swapChainSupport.formats.empty() &&
+                   !swapChainSupport.presentModes.empty();
+  if (!supported) {
+    throw mks::Logger::Errorf("Missing swap chain support on physical device.");
+  }
 }
 
-void Vulkan::UseLogicalDevice(
-    const std::vector<const char*> requiredValidationLayers,
-    std::vector<const char*> requiredPhysicalDeviceExtensions) {
+void Vulkan::UseLogicalDevice() {
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
   }
@@ -589,6 +647,9 @@ void Vulkan::CreateSwapChain() {
   if (!found2) {
     mode = VK_PRESENT_MODE_FIFO_KHR;
   }
+
+  // TODO: Need support for macOS retina displays which means the surface resolution will be
+  // larger than the window resolution.
 
   // TODO: these bounds need to be restricted within the maximum capability of the surface and
   // device, whichever is smaller. Unfortunately I was not able to make that work using
@@ -792,12 +853,15 @@ void Vulkan::CreateGraphicsPipeline() {
   dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
   dynamicState.pDynamicStates = dynamicStates.data();
 
+  auto bindingDescription = Vertex::getBindingDescription();
+  auto attributeDescriptions = Vertex::getAttributeDescriptions();
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputInfo.vertexBindingDescriptionCount = 0;
-  vertexInputInfo.pVertexBindingDescriptions = nullptr;  // Optional
-  vertexInputInfo.vertexAttributeDescriptionCount = 0;
-  vertexInputInfo.pVertexAttributeDescriptions = nullptr;  // Optional
+  vertexInputInfo.vertexBindingDescriptionCount = 1;
+  vertexInputInfo.vertexAttributeDescriptionCount =
+      static_cast<uint32_t>(attributeDescriptions.size());
+  vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;             // Optional
+  vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();  // Optional
 
   // specify what kind of geometry will be drawn from the vertices, and
   // if primitive restart should be enabled.
@@ -1040,6 +1104,13 @@ void Vulkan::CreateSyncObjects() {
   }
 }
 
+void Vulkan::CreateBullshitVertices() {
+  const std::vector<Vertex> vertices = {
+      {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+      {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+      {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+}
+
 void Vulkan::DrawFrame() {
   if (vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX) !=
       VK_SUCCESS) {
@@ -1163,6 +1234,8 @@ void Vulkan::CleanupSwapChain() {
 }
 
 void Vulkan::Cleanup() {
+  Logger::Infof("shutting down Vulkan.");
+
   if (instance) {
     if (logicalDevice) {
       CleanupSwapChain();

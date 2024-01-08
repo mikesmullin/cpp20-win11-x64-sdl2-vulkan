@@ -36,64 +36,35 @@ void Window::init() {
     throw mks::Logger::Errorf("Failed to create window");
   }
 
-  SDL_Surface* window_surface = SDL_GetWindowSurface(window);
-  if (!window_surface) {
-    throw mks::Logger::Errorf("Failed to get the surface from the window");
-  }
-
-  // TODO: bind vulkan to sdl window handle
-  bool supported = false;
-
-#ifdef DEBUG_VULKAN
-  // list required validation layers, according to developer debug preferences
-  const std::vector<const char*> requiredValidationLayers = {
-      // all of the useful standard validation is bundled into a layer included in the SDK
-      "VK_LAYER_KHRONOS_validation"};
-  supported = mks::Vulkan::CheckInstanceLayers(requiredValidationLayers);
-  if (!supported) {
-    throw mks::Logger::Errorf("Missing required Vulkan validation layers.");
-  }
-
-  // TODO: Device-specific layer validation is deprecated. However,
-  //   the specification document still recommends that you enable validation layers at device
-  //   level as well for compatibility, and it's required by some implementations. we'll see this
-  //   code later on:
-  //   https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Logical_device_and_queues
-#endif
-
   // list required extensions, according to SDL window manager
   unsigned int extensionCount = 0;
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
   std::vector<const char*> requiredExtensionNames(extensionCount);
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, requiredExtensionNames.data());
 
-  supported = mks::Vulkan::CheckInstanceExtensions(requiredExtensionNames);
-  if (!supported) {
-    throw mks::Logger::Errorf("Vulkan driver is missing required Vulkan extensions.");
-  }
+  const std::vector<const char*> requiredValidationLayers = {
+      // all of the useful standard validation is bundled into a layer included in the SDK
+      "VK_LAYER_KHRONOS_validation"};
 
   auto v = mks::Vulkan{"Vulkan_test", 1, 0, 0, requiredValidationLayers, requiredExtensionNames};
 
-  supported = v.UsePhysicalDevice(0);
-  if (!supported) {
-    throw mks::Logger::Errorf("Missing required Vulkan-compatible physical device.");
-  }
+  v.AssertDriverValidationLayersSupported();
+  v.AssertDriverExtensionsSupported(requiredExtensionNames);
+  v.UsePhysicalDevice(0);
 
+  // ask SDL to bind our Vulkan surface to the window surface
+  SDL_Surface* window_surface = SDL_GetWindowSurface(window);
+  if (!window_surface) {
+    throw mks::Logger::Errorf("Failed to get the surface from the window");
+  }
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
   int width, height = 0;
   SDL_Vulkan_GetDrawableSize(window, &width, &height);
   v.width = static_cast<uint32_t>(width);
   v.height = static_cast<uint32_t>(height);
 
-  const std::vector<const char*> requiredPhysicalDeviceExtensions = {
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-  supported = v.CheckSwapChainSupport();
-  if (!supported) {
-    throw mks::Logger::Errorf("Missing swap chain support on physical device.");
-  }
-
-  v.UseLogicalDevice(requiredValidationLayers, requiredPhysicalDeviceExtensions);
-
+  v.AssertSwapChainSupport();
+  v.UseLogicalDevice();
   v.CreateSwapChain();
   v.CreateImageViews();
   v.CreateRenderPass();
@@ -157,6 +128,7 @@ void Window::init() {
   }
 
   v.DeviceWaitIdle();
+  v.Cleanup();
 
   SDL_DestroyWindow(window);
 }
