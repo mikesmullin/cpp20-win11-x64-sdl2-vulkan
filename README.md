@@ -10,7 +10,7 @@
 1. Start > Run... > "x64 Native Tools Command Prompt for VS 2022"
 2. Build with Makefile
    ```
-   cd "C:\Users\mikes\Desktop\Desktop\Making_Games\Game4\"
+   cd "C:\Users\mikes\Desktop\Desktop\Making_Games\Game5\Code\"
    nmake all
    ```
 
@@ -18,7 +18,7 @@
 1. Start > Run... > "x64 Native Tools Command Prompt for VS 2022"
 2. Open in VSCode
    ```
-   cd "C:\Users\mikes\Desktop\VulkanGame"
+   cd "C:\Users\mikes\Desktop\Desktop\Making_Games\Game5\Code\"
    vscode .
    ```
 4. Debug from within VSCode buttons (ie. `.vscode/tasks.json`)
@@ -29,6 +29,15 @@
   https://discord.gg/2XuShqjC
 - Discord: Global Game Jam (Jan 30th - Feb 5th, 2023)  
   https://discord.gg/ggj
+
+## Screenshot
+![screenshot](docs/imgs/screenshot1.png)
+
+## Test files:
+- [tests/lib/Audio_test.cpp](tests/lib/Audio_test.cpp)
+- [tests/lib/Gamepad_test.cpp](tests/lib/Gamepad_test.cpp)
+- [tests/lib/Vulkan_test.cpp](tests/lib/Vulkan_test.cpp)
+- [tests/lib/Window_test.cpp](tests/lib/Window_test.cpp)
 
 ## Credits
 
@@ -52,8 +61,6 @@ This project was inspired by the following materials:
   https://github.com/mikesmullin/cpp11-14-17-examples/blob/master/README.md
 
 ## TODO
-
-- finish https://wiki.libsdl.org/SDL2/SDL_Vulkan_GetInstanceExtensions
 
 - learn to use RenderDoc and nVidia nSight Graphics to profile Vulkan
   - learn how to name objects for debugging in RenderDoc
