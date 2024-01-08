@@ -135,11 +135,16 @@ class Vulkan {
   void CreateSyncObjects();
   void DrawFrame();
   void DeviceWaitIdle();
+  void RecreateSwapChain();
+  void CleanupSwapChain();
+  void Cleanup();
 
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = 0;
   PhysicalDeviceQueues pdqs = PhysicalDeviceQueues{};
   uint32_t width, height = 0;
+  bool framebufferResized = false;
+  bool minimized = false;
 
  private:
   uint8_t currentFrame = 0;

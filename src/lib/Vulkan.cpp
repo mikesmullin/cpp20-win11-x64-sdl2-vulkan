@@ -1,5 +1,7 @@
 #include "Vulkan.hpp"
 
+#include <cstdint>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <algorithm>
@@ -210,48 +212,7 @@ Vulkan::Vulkan(
 
 Vulkan::~Vulkan() {
   Logger::Infof("shutting down Vulkan.");
-  if (instance) {
-    if (logicalDevice) {
-      for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if (renderFinishedSemaphores[i]) {
-          vkDestroySemaphore(logicalDevice, renderFinishedSemaphores[i], nullptr);
-        }
-        if (imageAvailableSemaphores[i]) {
-          vkDestroySemaphore(logicalDevice, imageAvailableSemaphores[i], nullptr);
-        }
-        if (inFlightFences[i]) {
-          vkDestroyFence(logicalDevice, inFlightFences[i], nullptr);
-        }
-      }
-      if (commandPool) {
-        vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
-      }
-      for (auto framebuffer : swapChainFramebuffers) {
-        vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
-      }
-      if (graphicsPipeline) {
-        vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
-      }
-      if (pipelineLayout) {
-        vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
-      }
-      if (renderPass) {
-        vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
-      }
-      if (swapChain) {
-        for (auto imageView : swapChainImageViews) {
-          vkDestroyImageView(logicalDevice, imageView, nullptr);
-        }
-        vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
-      }
-      vkDestroyDevice(logicalDevice, nullptr);
-      if (surface) {
-        vkDestroySurfaceKHR(instance, surface, nullptr);
-      }
-    }
-    // NOTICE: physicalDevice is destroyed implicitly with instance.
-    vkDestroyInstance(instance, nullptr);
-  }
+  Cleanup();
 }
 
 const bool Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {
@@ -629,19 +590,15 @@ void Vulkan::CreateSwapChain() {
     mode = VK_PRESENT_MODE_FIFO_KHR;
   }
 
+  // TODO: these bounds need to be restricted within the maximum capability of the surface and
+  // device, whichever is smaller. Unfortunately I was not able to make that work using
+  // swapChainSupport.capabilities because (min|max)ImageExtent always returns the current bounds,
+  // which is not helpful. In the event that Vulkan notifies us of a surface change, which is not
+  // preceded by an SDL resize event. (e.g.,. color-depth change?) Then we are missing a function to
+  // determine the new bounds. So we risk a crash here!
   VkExtent2D extent;
-  if (swapChainSupport.capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
-    extent = swapChainSupport.capabilities.currentExtent;
-  } else {
-    extent.width = std::clamp(
-        width,
-        swapChainSupport.capabilities.minImageExtent.width,
-        swapChainSupport.capabilities.maxImageExtent.width);
-    extent.height = std::clamp(
-        height,
-        swapChainSupport.capabilities.minImageExtent.height,
-        swapChainSupport.capabilities.maxImageExtent.height);
-  }
+  extent.width = width;
+  extent.height = height;
 
   const uint32_t imageCount = std::clamp(
       swapChainSupport.capabilities.minImageCount + 1,
@@ -704,14 +661,11 @@ void Vulkan::CreateSwapChain() {
   swapChainImageFormat = format.format;
   swapChainExtent = extent;
 
-  Logger::Debugf("swap chain:");
   Logger::Debugf(
-      "  width: %u, height: %u, imageCount: %u",
+      "swap chain:\n  width: %u, height: %u, imageCount: %u",
       extent.width,
       extent.height,
       receivedImageCount);
-
-  CreateImageViews();
 }
 
 void Vulkan::CreateShaderModule(const std::vector<char>& code, VkShaderModule* shaderModule) const {
@@ -1005,7 +959,7 @@ void Vulkan::CreateCommandBuffers() {
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocInfo.commandPool = commandPool;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+  allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
   if (vkAllocateCommandBuffers(logicalDevice, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
     throw Logger::Errorf("vkAllocateCommandBuffers failed.");
@@ -1091,20 +1045,31 @@ void Vulkan::DrawFrame() {
       VK_SUCCESS) {
     throw Logger::Errorf("vkWaitForFences failed.");
   }
-  if (vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]) != VK_SUCCESS) {
-    throw Logger::Errorf("vkResetFences failed.");
-  }
 
   uint32_t imageIndex;
-  if (vkAcquireNextImageKHR(
-          logicalDevice,
-          swapChain,
-          UINT64_MAX,
-          imageAvailableSemaphores[currentFrame],
-          VK_NULL_HANDLE,
-          &imageIndex) != VK_SUCCESS) {
+  VkResult result = vkAcquireNextImageKHR(
+      logicalDevice,
+      swapChain,
+      UINT64_MAX,
+      imageAvailableSemaphores[currentFrame],
+      VK_NULL_HANDLE,
+      &imageIndex);
+
+  // detect window surface changed (ie. resized, color depth)
+  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    // If the swap chain turns out to be out of date when attempting to acquire an image,
+    // then it is no longer possible to present to it.
+    // Therefore we should immediately recreate the swap chain
+    RecreateSwapChain();
+    // and try again in the next drawFrame call.
+    return;
+  } else if (result != VK_SUCCESS) {
     throw Logger::Errorf("vkAcquireNextImageKHR failed.");
   }
+
+  // NOTICE: Fence will deadlock if waiting on an empty work queue.
+  // Therefore, we only reset the fence just prior to submitting work.
+  vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 
   if (vkResetCommandBuffer(commandBuffers[currentFrame], 0) != VK_SUCCESS) {
     throw Logger::Errorf("vkResetCommandBuffer failed.");
@@ -1143,14 +1108,21 @@ void Vulkan::DrawFrame() {
   presentInfo.pImageIndices = &imageIndex;
   presentInfo.pResults = nullptr;
   bool same = pdqs.graphics.index.value() == pdqs.present.index.value();
+  VkQueue queue;
+  const char* err1;
   if (same) {
-    if (vkQueuePresentKHR(pdqs.graphics.queue, &presentInfo) != VK_SUCCESS) {
-      throw Logger::Errorf("vkQueuePresentKHR same failed.");
-    }
+    queue = pdqs.graphics.queue;
+    err1 = "vkQueuePresentKHR same failed.";
   } else {
-    if (vkQueuePresentKHR(pdqs.present.queue, &presentInfo) != VK_SUCCESS) {
-      throw Logger::Errorf("vkQueuePresentKHR !same failed.");
-    }
+    queue = pdqs.present.queue;
+    err1 = "vkQueuePresentKHR !same failed.";
+  }
+  VkResult result2 = vkQueuePresentKHR(queue, &presentInfo);
+  if (result2 == VK_ERROR_OUT_OF_DATE_KHR || result2 == VK_SUBOPTIMAL_KHR || framebufferResized) {
+    framebufferResized = false;
+    RecreateSwapChain();
+  } else if (result2 != VK_SUCCESS) {
+    throw Logger::Errorf(err1);
   }
 
   currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -1158,6 +1130,81 @@ void Vulkan::DrawFrame() {
 
 void Vulkan::DeviceWaitIdle() {
   vkDeviceWaitIdle(logicalDevice);
+}
+
+void Vulkan::RecreateSwapChain() {
+  // TODO: the disadvantage of this approach is that we need to stop all rendering before creating
+  // the new swap chain. It is possible to create a new swap chain while drawing commands on an
+  // image from the old swap chain are still in-flight. You need to pass the previous swap chain to
+  // the oldSwapChain field in the VkSwapchainCreateInfoKHR struct and destroy the old swap chain as
+  // soon as you've finished using it.
+
+  DeviceWaitIdle();
+
+  CleanupSwapChain();
+
+  CreateSwapChain();
+  CreateImageViews();
+  CreateFrameBuffers();
+}
+
+void Vulkan::CleanupSwapChain() {
+  if (instance && logicalDevice && swapChain) {
+    for (auto framebuffer : swapChainFramebuffers) {
+      vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+    }
+
+    for (auto imageView : swapChainImageViews) {
+      vkDestroyImageView(logicalDevice, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(logicalDevice, swapChain, nullptr);
+  }
+}
+
+void Vulkan::Cleanup() {
+  if (instance) {
+    if (logicalDevice) {
+      CleanupSwapChain();
+
+      if (graphicsPipeline) {
+        vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
+      }
+      if (pipelineLayout) {
+        vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
+      }
+      if (renderPass) {
+        vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
+      }
+
+      for (uint8_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        if (renderFinishedSemaphores[i]) {
+          vkDestroySemaphore(logicalDevice, renderFinishedSemaphores[i], nullptr);
+        }
+        if (imageAvailableSemaphores[i]) {
+          vkDestroySemaphore(logicalDevice, imageAvailableSemaphores[i], nullptr);
+        }
+        if (inFlightFences[i]) {
+          vkDestroyFence(logicalDevice, inFlightFences[i], nullptr);
+        }
+      }
+      if (commandPool) {
+        vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+      }
+
+      vkDestroyDevice(logicalDevice, nullptr);
+
+      // if (enableValidationLayers) {
+      //     DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+      // }
+
+      if (surface) {
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+      }
+    }
+    // NOTICE: physicalDevice is destroyed implicitly with instance.
+    vkDestroyInstance(instance, nullptr);
+  }
 }
 
 }  // namespace mks

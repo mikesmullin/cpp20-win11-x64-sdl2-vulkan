@@ -39,7 +39,8 @@ This project was inspired by the following materials:
 - Brendan's Vulkan Game Engine  
   https://github.com/blurrypiano/littleVulkanEngine
 - Official Vulkan Tutorial  
-  https://vulkan-tutorial.com/Introduction
+  https://vulkan-tutorial.com/Introduction  
+  https://github.com/Overv/VulkanTutorial/tree/main/code
 - Official Vulkan Sample Code  
   https://github.com/KhronosGroup/Vulkan-Samples
 - Vulkan API Discussion  
@@ -53,6 +54,10 @@ This project was inspired by the following materials:
 ## TODO
 
 - finish https://wiki.libsdl.org/SDL2/SDL_Vulkan_GetInstanceExtensions
+
+- learn to use RenderDoc and nVidia nSight Graphics to profile Vulkan
+  - learn how to name objects for debugging in RenderDoc
+    https://www.saschawillems.de/blog/2016/05/28/tutorial-on-using-vulkans-vk_ext_debug_marker-with-renderdoc/
 
 - Understand whether to adopt the DAG/terraform type of interface for my Vulkan wrapper
   - learn how to draw a complex scene while reducing draw calls

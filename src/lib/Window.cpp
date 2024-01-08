@@ -1,5 +1,7 @@
 #include "Window.hpp"
 
+#include <cstdint>
+
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_vulkan.h>
@@ -29,7 +31,7 @@ void Window::init() {
       SDL_WINDOWPOS_CENTERED,
       800,
       600,
-      SDL_WINDOW_VULKAN /* | SDL_WINDOW_SHOWN*/);
+      SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_SHOWN*/);
   if (!window) {
     throw mks::Logger::Errorf("Failed to create window");
   }
@@ -93,6 +95,7 @@ void Window::init() {
   v.UseLogicalDevice(requiredValidationLayers, requiredPhysicalDeviceExtensions);
 
   v.CreateSwapChain();
+  v.CreateImageViews();
   v.CreateRenderPass();
   v.CreateGraphicsPipeline();
   v.CreateFrameBuffers();
@@ -111,7 +114,26 @@ void Window::init() {
     // input handling
     while (SDL_PollEvent(&e) > 0) {
       switch (e.type) {
-          // TODO: implement window resizing
+        case SDL_WINDOWEVENT:
+          switch (e.window.event) {
+            case SDL_WINDOWEVENT_MINIMIZED:
+              v.minimized = true;
+              break;
+
+            case SDL_WINDOWEVENT_RESTORED:
+              v.minimized = false;
+              break;
+
+            // case SDL_WINDOWEVENT_MAXIMIZED:
+            // case SDL_WINDOWEVENT_RESIZED:
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+              v.width = e.window.data1;
+              v.height = e.window.data2;
+              v.minimized = false;
+              v.framebufferResized = true;
+              break;
+          }
+          break;
 
         case SDL_QUIT:
           quit = true;
@@ -122,7 +144,9 @@ void Window::init() {
     }
 
     // rendering
-    v.DrawFrame();
+    if (!v.minimized) {
+      v.DrawFrame();
+    }
 
     // frame rate limiter
     auto frameEnd = std::chrono::high_resolution_clock::now();
