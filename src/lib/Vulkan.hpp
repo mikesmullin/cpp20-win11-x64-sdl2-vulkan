@@ -147,6 +147,7 @@ class Vulkan {
       VkDeviceMemory& bufferMemory);
   void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
   void CreateVertexBuffer();
+  void CreateIndexBuffer();
   uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
   void DrawFrame();
   void DeviceWaitIdle();
@@ -183,6 +184,8 @@ class Vulkan {
   std::vector<VkFence> inFlightFences;
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;
+  VkBuffer indexBuffer;
+  VkDeviceMemory indexBufferMemory;
 };
 
 }  // namespace mks
