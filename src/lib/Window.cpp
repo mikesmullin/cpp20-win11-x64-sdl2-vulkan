@@ -77,6 +77,8 @@ void Window::init() {
   v.CreateCommandBuffers();
   v.CreateSyncObjects();
 
+  v.CreateVertexBuffer();
+
   const int FPS = 60;  // Target frames per second
   const std::chrono::duration<double, std::milli> frameDelay(1000.0 / FPS);
 
