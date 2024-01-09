@@ -36,15 +36,18 @@ void Window::init() {
     throw mks::Logger::Errorf("Failed to create window");
   }
 
+  const std::vector<const char*> requiredValidationLayers = {
+      // all of the useful standard validation is bundled into a layer included in the SDK
+      "VK_LAYER_KHRONOS_validation"};
+
   // list required extensions, according to SDL window manager
   unsigned int extensionCount = 0;
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
   std::vector<const char*> requiredExtensionNames(extensionCount);
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, requiredExtensionNames.data());
 
-  const std::vector<const char*> requiredValidationLayers = {
-      // all of the useful standard validation is bundled into a layer included in the SDK
-      "VK_LAYER_KHRONOS_validation"};
+  const std::vector<const char*> requiredPhysicalDeviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
   auto v = mks::Vulkan{"Vulkan_test", 1, 0, 0, requiredValidationLayers, requiredExtensionNames};
 
@@ -63,8 +66,8 @@ void Window::init() {
   v.width = static_cast<uint32_t>(width);
   v.height = static_cast<uint32_t>(height);
 
-  v.AssertSwapChainSupport();
-  v.UseLogicalDevice();
+  v.AssertSwapChainSupport(requiredPhysicalDeviceExtensions);
+  v.UseLogicalDevice(requiredPhysicalDeviceExtensions);
   v.CreateSwapChain();
   v.CreateImageViews();
   v.CreateRenderPass();

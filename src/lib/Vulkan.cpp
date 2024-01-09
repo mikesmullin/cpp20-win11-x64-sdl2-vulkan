@@ -401,7 +401,8 @@ void Vulkan::LocateQueueFamilies() {
   Logger::Debugf("  selected: graphics: %u, present: %u", pdqs.graphics.index, pdqs.present.index);
 }
 
-const bool Vulkan::CheckPhysicalDeviceExtensions() const {
+const bool Vulkan::CheckPhysicalDeviceExtensions(
+    std::vector<const char*> requiredPhysicalDeviceExtensions) const {
   // list the extensions supported by this physical device
   uint32_t extensionCount;
   if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr) !=
@@ -441,10 +442,9 @@ const bool Vulkan::CheckPhysicalDeviceExtensions() const {
   return allRequiredSupported;
 }
 
-const void Vulkan::AssertSwapChainSupport() {
-  requiredPhysicalDeviceExtensions.resize(1);
-  requiredPhysicalDeviceExtensions[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
-  const bool extensionsSupported = CheckPhysicalDeviceExtensions();
+const void Vulkan::AssertSwapChainSupport(
+    std::vector<const char*> requiredPhysicalDeviceExtensions) {
+  const bool extensionsSupported = CheckPhysicalDeviceExtensions(requiredPhysicalDeviceExtensions);
   if (!extensionsSupported) {
     throw Logger::Errorf("Missing VK_KHR_swapchain extension on physical device.");
   }
@@ -502,7 +502,7 @@ const void Vulkan::AssertSwapChainSupport() {
   }
 }
 
-void Vulkan::UseLogicalDevice() {
+void Vulkan::UseLogicalDevice(std::vector<const char*> requiredPhysicalDeviceExtensions) {
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
   }

@@ -105,25 +105,23 @@ class Vulkan {
    */
   void LocateQueueFamilies();
 
-  // list physical device extensions, according to developer preference
-  std::vector<const char*> requiredPhysicalDeviceExtensions;
-
   /**
    * Verify required extensions are present on current physical device.
    *
    * @return - Whether support was found for all in list.
    */
-  const bool CheckPhysicalDeviceExtensions() const;
+  const bool CheckPhysicalDeviceExtensions(
+      std::vector<const char*> requiredPhysicalDeviceExtensions) const;
 
   /**
    * Verify whether physical device supports Swap Chain feature.
    */
-  const void AssertSwapChainSupport();
+  const void AssertSwapChainSupport(std::vector<const char*> requiredPhysicalDeviceExtensions);
 
   /**
    * Set the current logical device, which will use the current physical device.
    */
-  void UseLogicalDevice();
+  void UseLogicalDevice(std::vector<const char*> requiredPhysicalDeviceExtensions);
 
   /**
    * Construct the swap chain.
