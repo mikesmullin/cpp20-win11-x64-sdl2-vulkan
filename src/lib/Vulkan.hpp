@@ -134,6 +134,7 @@ class Vulkan {
   void CreateImageViews();
   void CreateRenderPass();
   void CreateGraphicsPipeline();
+  void CreateDescriptorSetLayout();
   void CreateFrameBuffers();
   void CreateCommandPool();
   void CreateCommandBuffers();
@@ -148,6 +149,10 @@ class Vulkan {
   void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
   void CreateVertexBuffer();
   void CreateIndexBuffer();
+  void CreateUniformBuffers();
+  void UpdateUniformBuffer(uint32_t currentImage);
+  void CreateDescriptorPool();
+  void CreateDescriptorSets();
   uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
   void DrawFrame();
   void DeviceWaitIdle();
@@ -174,6 +179,7 @@ class Vulkan {
   VkExtent2D swapChainExtent = {};
   std::vector<VkImageView> swapChainImageViews = {};
   VkRenderPass renderPass = {};
+  VkDescriptorSetLayout descriptorSetLayout;
   VkPipelineLayout pipelineLayout = {};
   VkPipeline graphicsPipeline = {};
   std::vector<VkFramebuffer> swapChainFramebuffers = {};
@@ -186,6 +192,11 @@ class Vulkan {
   VkDeviceMemory vertexBufferMemory;
   VkBuffer indexBuffer;
   VkDeviceMemory indexBufferMemory;
+  std::vector<VkBuffer> uniformBuffers;
+  std::vector<VkDeviceMemory> uniformBuffersMemory;
+  std::vector<void*> uniformBuffersMapped;
+  VkDescriptorPool descriptorPool;
+  std::vector<VkDescriptorSet> descriptorSets;
 };
 
 }  // namespace mks
