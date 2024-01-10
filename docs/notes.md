@@ -14,4 +14,8 @@ graph TD
   Framebuffer --> Attachment
   ImageView --> Image
   CommandBuffer --> RenderPass
+
+  DescriptorLayout -->|specified during creation of| Pipeline
+  DescriptorPool -->|allocates| DescriptorSet
+  DescriptorSet -->|binds to| Pipeline
 ```
