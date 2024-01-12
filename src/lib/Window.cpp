@@ -75,14 +75,16 @@ void Window::init() {
   v.CreateGraphicsPipeline();
   v.CreateFrameBuffers();
   v.CreateCommandPool();
-  v.CreateCommandBuffers();
-  v.CreateSyncObjects();
-
+  v.CreateTextureImage();
+  v.CreateTextureImageView();
+  v.CreateTextureSampler();
   v.CreateVertexBuffer();
   v.CreateIndexBuffer();
   v.CreateUniformBuffers();
   v.CreateDescriptorPool();
   v.CreateDescriptorSets();
+  v.CreateCommandBuffers();
+  v.CreateSyncObjects();
 
   const int FPS = 60;  // Target frames per second
   const std::chrono::duration<double, std::milli> frameDelay(1000.0 / FPS);

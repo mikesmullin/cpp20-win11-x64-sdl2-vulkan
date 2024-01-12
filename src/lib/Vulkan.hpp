@@ -146,7 +146,12 @@ class Vulkan {
       VkMemoryPropertyFlags properties,
       VkBuffer& buffer,
       VkDeviceMemory& bufferMemory);
+  VkCommandBuffer BeginSingleTimeCommands();
+  void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
   void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+  void TransitionImageLayout(
+      VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+  void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
   void CreateVertexBuffer();
   void CreateIndexBuffer();
   void CreateUniformBuffers();
@@ -154,6 +159,19 @@ class Vulkan {
   void CreateDescriptorPool();
   void CreateDescriptorSets();
   uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+  void CreateTextureImage();
+  void CreateTextureImageView();
+  void CreateTextureSampler();
+  VkImageView CreateImageView(VkImage image, VkFormat format);
+  void CreateImage(
+      uint32_t width,
+      uint32_t height,
+      VkFormat format,
+      VkImageTiling tiling,
+      VkImageUsageFlags usage,
+      VkMemoryPropertyFlags properties,
+      VkImage& image,
+      VkDeviceMemory& imageMemory);
   void DrawFrame();
   void DeviceWaitIdle();
   void RecreateSwapChain();
@@ -197,6 +215,10 @@ class Vulkan {
   std::vector<void*> uniformBuffersMapped;
   VkDescriptorPool descriptorPool;
   std::vector<VkDescriptorSet> descriptorSets;
+  VkImage textureImage;
+  VkDeviceMemory textureImageMemory;
+  VkImageView textureImageView;
+  VkSampler textureSampler;
 };
 
 }  // namespace mks

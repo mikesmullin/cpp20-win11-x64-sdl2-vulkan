@@ -10,7 +10,8 @@ INCLUDE_PATHS = \
 	/I ../vendor/sdl-2.26.1/include \
 	/I ../vendor/sdl-mixer-2.6.2/include \
 	/I ../vendor/glm-0.9.9.8 \
-	/I ../vendor/tinyobjloader/include
+	/I ../vendor/tinyobjloader/include \
+	/I ../vendor/stb
 LIBS = user32.lib shell32.lib gdi32.lib
 LIB_PATHS = \
 	/LIBPATH:../vendor/sdl-2.26.1/lib/x64 SDL2.lib \
