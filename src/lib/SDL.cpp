@@ -10,7 +10,7 @@ SDL::SDL() {
 }
 
 SDL::~SDL() {
-  mks::Logger::Infof("shutting down SDL.");
+  // mks::Logger::Infof("shutting down SDL.");
   SDL_Quit();
 }
 
@@ -43,6 +43,7 @@ void SDL::enableVideo() {
   this->useVideo = true;
 }
 
+// NOTICE: this means any process compiled with this .cpp in scope will have this instantiated
 SDL SDL::defaultInstance = SDL{};
 
 }  // namespace mks

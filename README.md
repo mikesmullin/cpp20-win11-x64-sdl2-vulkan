@@ -60,6 +60,19 @@ This project was inspired by the following materials:
 - My notes on C++  
   https://github.com/mikesmullin/cpp11-14-17-examples/blob/master/README.md
 
+## Dependencies
+- Google Protobuf  
+  https://github.com/protocolbuffers/protobuf/releases
+  - installed with vcpkg https://vcpkg.io/en/getting-started
+  ```
+  C:\> vcpkg install protobuf protobuf:x64-windows
+  ```
+  - legend for file extensions:
+    - `.proto`: schema (proto3) language-agnostic input code
+    - `.pb.{h,cc}`: schema output cpp implementation code
+    - `.pb`: json-like protobuf text-based input format (human-readable data)
+    - `.bin`: encoded protobuf binary output format (machine-readable data)
+
 ## TODO
 
 - learn to use RenderDoc and nVidia nSight Graphics to profile Vulkan
@@ -74,3 +87,6 @@ This project was inspired by the following materials:
     - Scene Graph Rendering Optimization
     - Batching and Instancing
     - Multi-threaded Rendering
+
+
+

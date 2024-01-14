@@ -11,19 +11,29 @@ INCLUDE_PATHS = \
 	/I ../vendor/sdl-mixer-2.6.2/include \
 	/I ../vendor/glm-0.9.9.8 \
 	/I ../vendor/tinyobjloader/include \
-	/I ../vendor/stb
+	/I ../vendor/stb \
+	/I ../vendor/protobuf-25.2/include
 LIBS = user32.lib shell32.lib gdi32.lib
 LIB_PATHS = \
 	/LIBPATH:../vendor/sdl-2.26.1/lib/x64 SDL2.lib \
 	/LIBPATH:../vendor/sdl-mixer-2.6.2/lib/x64 SDL2_mixer.lib \
-	/LIBPATH:C:/VulkanSDK/1.3.236.0/Lib vulkan-1.lib
+	/LIBPATH:C:/VulkanSDK/1.3.236.0/Lib vulkan-1.lib \
+	/LIBPATH:../vendor/protobuf-25.2/x64 libprotobuf-lite.lib
 LINKER_ARGS = \
 	/NODEFAULTLIB:MSVCRT
 IMPORTS = \
 	../src/components/*.cpp \
-	../src/lib/*.cpp
+	../src/lib/*.cpp \
+	../src/proto/*.cc
 
 all: clean shaders cpp run
+
+.PHONY: protobuf
+protobuf:
+	cd assets\proto
+	..\..\vendor\protobuf-25.2\tools\protoc.exe --cpp_out=..\..\src\proto\ addressbook.proto
+	type addressbook.pb | ..\..\vendor\protobuf-25.2\tools\protoc.exe --encode tutorial.AddressBook addressbook.proto > addressbook.bin
+#	..\..\vendor\protobuf-25.2\tools\protoc.exe --help
 
 .PHONY: shaders
 shaders:
@@ -35,7 +45,8 @@ shaders:
 copy_dlls:
 	cd $(BUILD_DIR) && \
 	copy ..\\vendor\\sdl-2.26.1\\lib\\x64\\SDL2.dll . && \
-	copy ..\\vendor\\sdl-mixer-2.6.2\\lib\\x64\\SDL2_mixer.dll .
+	copy ..\\vendor\\sdl-mixer-2.6.2\\lib\\x64\\SDL2_mixer.dll . && \
+	copy ..\\vendor\\protobuf-25.2\\x64\\libprotobuf-lite.dll .
 
 BIN1=game.exe
 .PHONY: cpp
@@ -95,7 +106,7 @@ gamepad_test: clean copy_dlls shaders
 	$(BIN3)
 
 .PHONY: window_test
-BIN3=Window_test.exe
+BIN4=Window_test.exe
 window_test: clean copy_dlls shaders
 	cd $(BUILD_DIR) && \
 	$(CL_BIN) \
@@ -103,14 +114,14 @@ window_test: clean copy_dlls shaders
 	$(INCLUDE_PATHS) \
 	../tests/lib/Window_test.cpp \
 	$(IMPORTS) \
-	/Fe$(BIN3) \
+	/Fe$(BIN4) \
 	/link $(LIBS) \
 	$(LINKER_ARGS) \
 	$(LIB_PATHS) && \
-	$(BIN3)
+	$(BIN4)
 
 .PHONY: vulkan_test
-BIN3=Vulkan_test.exe
+BIN5=Vulkan_test.exe
 vulkan_test: clean copy_dlls shaders
 	cd $(BUILD_DIR) && \
 	$(CL_BIN) \
@@ -118,8 +129,23 @@ vulkan_test: clean copy_dlls shaders
 	$(INCLUDE_PATHS) \
 	../tests/lib/Vulkan_test.cpp \
 	$(IMPORTS) \
-	/Fe$(BIN3) \
+	/Fe$(BIN5) \
 	/link $(LIBS) \
 	$(LINKER_ARGS) \
 	$(LIB_PATHS) && \
-	$(BIN3)
+	$(BIN5)
+
+.PHONY: protobuf_test
+BIN6=Protobuf_test.exe
+protobuf_test: clean copy_dlls
+	cd $(BUILD_DIR) && \
+	$(CL_BIN) \
+	$(CL_ARGS) \
+	$(INCLUDE_PATHS) \
+	../tests/lib/Protobuf_test.cpp \
+	$(IMPORTS) \
+	/Fe$(BIN6) \
+	/link $(LIBS) \
+	$(LINKER_ARGS) \
+	$(LIB_PATHS) && \
+	$(BIN6)
