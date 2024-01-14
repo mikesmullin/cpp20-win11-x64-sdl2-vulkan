@@ -34,10 +34,7 @@
 ![screenshot](docs/imgs/screenshot1.png)
 
 ## Test files:
-- [tests/lib/Audio_test.cpp](tests/lib/Audio_test.cpp)
-- [tests/lib/Gamepad_test.cpp](tests/lib/Gamepad_test.cpp)
-- [tests/lib/Vulkan_test.cpp](tests/lib/Vulkan_test.cpp)
-- [tests/lib/Window_test.cpp](tests/lib/Window_test.cpp)
+- [tests/lib/](tests/lib/)
 
 ## Credits
 
