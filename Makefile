@@ -12,13 +12,15 @@ INCLUDE_PATHS = \
 	/I ../vendor/glm-0.9.9.8 \
 	/I ../vendor/tinyobjloader/include \
 	/I ../vendor/stb \
-	/I ../vendor/protobuf-25.2/include
+	/I ../vendor/protobuf-25.2/include \
+	/I ../vendor/lua-5.4.2/include
 LIBS = user32.lib shell32.lib gdi32.lib
 LIB_PATHS = \
 	/LIBPATH:../vendor/sdl-2.26.1/lib/x64 SDL2.lib \
 	/LIBPATH:../vendor/sdl-mixer-2.6.2/lib/x64 SDL2_mixer.lib \
 	/LIBPATH:C:/VulkanSDK/1.3.236.0/Lib vulkan-1.lib \
-	/LIBPATH:../vendor/protobuf-25.2/x64 libprotobuf-lite.lib
+	/LIBPATH:../vendor/protobuf-25.2/x64 libprotobuf-lite.lib \
+	/LIBPATH:../vendor/lua-5.4.2/x64 lua54.lib
 LINKER_ARGS = \
 	/NODEFAULTLIB:MSVCRT
 IMPORTS = \
@@ -46,7 +48,8 @@ copy_dlls:
 	cd $(BUILD_DIR) && \
 	copy ..\\vendor\\sdl-2.26.1\\lib\\x64\\SDL2.dll . && \
 	copy ..\\vendor\\sdl-mixer-2.6.2\\lib\\x64\\SDL2_mixer.dll . && \
-	copy ..\\vendor\\protobuf-25.2\\x64\\libprotobuf-lite.dll .
+	copy ..\\vendor\\protobuf-25.2\\x64\\libprotobuf-lite.dll . && \
+	copy ..\\vendor\\lua-5.4.2\\x64\\lua54.dll .
 
 BIN1=game.exe
 .PHONY: cpp
@@ -149,3 +152,18 @@ protobuf_test: clean copy_dlls
 	$(LINKER_ARGS) \
 	$(LIB_PATHS) && \
 	$(BIN6)
+
+.PHONY: lua_test
+BIN7=Lua_test.exe
+lua_test: clean copy_dlls
+	cd $(BUILD_DIR) && \
+	$(CL_BIN) \
+	$(CL_ARGS) \
+	$(INCLUDE_PATHS) \
+	../tests/lib/Lua_test.cpp \
+	$(IMPORTS) \
+	/Fe$(BIN7) \
+	/link $(LIBS) \
+	$(LINKER_ARGS) \
+	$(LIB_PATHS) && \
+	$(BIN7)

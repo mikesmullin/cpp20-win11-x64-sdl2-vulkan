@@ -61,6 +61,9 @@ This project was inspired by the following materials:
   https://github.com/mikesmullin/cpp11-14-17-examples/blob/master/README.md
 
 ## Dependencies
+- Lua  
+  https://www.lua.org/  
+  tutorial: https://www.youtube.com/watch?v=4l5HdmPoynw
 - Google Protobuf  
   https://github.com/protocolbuffers/protobuf/releases
   - installed with vcpkg https://vcpkg.io/en/getting-started
