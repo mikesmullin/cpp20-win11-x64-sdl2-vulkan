@@ -12,12 +12,15 @@ void PrintLuaError(lua_State* L) {
   std::cout << errormsg << std::endl;
 }
 
-int lua_HostFunction(lua_State* L) {
-  float a = (float)lua_tonumber(L, 1);
-  float b = (float)lua_tonumber(L, 2);
-  std::cout << "[C++] HostFunction(" << a << ", " << b << ") called." << std::endl;
-  float c = a * b;
-  lua_pushnumber(L, c);
+uint8_t nextEid = 1;
+struct Entity {
+  uint8_t eid;
+};
+
+int lua_RegisterEntity(lua_State* L) {
+  // TODO: heap alloc needs free
+  Entity* e = new Entity{nextEid++};
+  lua_pushinteger(L, e->eid);
   return 1;
 }
 
@@ -29,12 +32,26 @@ int main() {
   lua_State* L = luaL_newstate();
   luaL_openlibs(L);
 
-  lua_register(L, "HostFunction", lua_HostFunction);
+  lua_register(L, "RegisterEntity", lua_RegisterEntity);
 
   int result = luaL_dofile(L, infile);
   if (result != LUA_OK) {
     PrintLuaError(L);
     return -1;
+  }
+
+  lua_getglobal(L, "AddStuff");
+  if (lua_isfunction(L, -1)) {
+    lua_pushnumber(L, 3.5f);
+    lua_pushnumber(L, 7.1f);
+
+    int result2 = lua_pcall(L, 2, 1, 0);
+    if (result2 != LUA_OK) {
+      PrintLuaError(L);
+      return -1;
+    }
+    float r = (float)lua_tonumber(L, -1);
+    std::cout << "[C++] AddStuff() returned " << r << std::endl;
   }
 
   // lua_getglobal(L, "a");
