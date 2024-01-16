@@ -5,6 +5,7 @@ extern "C" {
 }
 
 #include <iostream>
+#include <vector>
 
 namespace {
 void PrintLuaError(lua_State* L) {
@@ -24,6 +25,19 @@ int lua_RegisterEntity(lua_State* L) {
   return 1;
 }
 
+struct Component {
+  int OnUpdate;
+};
+
+std::vector<Component*> componentRegistry;
+
+int lua_RegisterComponent(lua_State* L) {
+  Component* c = new Component{};
+  c->OnUpdate = luaL_ref(L, LUA_REGISTRYINDEX);
+  componentRegistry.push_back(c);
+  return 1;
+}
+
 }  // namespace
 
 int main() {
@@ -33,6 +47,7 @@ int main() {
   luaL_openlibs(L);
 
   lua_register(L, "RegisterEntity", lua_RegisterEntity);
+  lua_register(L, "RegisterComponent", lua_RegisterComponent);
 
   int result = luaL_dofile(L, infile);
   if (result != LUA_OK) {
@@ -40,25 +55,17 @@ int main() {
     return -1;
   }
 
-  lua_getglobal(L, "AddStuff");
-  if (lua_isfunction(L, -1)) {
-    lua_pushnumber(L, 3.5f);
-    lua_pushnumber(L, 7.1f);
-
-    int result2 = lua_pcall(L, 2, 1, 0);
-    if (result2 != LUA_OK) {
-      PrintLuaError(L);
-      return -1;
+  for (Component* component : componentRegistry) {
+    lua_rawgeti(L, LUA_REGISTRYINDEX, component->OnUpdate);
+    if (lua_isfunction(L, -1)) {
+      int result2 = lua_pcall(L, 0, 0, 0);
+      if (result2 != LUA_OK) {
+        PrintLuaError(L);
+        return -1;
+      }
+      std::cout << "[C++] invoked callback. " << std::endl;
     }
-    float r = (float)lua_tonumber(L, -1);
-    std::cout << "[C++] AddStuff() returned " << r << std::endl;
   }
-
-  // lua_getglobal(L, "a");
-  // if (lua_isnumber(L, -1)) {
-  //   float a_in_cpp = (float)lua_tonumber(L, -1);
-  //   std::cout << "a_in_cpp = " << a_in_cpp << std::endl;
-  // }
 
   return 0;
 }
