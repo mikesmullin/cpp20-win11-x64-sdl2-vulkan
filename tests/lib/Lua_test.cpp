@@ -1,15 +1,9 @@
-
-extern "C" {
-#include <lauxlib.h>
-#include <lua.h>
-#include <lualib.h>
-}
+#include "../../src/lib/Lua.hpp"
 
 #include <iostream>
 #include <vector>
 
 #include "../../src/lib/Logger.hpp"
-#include "../../src/lib/Lua.hpp"
 
 namespace {
 
@@ -35,7 +29,7 @@ int lua_RegisterComponent(lua_State* L) {
   Component* c = new Component{};
   c->OnUpdate = luaL_ref(L, LUA_REGISTRYINDEX);
   componentRegistry.push_back(c);
-  return 1;
+  return 0;
 }
 
 }  // namespace

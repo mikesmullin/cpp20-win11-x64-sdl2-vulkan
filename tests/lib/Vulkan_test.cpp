@@ -46,26 +46,31 @@ int main() {
 
     ubo_MVPMatrix ubo{};  // model_view_projection_matrix
 
-    w.RenderLoop(60, [&w, &ubo](float deltaTime) {
-      static float angle = 0.0f;
-      static const float ROT_SPEED = 0.05f;  // deg per sec
-      angle += (ROT_SPEED * deltaTime);
+    w.RenderLoop(
+        60,
+        [](auto& e&) {},
+        [&w, &ubo](float deltaTime) {
+          static float angle = 0.0f;
+          static const float ROT_SPEED = 0.05f;  // deg per sec
+          angle += (ROT_SPEED * deltaTime);
 
-      ubo.model =
-          glm::rotate(glm::mat4(1.0f), angle * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-      ubo.view = glm::lookAt(
-          glm::vec3(2.0f, 2.0f, 2.0f),
-          glm::vec3(0.0f, 0.0f, 0.0f),
-          glm::vec3(0.0f, 0.0f, 1.0f));
-      ubo.proj = glm::perspective(
-          glm::radians(45.0f),
-          w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
-          0.1f,
-          10.0f);
-      ubo.proj[1][1] *= -1;
+          ubo.model = glm::rotate(
+              glm::mat4(1.0f),
+              angle * glm::radians(90.0f),
+              glm::vec3(0.0f, 0.0f, 1.0f));
+          ubo.view = glm::lookAt(
+              glm::vec3(2.0f, 2.0f, 2.0f),
+              glm::vec3(0.0f, 0.0f, 0.0f),
+              glm::vec3(0.0f, 0.0f, 1.0f));
+          ubo.proj = glm::perspective(
+              glm::radians(45.0f),
+              w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
+              0.1f,
+              10.0f);
+          ubo.proj[1][1] *= -1;
 
-      w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
-    });
+          w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
+        });
 
     w.End();
 

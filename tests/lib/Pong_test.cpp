@@ -1,9 +1,3 @@
-extern "C" {
-#include <lauxlib.h>
-#include <lua.h>
-#include <lualib.h>
-}
-
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -15,6 +9,7 @@ extern "C" {
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "../../src/lib/Audio.hpp"
+#include "../../src/lib/Gamepad.hpp"
 #include "../../src/lib/Logger.hpp"
 #include "../../src/lib/Lua.hpp"
 #include "../../src/lib/Window.hpp"
@@ -29,15 +24,29 @@ struct ubo_MVPMatrix {
 mks::Audio a{};
 
 int lua_AddSoundEffect(lua_State* L) {
-  auto file = lua_tostring(L, -1);
+  auto file = lua_tostring(L, 1);
   a.addSoundEffect(file);
-  return 1;
+  return 0;
 }
 
 int lua_PlaySoundEffect(lua_State* L) {
-  const int index = lua_tointeger(L, -1);
+  const int index = lua_tointeger(L, 1);
   a.playSoundEffect(index);
-  return 1;
+  return 0;
+}
+
+int lua_GetGamepadInput(lua_State* L) {
+  const int index = lua_tointeger(L, 1);
+  auto g = mks::Gamepad::registry[index];
+  lua_pushnumber(L, g->axes[0]);
+  lua_pushnumber(L, g->axes[1]);
+  lua_pushnumber(L, g->axes[2]);
+  lua_pushnumber(L, g->axes[3]);
+  lua_pushboolean(L, g->buttons[0]);
+  lua_pushboolean(L, g->buttons[1]);
+  lua_pushboolean(L, g->buttons[2]);
+  lua_pushboolean(L, g->buttons[3]);
+  return 8;
 }
 
 }  // namespace
@@ -51,9 +60,16 @@ int main() {
     auto l = mks::Lua{};
     lua_register(l.L, "AddSoundEffect", lua_AddSoundEffect);
     lua_register(l.L, "PlaySoundEffect", lua_PlaySoundEffect);
+    lua_register(l.L, "GetGamepadInput", lua_GetGamepadInput);
+
+    mks::Gamepad::Enable();
 
     auto w = mks::Window{};
     w.Begin("Pong_test", "Pong", 1024, 768);
+
+    auto gamePad1 = mks::Gamepad{0};
+    mks::Logger::Infof("Controller Id: %d, Name: %s", gamePad1.index, gamePad1.GetControllerName());
+    gamePad1.Open();
 
     w.v.CreateImageViews();                           // pre
     w.v.CreateRenderPass();                           // pre
@@ -78,27 +94,32 @@ int main() {
       throw mks::Logger::Errorf(l.GetError());
     }
 
-    w.RenderLoop(60, [&w, &ubo, &l](float deltaTime) {
-      lua_getglobal(l.L, "SetRotAngle");
-      lua_pushnumber(l.L, deltaTime);
-      int result = lua_pcall(l.L, 1, 1, 0);
-      float angle = (float)lua_tonumber(l.L, -1);
+    w.RenderLoop(
+        60,
+        [&l](auto& e) { mks::Gamepad::OnInput(e); },
+        [&w, &ubo, &l](float deltaTime) {
+          lua_getglobal(l.L, "SetRotAngle");
+          lua_pushnumber(l.L, deltaTime);
+          int result = lua_pcall(l.L, 1, 1, 0);
+          float angle = (float)lua_tonumber(l.L, -1);
 
-      ubo.model =
-          glm::rotate(glm::mat4(1.0f), angle * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-      ubo.view = glm::lookAt(
-          glm::vec3(0.0f, 1.0f, 2.0f),
-          glm::vec3(0.0f, 0.0f, 0.0f),
-          glm::vec3(0.0f, 0.0f, 1.0f));
-      ubo.proj = glm::perspective(
-          glm::radians(45.0f),
-          w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
-          0.1f,
-          10.0f);
-      ubo.proj[1][1] *= -1;
+          ubo.model = glm::rotate(
+              glm::mat4(1.0f),
+              angle * glm::radians(90.0f),
+              glm::vec3(0.0f, 0.0f, 1.0f));
+          ubo.view = glm::lookAt(
+              glm::vec3(0.0f, 1.0f, 2.0f),
+              glm::vec3(0.0f, 0.0f, 0.0f),
+              glm::vec3(0.0f, 0.0f, 1.0f));
+          ubo.proj = glm::perspective(
+              glm::radians(45.0f),
+              w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
+              0.1f,
+              10.0f);
+          ubo.proj[1][1] *= -1;
 
-      w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
-    });
+          w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
+        });
 
     w.End();
 

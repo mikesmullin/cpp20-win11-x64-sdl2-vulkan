@@ -15,7 +15,10 @@ class Window {
   ~Window();
 
   void Begin(const char* vulkanAppName, const char* title, const int width, const int height);
-  void RenderLoop(const int fps, std::function<void(float)> callback);
+  void RenderLoop(
+      const int fps,
+      std::function<void(SDL_Event&)> sdl_callback,
+      std::function<void(float)> callback);
   void End();
 
   SDL_Window* window;
