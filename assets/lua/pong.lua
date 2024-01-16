@@ -1,6 +1,7 @@
 print("[Lua] pong script loading.")
 
-AddSoundEffect("../assets/audio/sfx/mop2.ogg")
+LoadTexture("../assets/textures/crates.png")
+LoadSoundEffect("../assets/audio/sfx/mop2.ogg")
 
 local angle = 0
 local ROT_SPEED = 30
@@ -21,6 +22,7 @@ function OnUpdate(deltaTime)
     pressed = true
     print("button1")
     PlaySoundEffect(0)
+    AdjustVBO();
   elseif not b1 and pressed then
     pressed = false
   end

@@ -15,15 +15,24 @@
 #include "../../src/lib/Window.hpp"
 
 namespace {
+
 struct ubo_MVPMatrix {
   glm::mat4 model;
   glm::mat4 view;
   glm::mat4 proj;
 };
 
+std::vector<mks::Vertex> vertices = {
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.2f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.25f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.2f, 0.25f}}};
+
+std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+
 mks::Audio a{};
 
-int lua_AddSoundEffect(lua_State* L) {
+int lua_LoadSoundEffect(lua_State* L) {
   auto file = lua_tostring(L, 1);
   a.addSoundEffect(file);
   return 0;
@@ -49,6 +58,33 @@ int lua_GetGamepadInput(lua_State* L) {
   return 8;
 }
 
+std::vector<std::string> textureFiles;
+int lua_LoadTexture(lua_State* L) {
+  textureFiles.resize(1);
+  auto file = lua_tostring(L, 1);
+  // TODO: make it possible to load more than one texture atlas?
+  textureFiles[0] = static_cast<std::string>(file);
+  return 0;
+}
+
+mks::Window* ww;
+bool isVBODirty;
+int lua_AdjustVBO(lua_State* L) {
+  auto u = lua_tointeger(L, 1);
+  auto v = lua_tointeger(L, 2);
+  vertices[0].texCoord[0] += 0.2f;
+  vertices[0].texCoord[1] += 0.25f;
+  vertices[1].texCoord[0] += 0.2f;
+  vertices[1].texCoord[1] += 0.25f;
+  vertices[2].texCoord[0] += 0.2f;
+  vertices[2].texCoord[1] += 0.25f;
+  vertices[3].texCoord[0] += 0.2f;
+  vertices[3].texCoord[1] += 0.25f;
+  ww->v.SetVertexBufferData(vertices, indices);
+  isVBODirty = true;
+  return 0;
+}
+
 }  // namespace
 
 int main() {
@@ -58,18 +94,27 @@ int main() {
     a.init();
 
     auto l = mks::Lua{};
-    lua_register(l.L, "AddSoundEffect", lua_AddSoundEffect);
+    lua_register(l.L, "LoadSoundEffect", lua_LoadSoundEffect);
     lua_register(l.L, "PlaySoundEffect", lua_PlaySoundEffect);
     lua_register(l.L, "GetGamepadInput", lua_GetGamepadInput);
+    lua_register(l.L, "LoadTexture", lua_LoadTexture);
+    lua_register(l.L, "AdjustVBO", lua_AdjustVBO);
 
     mks::Gamepad::Enable();
 
     auto w = mks::Window{};
+    ww = &w;
     w.Begin("Pong_test", "Pong", 1024, 768);
 
     auto gamePad1 = mks::Gamepad{0};
     mks::Logger::Infof("Controller Id: %d, Name: %s", gamePad1.index, gamePad1.GetControllerName());
     gamePad1.Open();
+
+    if (!l.ReloadScript("../assets/lua/pong.lua")) {
+      throw mks::Logger::Errorf(l.GetError());
+    }
+
+    w.v.SetVertexBufferData(vertices, indices);
 
     w.v.CreateImageViews();                           // pre
     w.v.CreateRenderPass();                           // pre
@@ -77,7 +122,7 @@ int main() {
     w.v.CreateGraphicsPipeline();                     // pre
     w.v.CreateFrameBuffers();                         // pre
     w.v.CreateCommandPool();                          // setting
-    w.v.CreateTextureImage();                         // cmd
+    w.v.CreateTextureImage(textureFiles[0].c_str());  // cmd
     w.v.CreateTextureImageView();                     // setting
     w.v.CreateTextureSampler();                       // setting
     w.v.CreateVertexBuffer();                         // cmd
@@ -90,10 +135,6 @@ int main() {
 
     ubo_MVPMatrix ubo{};  // model_view_projection_matrix
 
-    if (!l.ReloadScript("../assets/lua/pong.lua")) {
-      throw mks::Logger::Errorf(l.GetError());
-    }
-
     w.RenderLoop(
         60,
         [&l](auto& e) { mks::Gamepad::OnInput(e); },
@@ -105,8 +146,6 @@ int main() {
           float x = lua_tonumber(l.L, -3);
           float y = lua_tonumber(l.L, -2);
           float z = lua_tonumber(l.L, -1);
-
-          mks::Logger::Debugf("x %7.3f y %7.3f z %7.3f", x, y, z);
 
           ubo.model =
               glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -121,6 +160,10 @@ int main() {
               10.0f);
           ubo.proj[1][1] *= -1;
 
+          if (isVBODirty) {
+            isVBODirty = false;
+            w.v.UpdateVertexBuffer();
+          }
           w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
         });
 

@@ -2,6 +2,11 @@
 
 #include <vulkan/vulkan.h>
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <optional>
 #include <vector>
 
@@ -40,8 +45,19 @@ struct SwapChainSupportDetails {
   std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct Vertex {
+  glm::vec2 pos;
+  glm::vec3 color;
+  glm::vec2 texCoord;
+
+  static VkVertexInputBindingDescription getBindingDescription();
+  static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
+};
+
 class Vulkan {
  public:
+  static const int MAX_FRAMES_IN_FLIGHT = 2;
+
   /**
    * Query the instance for a list of validation layers it supports.
    */
@@ -140,6 +156,8 @@ class Vulkan {
   void CreateFrameBuffers();
   void CreateCommandPool();
   void CreateCommandBuffers();
+  const void SetVertexBufferData(
+      const std::vector<mks::Vertex> vertices, const std::vector<uint16_t> indices);
   void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
   void CreateSyncObjects();
   void CreateBuffer(
@@ -155,13 +173,14 @@ class Vulkan {
       VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
   void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
   void CreateVertexBuffer();
+  void UpdateVertexBuffer();
   void CreateIndexBuffer();
   void CreateUniformBuffers(const unsigned int length);
   void UpdateUniformBuffer(uint32_t frame, void* data);
   void CreateDescriptorPool();
   void CreateDescriptorSets();
   uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-  void CreateTextureImage();
+  void CreateTextureImage(const char* file);
   void CreateTextureImageView();
   void CreateTextureSampler();
   VkImageView CreateImageView(VkImage image, VkFormat format);
@@ -224,6 +243,8 @@ class Vulkan {
   VkDeviceMemory textureImageMemory;
   VkImageView textureImageView;
   VkSampler textureSampler;
+  std::vector<mks::Vertex> vertices;
+  std::vector<uint16_t> indices;
 };
 
 }  // namespace mks

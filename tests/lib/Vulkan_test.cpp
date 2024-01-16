@@ -12,11 +12,20 @@
 #include "../../src/lib/Window.hpp"
 
 namespace {
+
 struct ubo_MVPMatrix {
   glm::mat4 model;
   glm::mat4 view;
   glm::mat4 proj;
 };
+
+const std::vector<mks::Vertex> vertices = {
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.2f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.25f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.2f, 0.25f}}};
+
+const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 }  // namespace
 
@@ -27,13 +36,15 @@ int main() {
     auto w = mks::Window{};
     w.Begin("Vulkan_test", "SDL2 Vulkan Window", 800, 600);
 
+    w.v.SetVertexBufferData(vertices, indices);
+
     w.v.CreateImageViews();
     w.v.CreateRenderPass();
     w.v.CreateDescriptorSetLayout();
     w.v.CreateGraphicsPipeline();
     w.v.CreateFrameBuffers();
     w.v.CreateCommandPool();
-    w.v.CreateTextureImage();
+    w.v.CreateTextureImage("../assets/textures/crates.png");
     w.v.CreateTextureImageView();
     w.v.CreateTextureSampler();
     w.v.CreateVertexBuffer();
@@ -48,7 +59,7 @@ int main() {
 
     w.RenderLoop(
         60,
-        [](auto& e&) {},
+        [](auto& e) {},
         [&w, &ubo](float deltaTime) {
           static float angle = 0.0f;
           static const float ROT_SPEED = 0.05f;  // deg per sec
