@@ -1,5 +1,8 @@
 print("[Lua] pong script loading.")
 
+AddSoundEffect("../assets/audio/sfx/mop2.ogg")
+PlaySoundEffect(0)
+
 local angle = 0
 local ROT_SPEED = 0.05
 function SetRotAngle(deltaTime)

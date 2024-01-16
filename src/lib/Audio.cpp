@@ -4,10 +4,8 @@
 #include <SDL.h>
 
 #include <iostream>
-#include <stdexcept>
 
 #include "Logger.hpp"
-#include "SDL.hpp"
 
 namespace mks {
 

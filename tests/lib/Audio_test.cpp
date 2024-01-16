@@ -1,7 +1,6 @@
 #include "../../src/lib/Audio.hpp"
 
 #include <iostream>
-#include <stdexcept>
 
 #include "../../src/lib/Logger.hpp"
 #include "../../src/lib/SDL.hpp"

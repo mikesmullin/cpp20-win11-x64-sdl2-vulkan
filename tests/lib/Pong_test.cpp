@@ -14,6 +14,7 @@ extern "C" {
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "../../src/lib/Audio.hpp"
 #include "../../src/lib/Logger.hpp"
 #include "../../src/lib/Lua.hpp"
 #include "../../src/lib/Window.hpp"
@@ -25,13 +26,31 @@ struct ubo_MVPMatrix {
   glm::mat4 proj;
 };
 
+mks::Audio a{};
+
+int lua_AddSoundEffect(lua_State* L) {
+  auto file = lua_tostring(L, -1);
+  a.addSoundEffect(file);
+  return 1;
+}
+
+int lua_PlaySoundEffect(lua_State* L) {
+  const int index = lua_tointeger(L, -1);
+  a.playSoundEffect(index);
+  return 1;
+}
+
 }  // namespace
 
 int main() {
   try {
     mks::Logger::Infof("Begin Pong test.");
 
+    a.init();
+
     auto l = mks::Lua{};
+    lua_register(l.L, "AddSoundEffect", lua_AddSoundEffect);
+    lua_register(l.L, "PlaySoundEffect", lua_PlaySoundEffect);
 
     auto w = mks::Window{};
     w.Begin("Pong_test", "Pong", 1024, 768);
