@@ -98,17 +98,20 @@ int main() {
         60,
         [&l](auto& e) { mks::Gamepad::OnInput(e); },
         [&w, &ubo, &l](float deltaTime) {
-          lua_getglobal(l.L, "SetRotAngle");
+          lua_getglobal(l.L, "OnUpdate");
           lua_pushnumber(l.L, deltaTime);
-          int result = lua_pcall(l.L, 1, 1, 0);
-          float angle = (float)lua_tonumber(l.L, -1);
+          int result = lua_pcall(l.L, 1, 4, 0);
+          float angle = lua_tonumber(l.L, -4);
+          float x = lua_tonumber(l.L, -3);
+          float y = lua_tonumber(l.L, -2);
+          float z = lua_tonumber(l.L, -1);
 
-          ubo.model = glm::rotate(
-              glm::mat4(1.0f),
-              angle * glm::radians(90.0f),
-              glm::vec3(0.0f, 0.0f, 1.0f));
+          mks::Logger::Debugf("x %7.3f y %7.3f z %7.3f", x, y, z);
+
+          ubo.model =
+              glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
           ubo.view = glm::lookAt(
-              glm::vec3(0.0f, 1.0f, 2.0f),
+              glm::vec3(x, y, z),
               glm::vec3(0.0f, 0.0f, 0.0f),
               glm::vec3(0.0f, 0.0f, 1.0f));
           ubo.proj = glm::perspective(
