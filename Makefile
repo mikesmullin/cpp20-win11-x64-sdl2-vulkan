@@ -167,3 +167,18 @@ lua_test: clean copy_dlls
 	$(LINKER_ARGS) \
 	$(LIB_PATHS) && \
 	$(BIN7)
+
+.PHONY: pong_test
+BIN8=Pong_test.exe
+pong_test: clean copy_dlls shaders
+	cd $(BUILD_DIR) && \
+	$(CL_BIN) \
+	$(CL_ARGS) \
+	$(INCLUDE_PATHS) \
+	../tests/lib/Pong_test.cpp \
+	$(IMPORTS) \
+	/Fe$(BIN8) \
+	/link $(LIBS) \
+	$(LINKER_ARGS) \
+	$(LIB_PATHS) && \
+	$(BIN8)

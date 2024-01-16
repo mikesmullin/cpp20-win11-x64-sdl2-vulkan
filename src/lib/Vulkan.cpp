@@ -208,6 +208,10 @@ const bool Vulkan::CheckInstanceExtensions(const std::vector<const char*> requir
   return allRequiredSupported;
 }
 
+Vulkan::Vulkan() {
+  // TODO: this is naughty. i am calling this instead of setting nullptr.
+}
+
 Vulkan::Vulkan(
     const char* name,
     const unsigned int major,

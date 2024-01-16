@@ -1,18 +1,13 @@
 #include "Window.hpp"
 
-#include <cstdint>
-
-#define SDL_MAIN_HANDLED
-#include <SDL.h>
-#include <SDL_vulkan.h>
-
 #include <chrono>
+#include <cstdint>
+#include <functional>
 #include <thread>
 #include <vector>
 
 #include "Logger.hpp"
 #include "SDL.hpp"
-#include "Vulkan.hpp"
 
 namespace mks {
 
@@ -21,16 +16,19 @@ Window::Window() {
 Window::~Window() {
 }
 
-void Window::init() {
+// init Windows + SDL2 + Vulkan
+void Window::Begin(
+    const char* vulkanAppName, const char* title, const int width, const int height) {
+  // SDL2
   mks::SDL::defaultInstance.enableVideo();
   mks::SDL::defaultInstance.init();
 
-  SDL_Window* window = SDL_CreateWindow(
-      "SDL2 Vulkan Window",
+  window = SDL_CreateWindow(
+      title,
       SDL_WINDOWPOS_CENTERED,
       SDL_WINDOWPOS_CENTERED,
-      800,
-      600,
+      width,
+      height,
       SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE /* | SDL_WINDOW_SHOWN*/);
   if (!window) {
     throw mks::Logger::Errorf("Failed to create window");
@@ -49,7 +47,7 @@ void Window::init() {
   const std::vector<const char*> requiredPhysicalDeviceExtensions = {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
-  auto v = mks::Vulkan{"Vulkan_test", 1, 0, 0, requiredValidationLayers, requiredExtensionNames};
+  v = mks::Vulkan{vulkanAppName, 1, 0, 0, requiredValidationLayers, requiredExtensionNames};
 
   v.AssertDriverValidationLayersSupported();
   v.AssertDriverExtensionsSupported(requiredExtensionNames);
@@ -61,33 +59,18 @@ void Window::init() {
     throw mks::Logger::Errorf("Failed to get the surface from the window");
   }
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
-  int width, height = 0;
-  SDL_Vulkan_GetDrawableSize(window, &width, &height);
-  v.width = static_cast<uint32_t>(width);
-  v.height = static_cast<uint32_t>(height);
+  int dwidth, dheight = 0;
+  SDL_Vulkan_GetDrawableSize(window, &dwidth, &dheight);
+  v.width = static_cast<uint32_t>(dwidth);
+  v.height = static_cast<uint32_t>(dheight);
 
   v.AssertSwapChainSupport(requiredPhysicalDeviceExtensions);
   v.UseLogicalDevice(requiredPhysicalDeviceExtensions);
   v.CreateSwapChain();
-  v.CreateImageViews();
-  v.CreateRenderPass();
-  v.CreateDescriptorSetLayout();
-  v.CreateGraphicsPipeline();
-  v.CreateFrameBuffers();
-  v.CreateCommandPool();
-  v.CreateTextureImage();
-  v.CreateTextureImageView();
-  v.CreateTextureSampler();
-  v.CreateVertexBuffer();
-  v.CreateIndexBuffer();
-  v.CreateUniformBuffers();
-  v.CreateDescriptorPool();
-  v.CreateDescriptorSets();
-  v.CreateCommandBuffers();
-  v.CreateSyncObjects();
+}
 
-  const int FPS = 60;  // Target frames per second
-  const std::chrono::duration<double, std::milli> frameDelay(1000.0 / FPS);
+void Window::RenderLoop(const int fps, std::function<void()> callback) {
+  const std::chrono::duration<double, std::milli> frameDelay(1000.0 / fps);
 
   bool quit = false;
   SDL_Event e;
@@ -128,6 +111,7 @@ void Window::init() {
 
     // rendering
     if (!v.minimized) {
+      callback();
       v.DrawFrame();
     }
 
@@ -138,7 +122,9 @@ void Window::init() {
 
     // TODO: wait remaining ms to target frame rate
   }
+}
 
+void Window::End() {
   v.DeviceWaitIdle();
   v.Cleanup();
 

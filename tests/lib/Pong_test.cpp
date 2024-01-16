@@ -7,10 +7,10 @@
 
 int main() {
   try {
-    mks::Logger::Infof("Begin SDL2 Vulkan test.");
+    mks::Logger::Infof("Begin Pong test.");
 
     auto w = mks::Window{};
-    w.Begin("Vulkan_test", "SDL2 Vulkan Window", 800, 600);
+    w.Begin("Pong_test", "Pong", 1024, 768);
 
     w.v.CreateImageViews();
     w.v.CreateRenderPass();

@@ -55,6 +55,8 @@ class Vulkan {
    */
   static const bool CheckInstanceExtensions(const std::vector<const char*> requiredExtensions);
 
+  Vulkan();
+
   /**
    * The very first thing you need to do is initialize the Vulkan library by creating an instance.
    * The instance is the connection between your application and the Vulkan library and creating it
