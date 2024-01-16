@@ -1,3 +1,8 @@
+extern "C" {
+#include <lauxlib.h>
+#include <lua.h>
+#include <lualib.h>
+}
 
 #include <chrono>
 #include <functional>
@@ -11,6 +16,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "../../src/lib/Logger.hpp"
+#include "../../src/lib/Lua.hpp"
 #include "../../src/lib/Window.hpp"
 
 namespace {
@@ -25,6 +31,8 @@ struct ubo_MVPMatrix {
 int main() {
   try {
     mks::Logger::Infof("Begin Pong test.");
+
+    auto l = mks::Lua{};
 
     auto w = mks::Window{};
     w.Begin("Pong_test", "Pong", 1024, 768);
@@ -47,6 +55,10 @@ int main() {
     w.v.CreateSyncObjects();     // fence and semaphores
 
     ubo_MVPMatrix ubo{};  // model_view_projection_matrix
+
+    if (!l.ReloadScript("../assets/lua/pong.lua")) {
+      throw mks::Logger::Errorf(l.GetError());
+    }
 
     w.RenderLoop(60, [&w, &ubo]() {
       static auto startTime = std::chrono::high_resolution_clock::now();

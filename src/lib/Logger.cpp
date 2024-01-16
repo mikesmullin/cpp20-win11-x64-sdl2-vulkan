@@ -1,11 +1,19 @@
 #include "Logger.hpp"
 
 #include <cstdarg>
-#include <cstdio>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 namespace mks {
+
+std::runtime_error Logger::Errorf(const std::string msg, ...) {
+  va_list args;
+  va_start(args, msg);
+  auto r = Errorf(msg.c_str());
+  va_end(args);
+  return r;
+}
 
 std::runtime_error Logger::Errorf(const char* msg, ...) {
   char buf[255];

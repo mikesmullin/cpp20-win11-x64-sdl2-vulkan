@@ -1,3 +1,4 @@
+
 extern "C" {
 #include <lauxlib.h>
 #include <lua.h>
@@ -7,11 +8,10 @@ extern "C" {
 #include <iostream>
 #include <vector>
 
+#include "../../src/lib/Logger.hpp"
+#include "../../src/lib/Lua.hpp"
+
 namespace {
-void PrintLuaError(lua_State* L) {
-  std::string errormsg = lua_tostring(L, -1);
-  std::cout << errormsg << std::endl;
-}
 
 uint8_t nextEid = 1;
 struct Entity {
@@ -41,26 +41,22 @@ int lua_RegisterComponent(lua_State* L) {
 }  // namespace
 
 int main() {
-  const char* infile = "../assets/lua/test.lua";
+  auto l = mks::Lua{};
 
-  lua_State* L = luaL_newstate();
-  luaL_openlibs(L);
+  lua_register(l.L, "RegisterEntity", lua_RegisterEntity);
+  lua_register(l.L, "RegisterComponent", lua_RegisterComponent);
 
-  lua_register(L, "RegisterEntity", lua_RegisterEntity);
-  lua_register(L, "RegisterComponent", lua_RegisterComponent);
-
-  int result = luaL_dofile(L, infile);
-  if (result != LUA_OK) {
-    PrintLuaError(L);
+  if (!l.ReloadScript("../assets/lua/test.lua")) {
+    std::cerr << l.GetError() << std::endl;
     return -1;
   }
 
   for (Component* component : componentRegistry) {
-    lua_rawgeti(L, LUA_REGISTRYINDEX, component->OnUpdate);
-    if (lua_isfunction(L, -1)) {
-      int result2 = lua_pcall(L, 0, 0, 0);
+    lua_rawgeti(l.L, LUA_REGISTRYINDEX, component->OnUpdate);
+    if (lua_isfunction(l.L, -1)) {
+      int result2 = lua_pcall(l.L, 0, 0, 0);
       if (result2 != LUA_OK) {
-        PrintLuaError(L);
+        std::cerr << l.GetError() << std::endl;
         return -1;
       }
       std::cout << "[C++] invoked callback. " << std::endl;
