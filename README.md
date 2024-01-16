@@ -75,6 +75,9 @@ This project was inspired by the following materials:
 
 ## TODO
 
+- make pong demo
+- publish to mobile
+
 - learn to use RenderDoc and nVidia nSight Graphics to profile Vulkan
   - learn how to name objects for debugging in RenderDoc
     https://www.saschawillems.de/blog/2016/05/28/tutorial-on-using-vulkans-vk_ext_debug_marker-with-renderdoc/
