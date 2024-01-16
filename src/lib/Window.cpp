@@ -69,8 +69,11 @@ void Window::Begin(
   v.CreateSwapChain();
 }
 
-void Window::RenderLoop(const int fps, std::function<void()> callback) {
+void Window::RenderLoop(const int fps, std::function<void(float)> callback) {
+  auto startTime = std::chrono::high_resolution_clock::now();
+  auto lastRun = startTime;
   const std::chrono::duration<double, std::milli> frameDelay(1000.0 / fps);
+  float deltaTime = 0;
 
   bool quit = false;
   SDL_Event e;
@@ -112,7 +115,10 @@ void Window::RenderLoop(const int fps, std::function<void()> callback) {
     // rendering
     if (!v.minimized) {
       v.AwaitNextFrame();
-      callback();
+      deltaTime =
+          std::chrono::duration<float, std::chrono::seconds::period>(frameStart - lastRun).count();
+      lastRun = frameStart;
+      callback(deltaTime);
       v.DrawFrame();
     }
 

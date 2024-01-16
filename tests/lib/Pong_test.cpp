@@ -4,7 +4,6 @@ extern "C" {
 #include <lualib.h>
 }
 
-#include <chrono>
 #include <functional>
 #include <iostream>
 #include <stdexcept>
@@ -60,17 +59,16 @@ int main() {
       throw mks::Logger::Errorf(l.GetError());
     }
 
-    w.RenderLoop(60, [&w, &ubo]() {
-      static auto startTime = std::chrono::high_resolution_clock::now();
+    w.RenderLoop(60, [&w, &ubo, &l](float deltaTime) {
+      lua_getglobal(l.L, "SetRotAngle");
+      lua_pushnumber(l.L, deltaTime);
+      int result = lua_pcall(l.L, 1, 1, 0);
+      float angle = (float)lua_tonumber(l.L, -1);
 
-      auto currentTime = std::chrono::high_resolution_clock::now();
-      float time =
-          std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime)
-              .count();
       ubo.model =
-          glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+          glm::rotate(glm::mat4(1.0f), angle * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
       ubo.view = glm::lookAt(
-          glm::vec3(2.0f, 2.0f, 2.0f),
+          glm::vec3(0.0f, 1.0f, 2.0f),
           glm::vec3(0.0f, 0.0f, 0.0f),
           glm::vec3(0.0f, 0.0f, 1.0f));
       ubo.proj = glm::perspective(
