@@ -111,6 +111,7 @@ void Window::RenderLoop(const int fps, std::function<void()> callback) {
 
     // rendering
     if (!v.minimized) {
+      v.AwaitNextFrame();
       callback();
       v.DrawFrame();
     }

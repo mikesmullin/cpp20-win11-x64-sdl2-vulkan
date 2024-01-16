@@ -156,8 +156,8 @@ class Vulkan {
   void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
   void CreateVertexBuffer();
   void CreateIndexBuffer();
-  void CreateUniformBuffers();
-  void UpdateUniformBuffer(uint32_t currentImage);
+  void CreateUniformBuffers(const unsigned int length);
+  void UpdateUniformBuffer(uint32_t frame, void* data);
   void CreateDescriptorPool();
   void CreateDescriptorSets();
   uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
@@ -174,6 +174,7 @@ class Vulkan {
       VkMemoryPropertyFlags properties,
       VkImage& image,
       VkDeviceMemory& imageMemory);
+  void AwaitNextFrame();
   void DrawFrame();
   void DeviceWaitIdle();
   void RecreateSwapChain();
@@ -186,9 +187,11 @@ class Vulkan {
   uint32_t width, height = 0;
   bool framebufferResized = false;
   bool minimized = false;
+  uint32_t imageIndex = 0;
+  uint8_t currentFrame = 0;
+  VkExtent2D swapChainExtent = {};
 
  private:
-  uint8_t currentFrame = 0;
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice logicalDevice = nullptr;
   // TODO: swap chain stuff should get its own struct
@@ -196,7 +199,6 @@ class Vulkan {
   VkSwapchainKHR swapChain = 0;
   std::vector<VkImage> swapChainImages = {};
   VkFormat swapChainImageFormat = {};
-  VkExtent2D swapChainExtent = {};
   std::vector<VkImageView> swapChainImageViews = {};
   VkRenderPass renderPass = {};
   VkDescriptorSetLayout descriptorSetLayout;
@@ -213,6 +215,7 @@ class Vulkan {
   VkBuffer indexBuffer;
   VkDeviceMemory indexBufferMemory;
   std::vector<VkBuffer> uniformBuffers;
+  std::vector<unsigned int> uniformBufferLengths;
   std::vector<VkDeviceMemory> uniformBuffersMemory;
   std::vector<void*> uniformBuffersMapped;
   VkDescriptorPool descriptorPool;

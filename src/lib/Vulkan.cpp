@@ -1,12 +1,12 @@
 #include "Vulkan.hpp"
 
+#include <algorithm>
+#include <array>
+#include <chrono>
 #include <cstdint>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <algorithm>
-#include <array>
-#include <chrono>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -64,12 +64,6 @@ const std::vector<Vertex> vertices = {
     {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.2f, 0.25f}}};
 
 const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
-
-struct UniformBufferObject {
-  glm::mat4 model;
-  glm::mat4 view;
-  glm::mat4 proj;
-};
 
 }  // namespace
 
@@ -1032,6 +1026,7 @@ void Vulkan::CreateFrameBuffers() {
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebufferInfo.renderPass = renderPass;
+    // TODO: couldn't/shouldn't we have one framebuffer, with two attachments?
     framebufferInfo.attachmentCount = 1;
     framebufferInfo.pAttachments = attachments;
     framebufferInfo.width = swapChainExtent.width;
@@ -1061,8 +1056,8 @@ void Vulkan::CreateCommandBuffers() {
 
   VkCommandBufferAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-  allocInfo.commandPool = commandPool;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocInfo.commandPool = commandPool;
   allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
   if (vkAllocateCommandBuffers(logicalDevice, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
@@ -1388,14 +1383,15 @@ void Vulkan::CreateIndexBuffer() {
   vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
 }
 
-void Vulkan::CreateUniformBuffers() {
-  VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
+void Vulkan::CreateUniformBuffers(const unsigned int length) {
+  VkDeviceSize bufferSize = length;
   uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+  uniformBufferLengths.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
   uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
 
   for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+    uniformBufferLengths[i] = length;
     CreateBuffer(
         bufferSize,
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -1407,26 +1403,8 @@ void Vulkan::CreateUniformBuffers() {
   }
 }
 
-void Vulkan::UpdateUniformBuffer(uint32_t currentImage) {
-  static auto startTime = std::chrono::high_resolution_clock::now();
-
-  auto currentTime = std::chrono::high_resolution_clock::now();
-  float time =
-      std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-  UniformBufferObject ubo{};
-  ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-  ubo.view = glm::lookAt(
-      glm::vec3(2.0f, 2.0f, 2.0f),
-      glm::vec3(0.0f, 0.0f, 0.0f),
-      glm::vec3(0.0f, 0.0f, 1.0f));
-  ubo.proj = glm::perspective(
-      glm::radians(45.0f),
-      swapChainExtent.width / (float)swapChainExtent.height,
-      0.1f,
-      10.0f);
-  ubo.proj[1][1] *= -1;
-  memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+void Vulkan::UpdateUniformBuffer(uint32_t frame, void* ubo) {
+  memcpy(uniformBuffersMapped[frame], ubo, uniformBufferLengths[frame]);
 }
 
 void Vulkan::CreateDescriptorPool() {
@@ -1464,7 +1442,7 @@ void Vulkan::CreateDescriptorSets() {
     VkDescriptorBufferInfo bufferInfo{};
     bufferInfo.buffer = uniformBuffers[i];
     bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(UniformBufferObject);
+    bufferInfo.range = uniformBufferLengths[i];
 
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1498,6 +1476,9 @@ void Vulkan::CreateDescriptorSets() {
   }
 }
 
+/**
+ * Load an image from disk. Queue it to Vulkan -> Buffer -> Image.
+ */
 void Vulkan::CreateTextureImage() {
   int texWidth, texHeight, texChannels;
   stbi_uc* pixels = stbi_load(
@@ -1649,13 +1630,12 @@ void Vulkan::CreateImage(
   vkBindImageMemory(logicalDevice, image, imageMemory, 0);
 }
 
-void Vulkan::DrawFrame() {
+void Vulkan::AwaitNextFrame() {
   if (vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX) !=
       VK_SUCCESS) {
     throw Logger::Errorf("vkWaitForFences failed.");
   }
 
-  uint32_t imageIndex;
   VkResult result = vkAcquireNextImageKHR(
       logicalDevice,
       swapChain,
@@ -1675,9 +1655,9 @@ void Vulkan::DrawFrame() {
   } else if (result != VK_SUCCESS) {
     throw Logger::Errorf("vkAcquireNextImageKHR failed.");
   }
+}
 
-  UpdateUniformBuffer(currentFrame);
-
+void Vulkan::DrawFrame() {
   // NOTICE: Fence will deadlock if waiting on an empty work queue.
   // Therefore, we only reset the fence just prior to submitting work.
   vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
