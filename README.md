@@ -51,6 +51,8 @@ This project was inspired by the following materials:
   https://github.com/KhronosGroup/Vulkan-Samples
 - Vulkan API Discussion  
   https://www.youtube.com/watch?v=gZ9lSzI_Geg&list=PLNhdAzzsGnqPLeu7Doln4cFrpq-P_ZKsh
+- Vulkan API Demos  
+  https://github.com/SaschaWillems/Vulkan/tree/master
 
 ## References
 
