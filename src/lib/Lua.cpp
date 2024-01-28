@@ -10,6 +10,7 @@ Lua::Lua() {
   luaL_openlibs(L);
 }
 Lua::~Lua() {
+  lua_close(L);
 }
 
 std::string Lua::GetError() {
