@@ -17,7 +17,6 @@ Gamepad::Gamepad(const uint8_t index) : index{index} {
   buttons.resize(4);
 }
 Gamepad::~Gamepad() {
-  Close();
 }
 
 void Gamepad::Init() {
@@ -32,7 +31,7 @@ void Gamepad::Enable() {
 }
 
 void Gamepad::Open() {
-  SDL_JoystickOpen(index);
+  joystick = SDL_JoystickOpen(index);
 }
 
 const char* Gamepad::GetControllerName() {
