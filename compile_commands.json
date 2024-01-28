@@ -1,0 +1,382 @@
+[
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "main.o",
+      "../src/main.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/main.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Behavior.o",
+      "../src/components/Behavior.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/components/Behavior.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Window.o",
+      "../src/lib/Window.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Window.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Vulkan.o",
+      "../src/lib/Vulkan.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Vulkan.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Shader.o",
+      "../src/lib/Shader.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Shader.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "SDL.o",
+      "../src/lib/SDL.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/SDL.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Math.o",
+      "../src/lib/Math.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Math.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Lua.o",
+      "../src/lib/Lua.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Lua.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Logger.o",
+      "../src/lib/Logger.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Logger.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Gamepad.o",
+      "../src/lib/Gamepad.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Gamepad.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Engine.o",
+      "../src/lib/Engine.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Engine.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Audio.o",
+      "../src/lib/Audio.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/src/lib/Audio.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Window_test.o",
+      "../tests/lib/Window_test.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/tests/lib/Window_test.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Vulkan_test.o",
+      "../tests/lib/Vulkan_test.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/tests/lib/Vulkan_test.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Protobuf_test.o",
+      "../tests/lib/Protobuf_test.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/tests/lib/Protobuf_test.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Pong_test.o",
+      "../tests/lib/Pong_test.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/tests/lib/Pong_test.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Lua_test.o",
+      "../tests/lib/Lua_test.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/tests/lib/Lua_test.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Gamepad_test.o",
+      "../tests/lib/Gamepad_test.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/tests/lib/Gamepad_test.cpp"
+  },
+  {
+    "directory": "build",
+    "arguments": [
+      "clang",
+      "-std=c++17",
+      "-IC:/VulkanSDK/1.3.236.0/Include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-2.26.1/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/sdl-mixer-2.6.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/glm-0.9.9.8",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/tinyobjloader/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/stb",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/protobuf-25.2/include",
+      "-IC:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/vendor/lua-5.4.2/include",
+      "-c",
+      "-o",
+      "Audio_test.o",
+      "../tests/lib/Audio_test.cpp"
+    ],
+    "file": "C:/Users/mikes/Desktop/Desktop/Making_Games/Game5/Code/tests/lib/Audio_test.cpp"
+  }
+]

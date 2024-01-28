@@ -1,0 +1,15 @@
+{
+  "name": "build_scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mike Smullin <mike@mikesmullin.com>",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "glob": "^10.3.10"
+  }
+}

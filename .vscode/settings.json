@@ -80,15 +80,7 @@
     "vendor/tinyobjloader/include"
   ],
   "editor.formatOnSave": true,
-  "clangd.fallbackFlags": [
-    "-std=c++17",
-    "-IC:/VulkanSDK/1.3.236.0/Include",
-    "-I${workspaceFolder}/vendor/sdl-2.26.1/include",
-    "-I${workspaceFolder}/vendor/sdl-mixer-2.6.2/include",
-    "-I${workspaceFolder}/vendor/glm-0.9.9.8",
-    "-I${workspaceFolder}/vendor/tinyobjloader/include",
-    "-I${workspaceFolder}/vendor/stb",
-    "-I${workspaceFolder}/vendor/protobuf-25.2/include",
-    "-I${workspaceFolder}/vendor/lua-5.4.2/include"
+  "clangd.arguments": [
+    "--compile-commands-dir=${workspaceFolder}"
   ]
 }
