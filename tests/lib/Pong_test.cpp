@@ -93,7 +93,7 @@ int main() {
 
     a.init();
 
-    auto l = mks::Lua{};
+    mks::Lua l{};
     lua_register(l.L, "LoadSoundEffect", lua_LoadSoundEffect);
     lua_register(l.L, "PlaySoundEffect", lua_PlaySoundEffect);
     lua_register(l.L, "GetGamepadInput", lua_GetGamepadInput);
