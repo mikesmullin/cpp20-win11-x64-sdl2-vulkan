@@ -30,6 +30,8 @@ int main() {
       std::cin.clear();
     }
 
+    joystick.Close();
+
     mks::Logger::Infof("End of test.");
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';

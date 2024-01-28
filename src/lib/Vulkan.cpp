@@ -43,23 +43,124 @@ std::array<VkVertexInputAttributeDescription, 3> Vertex::getAttributeDescription
   return attributeDescriptions;
 }
 
+Vulkan::Vulkan() {
+}
+
+Vulkan::~Vulkan() {
+}
+
+void Vulkan::CreateInstance(
+    const char* name,
+    const unsigned int major,
+    const unsigned int minor,
+    const unsigned int hotfix) {
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkApplicationInfo.html
+  auto appInfo = std::make_unique<VkApplicationInfo>();
+
+  // the type of this structure.
+  appInfo->sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+
+  // NULL or a pointer to a structure extending this structure.
+  // ie. optional extension information
+  appInfo->pNext = nullptr;  // default
+
+  // NULL or is a pointer to a null-terminated UTF-8 string containing the name of the
+  // application.
+  appInfo->pApplicationName = name;
+
+  // an unsigned integer variable containing the developer-supplied version number of the
+  // application.
+  appInfo->applicationVersion = VK_MAKE_VERSION(major, minor, hotfix);
+
+  // NULL or is a pointer to a null-terminated UTF-8 string containing the name of the engine (if
+  // any) used to create the application.
+  appInfo->pEngineName = "MKS";
+
+  // an unsigned integer variable containing the developer-supplied version number of the engine
+  // used to create the application.
+  appInfo->engineVersion = VK_MAKE_VERSION(1, 0, 0);
+
+  // must be the highest version of Vulkan that the application is designed to use, encoded as
+  // described in
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#extendingvulkan-coreversions-versionnumbers.
+  // The patch version number specified in apiVersion is ignored when creating an instance object.
+  // Only the major and minor versions of the instance must match those requested in apiVersion.
+  appInfo->apiVersion = VK_API_VERSION_1_3;
+
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkInstanceCreateInfo.html
+  auto createInfo = std::make_unique<VkInstanceCreateInfo>();
+
+  // the type of this structure.
+  createInfo->sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+
+  // NULL or a pointer to a structure extending this structure.
+  createInfo->pNext = nullptr;  // default
+
+  // a bitmask of VkInstanceCreateFlagBits indicating the behavior of the instance.
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkInstanceCreateFlagBits.html
+  createInfo->flags = 0x0;  // default
+
+  // NULL or a pointer to a VkApplicationInfo structure. If not NULL, this information helps
+  // implementations recognize behavior inherent to classes of applications.
+  createInfo->pApplicationInfo = appInfo.get();
+
+#ifdef DEBUG_VULKAN
+  // the number of global layers to enable.
+  createInfo->enabledLayerCount = requiredValidationLayers.size();
+
+  // a pointer to an array of enabledLayerCount null-terminated UTF-8 strings containing the
+  // names of layers to enable for the created instance. The layers are loaded in the order they
+  // are listed in this array, with the first array element being the closest to the application,
+  // and the last array element being the closest to the driver. See the
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#extendingvulkan-layers
+  // section for further details.
+  createInfo->ppEnabledLayerNames = requiredValidationLayers.data();
+#else
+  createInfo->enabledLayerCount = 0;          // default
+  createInfo->ppEnabledLayerNames = nullptr;  // default
+#endif
+
+  // the number of global extensions to enable
+  createInfo->enabledExtensionCount = requiredExtensionNames.size();
+
+  // a pointer to an array of enabledExtensionCount null-terminated UTF-8 strings containing the
+  // names of extensions to enable.
+  createInfo->ppEnabledExtensionNames = requiredExtensionNames.data();
+
+  // Create a new Vulkan instance
+  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCreateInstance.html
+  if (vkCreateInstance(createInfo.get(), nullptr, &instance) != VK_SUCCESS) {
+    throw Logger::Errorf("Failed to create Vulkan instance.");
+  }
+}
+
+void Vulkan::InitSwapChain() {
+  const std::vector<const char*> requiredPhysicalDeviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+  AssertSwapChainSupport(requiredPhysicalDeviceExtensions);
+  UseLogicalDevice(requiredPhysicalDeviceExtensions);
+  CreateSwapChain();
+}
+
 void Vulkan::AssertDriverValidationLayersSupported() {
 #ifdef DEBUG_VULKAN
   requiredValidationLayers.resize(1);
   // SDK-provided layer conveniently bundles all useful standard validation
   requiredValidationLayers[0] = "VK_LAYER_KHRONOS_validation";
-
-  bool supported = Vulkan::CheckInstanceLayers(Vulkan::requiredValidationLayers);
-  if (!supported) {
-    throw Logger::Errorf("Missing required Vulkan validation layers.");
-  }
-
-  // TODO: Device-specific layer validation is deprecated. However,
-  //   the specification document still recommends that you enable validation layers at device
-  //   level as well for compatibility, and it's required by some implementations. we'll see this
-  //   code later on:
-  //   https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Logical_device_and_queues
 #endif
+
+  if (requiredValidationLayers.size() > 0) {
+    bool supported = Vulkan::CheckInstanceLayers(Vulkan::requiredValidationLayers);
+    if (!supported) {
+      throw Logger::Errorf("Missing required Vulkan validation layers.");
+    }
+
+    // TODO: Device-specific layer validation is deprecated. However,
+    //   the specification document still recommends that you enable validation layers at device
+    //   level as well for compatibility, and it's required by some implementations. we'll see this
+    //   code later on:
+    //   https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Logical_device_and_queues
+  }
 }
 
 void Vulkan::AssertDriverExtensionsSupported(std::vector<const char*> requiredExtensionNames) {
@@ -68,6 +169,7 @@ void Vulkan::AssertDriverExtensionsSupported(std::vector<const char*> requiredEx
   if (!supported) {
     throw Logger::Errorf("Vulkan driver is missing required Vulkan extensions.");
   }
+  this->requiredExtensionNames = requiredExtensionNames;
 }
 
 const bool Vulkan::CheckInstanceLayers(const std::vector<const char*> requiredLayers) {
@@ -174,100 +276,6 @@ const bool Vulkan::CheckInstanceExtensions(const std::vector<const char*> requir
     }
   }
   return allRequiredSupported;
-}
-
-Vulkan::Vulkan() {
-  // TODO: this is naughty. i am calling this instead of setting nullptr.
-}
-
-Vulkan::Vulkan(
-    const char* name,
-    const unsigned int major,
-    const unsigned int minor,
-    const unsigned int hotfix,
-    const std::vector<const char*> requiredValidationLayers,
-    const std::vector<const char*> requiredExtensionNames) {
-  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkApplicationInfo.html
-  auto appInfo = std::make_unique<VkApplicationInfo>();
-
-  // the type of this structure.
-  appInfo->sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-
-  // NULL or a pointer to a structure extending this structure.
-  // ie. optional extension information
-  appInfo->pNext = nullptr;  // default
-
-  // NULL or is a pointer to a null-terminated UTF-8 string containing the name of the
-  // application.
-  appInfo->pApplicationName = name;
-
-  // an unsigned integer variable containing the developer-supplied version number of the
-  // application.
-  appInfo->applicationVersion = VK_MAKE_VERSION(major, minor, hotfix);
-
-  // NULL or is a pointer to a null-terminated UTF-8 string containing the name of the engine (if
-  // any) used to create the application.
-  appInfo->pEngineName = "MKS";
-
-  // an unsigned integer variable containing the developer-supplied version number of the engine
-  // used to create the application.
-  appInfo->engineVersion = VK_MAKE_VERSION(1, 0, 0);
-
-  // must be the highest version of Vulkan that the application is designed to use, encoded as
-  // described in
-  // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#extendingvulkan-coreversions-versionnumbers.
-  // The patch version number specified in apiVersion is ignored when creating an instance object.
-  // Only the major and minor versions of the instance must match those requested in apiVersion.
-  appInfo->apiVersion = VK_API_VERSION_1_3;
-
-  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkInstanceCreateInfo.html
-  auto createInfo = std::make_unique<VkInstanceCreateInfo>();
-
-  // the type of this structure.
-  createInfo->sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-
-  // NULL or a pointer to a structure extending this structure.
-  createInfo->pNext = nullptr;  // default
-
-  // a bitmask of VkInstanceCreateFlagBits indicating the behavior of the instance.
-  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkInstanceCreateFlagBits.html
-  createInfo->flags = 0x0;  // default
-
-  // NULL or a pointer to a VkApplicationInfo structure. If not NULL, this information helps
-  // implementations recognize behavior inherent to classes of applications.
-  createInfo->pApplicationInfo = appInfo.get();
-
-#ifdef DEBUG_VULKAN
-  // the number of global layers to enable.
-  createInfo->enabledLayerCount = requiredValidationLayers.size();
-
-  // a pointer to an array of enabledLayerCount null-terminated UTF-8 strings containing the
-  // names of layers to enable for the created instance. The layers are loaded in the order they
-  // are listed in this array, with the first array element being the closest to the application,
-  // and the last array element being the closest to the driver. See the
-  // https://registry.khronos.org/vulkan/specs/1.3-extensions/html/vkspec.html#extendingvulkan-layers
-  // section for further details.
-  createInfo->ppEnabledLayerNames = requiredValidationLayers.data();
-#else
-  createInfo->enabledLayerCount = 0;          // default
-  createInfo->ppEnabledLayerNames = nullptr;  // default
-#endif
-
-  // the number of global extensions to enable
-  createInfo->enabledExtensionCount = requiredExtensionNames.size();
-
-  // a pointer to an array of enabledExtensionCount null-terminated UTF-8 strings containing the
-  // names of extensions to enable.
-  createInfo->ppEnabledExtensionNames = requiredExtensionNames.data();
-
-  // Create a new Vulkan instance
-  // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCreateInstance.html
-  if (vkCreateInstance(createInfo.get(), nullptr, &instance) != VK_SUCCESS) {
-    throw Logger::Errorf("Failed to create Vulkan instance.");
-  }
-}
-
-Vulkan::~Vulkan() {
 }
 
 const void Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {

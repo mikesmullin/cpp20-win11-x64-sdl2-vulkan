@@ -58,6 +58,30 @@ class Vulkan {
  public:
   static const int MAX_FRAMES_IN_FLIGHT = 2;
 
+  Vulkan();
+  ~Vulkan();
+
+  std::vector<const char*> requiredValidationLayers{};
+  std::vector<const char*> requiredExtensionNames{};
+
+  /**
+   * The very first thing you need to do is initialize the Vulkan library by creating an instance.
+   * The instance is the connection between your application and the Vulkan library and creating it
+   * involves specifying some details about your application to the driver.
+   *
+   * @param name - Application name
+   * @param major - Application major version number
+   * @param minor - Application minor version number
+   * @param hotfix  - Application hotfix version number
+   */
+  void CreateInstance(
+      const char* name,
+      const unsigned int major,
+      const unsigned int minor,
+      const unsigned int hotfix);
+
+  void InitSwapChain();
+
   /**
    * Query the instance for a list of validation layers it supports.
    */
@@ -70,31 +94,6 @@ class Vulkan {
    * @return whether all required extensions are supported
    */
   static const bool CheckInstanceExtensions(const std::vector<const char*> requiredExtensions);
-
-  Vulkan();
-
-  /**
-   * The very first thing you need to do is initialize the Vulkan library by creating an instance.
-   * The instance is the connection between your application and the Vulkan library and creating it
-   * involves specifying some details about your application to the driver.
-   *
-   * @param name - Application name
-   * @param major - Application major version number
-   * @param minor - Application minor version number
-   * @param hotfix  - Application hotfix version number
-   */
-  Vulkan(
-      const char* name,
-      const unsigned int major,
-      const unsigned int minor,
-      const unsigned int hotfix,
-      const std::vector<const char*> requiredValidationLayers,
-      const std::vector<const char*> requiredExtensionNames);
-
-  ~Vulkan();
-
-  // list of required validation layers, according to developer debug preferences
-  std::vector<const char*> requiredValidationLayers;
 
   /**
    * Abort unless all required Vulkan validation layers

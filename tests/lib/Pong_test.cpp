@@ -104,7 +104,15 @@ int main() {
 
     auto w = mks::Window{};
     ww = &w;
-    w.Begin("Pong_test", "Pong", 1024, 768);
+    w.Begin("Pong", 1024, 768);
+    w.v.AssertDriverValidationLayersSupported();
+    w.v.AssertDriverExtensionsSupported(w.requiredExtensionNames);
+    w.v.CreateInstance("Pong_test", 1, 0, 0);
+    w.v.UsePhysicalDevice(0);
+    w.Bind();
+    auto b = w.GetDrawableAreaExtentBounds();
+    w.v.width = b.width;
+    w.v.height = b.height;
 
     auto gamePad1 = mks::Gamepad{0};
     mks::Logger::Infof("Controller Id: %d, Name: %s", gamePad1.index, gamePad1.GetControllerName());
@@ -114,6 +122,7 @@ int main() {
       throw mks::Logger::Errorf(l.GetError());
     }
 
+    w.v.InitSwapChain();
     w.v.SetVertexBufferData(vertices, indices);
 
     w.v.CreateImageViews();                           // pre
@@ -167,16 +176,18 @@ int main() {
           w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
         });
 
+    w.v.DeviceWaitIdle();
+    gamePad1.Close();
+    w.v.Cleanup();
     w.End();
 
     mks::Logger::Infof("End of test.");
+    return EXIT_SUCCESS;
   } catch (const std::runtime_error& e) {
-    std::cerr << "Fatal: " << e.what() << '\n';
+    std::cerr << "Fatal: " << e.what() << std::endl;
     return EXIT_FAILURE;
   } catch (...) {
-    std::cerr << "Unexpected error\n";
+    std::cerr << "Unexpected error" << std::endl;
     return EXIT_FAILURE;
   }
-
-  return EXIT_SUCCESS;
 }

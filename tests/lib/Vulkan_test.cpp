@@ -34,8 +34,17 @@ int main() {
     mks::Logger::Infof("Begin SDL2 Vulkan test.");
 
     auto w = mks::Window{};
-    w.Begin("Vulkan_test", "SDL2 Vulkan Window", 800, 600);
+    w.Begin("SDL2 Vulkan Window", 800, 600);
+    w.v.AssertDriverValidationLayersSupported();
+    w.v.AssertDriverExtensionsSupported(w.requiredExtensionNames);
+    w.v.CreateInstance("Vulkan_test", 1, 0, 0);
+    w.v.UsePhysicalDevice(0);
+    w.Bind();
+    auto b = w.GetDrawableAreaExtentBounds();
+    w.v.width = b.width;
+    w.v.height = b.height;
 
+    w.v.InitSwapChain();
     w.v.SetVertexBufferData(vertices, indices);
 
     w.v.CreateImageViews();
@@ -83,6 +92,8 @@ int main() {
           w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
         });
 
+    w.v.DeviceWaitIdle();
+    w.v.Cleanup();
     w.End();
 
     mks::Logger::Infof("End of test.");

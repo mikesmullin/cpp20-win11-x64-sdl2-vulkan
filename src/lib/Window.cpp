@@ -17,8 +17,7 @@ Window::~Window() {
 }
 
 // init Windows + SDL2 + Vulkan
-void Window::Begin(
-    const char* vulkanAppName, const char* title, const int width, const int height) {
+void Window::Begin(const char* title, const int width, const int height) {
   // SDL2
   mks::SDL::defaultInstance.enableVideo();
   mks::SDL::defaultInstance.init();
@@ -34,39 +33,31 @@ void Window::Begin(
     throw mks::Logger::Errorf("Failed to create window");
   }
 
-  const std::vector<const char*> requiredValidationLayers = {
-      // all of the useful standard validation is bundled into a layer included in the SDK
-      "VK_LAYER_KHRONOS_validation"};
-
   // list required extensions, according to SDL window manager
   unsigned int extensionCount = 0;
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
-  std::vector<const char*> requiredExtensionNames(extensionCount);
+  requiredExtensionNames.resize(extensionCount);
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, requiredExtensionNames.data());
+}
 
-  const std::vector<const char*> requiredPhysicalDeviceExtensions = {
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-
-  v = mks::Vulkan{vulkanAppName, 1, 0, 0, requiredValidationLayers, requiredExtensionNames};
-
-  v.AssertDriverValidationLayersSupported();
-  v.AssertDriverExtensionsSupported(requiredExtensionNames);
-  v.UsePhysicalDevice(0);
-
+void Window::Bind() {
   // ask SDL to bind our Vulkan surface to the window surface
   SDL_Surface* window_surface = SDL_GetWindowSurface(window);
   if (!window_surface) {
     throw mks::Logger::Errorf("Failed to get the surface from the window");
   }
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
+}
+
+/**
+ * for use when telling Vulkan what its drawable area (extent bounds) are, according to SDL
+ * window. this may differ from what we requested, and must be less than the physical device
+ * capability.
+ */
+Window::DrawableArea Window::GetDrawableAreaExtentBounds() {
   int dwidth, dheight = 0;
   SDL_Vulkan_GetDrawableSize(window, &dwidth, &dheight);
-  v.width = static_cast<uint32_t>(dwidth);
-  v.height = static_cast<uint32_t>(dheight);
-
-  v.AssertSwapChainSupport(requiredPhysicalDeviceExtensions);
-  v.UseLogicalDevice(requiredPhysicalDeviceExtensions);
-  v.CreateSwapChain();
+  return {static_cast<uint32_t>(dwidth), static_cast<uint32_t>(dheight)};
 }
 
 void Window::RenderLoop(
@@ -137,9 +128,6 @@ void Window::RenderLoop(
 }
 
 void Window::End() {
-  v.DeviceWaitIdle();
-  v.Cleanup();
-
   SDL_DestroyWindow(window);
 }
 
