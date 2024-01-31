@@ -3,7 +3,7 @@
 ## Prerequisites
 - Vulkan SDK (not-included)  
   https://www.lunarg.com/vulkan-sdk/
-- GLFW (included)
+- SDL (included)
 - GLM (included)
 
 ## Building
@@ -80,9 +80,8 @@ This project was inspired by the following materials:
 - make pong demo
 - publish to mobile
 
-- learn to use RenderDoc and nVidia nSight Graphics to profile Vulkan
-  - learn how to name objects for debugging in RenderDoc
-    https://www.saschawillems.de/blog/2016/05/28/tutorial-on-using-vulkans-vk_ext_debug_marker-with-renderdoc/
+- learn how to name objects for debugging in RenderDoc + nVidia nSight Graphics
+  https://www.saschawillems.de/blog/2016/05/28/tutorial-on-using-vulkans-vk_ext_debug_marker-with-renderdoc/
 
 - Use class RAII to manage vk object lifetimes, and refactor long source files into reusable modules
 - Understand whether to adopt the DAG/terraform type of interface for my Vulkan wrapper
