@@ -359,13 +359,63 @@ Vulkan__CreateDescriptorSets();      // setting
 Vulkan__CreateCommandBuffers();      // these theoretically would get used in render loop by me
 Vulkan__CreateSyncObjects();         // fence and semaphores
 
+log('-- BEGIN RENDER LOOP')
 Window__RenderLoop(() => {
   Vulkan__UpdateVertexBuffer();
   Vulkan__UpdateUniformBuffer();
 })
+log('-- END RENDER LOOP')
 
 Vulkan__DeviceWaitIdle();
 Vulkan__Cleanup();
 Window__End();
+// #endregion
 
+// #region game
+// api inspired by http://phaser.io
+// compare https://github.com/mikesmullin/pupu-panic/blob/master/src/main.js
+class Simulation { // aka Game
+  // constructor(Object config);
+  loadModel() { }
+  loadImage() { }
+}
+class Scene { // has lifecycle
+  /*Fn*/ preload;
+  /*Fn*/ create;
+}
+class Texture {
+  /*str*/ path;
+}
+class Sprite {
+  /*Texture*/ texture;
+}
+const g = new Simulation({ width: 800, height: 600 });
+
+// TODO: what does a texture memory manager look like?
+//   - stream files from disk, as needed
+//   - evict from CPU or GPU mem when unused
+//   - avoid thrashing
+//   - recompose atlases at runtime?
+
+const model1 = g.loadModel('/a.obj')
+const img1 = g.loadImage('/abc.png')
+
+class VulkanRenderGraph {
+  window() { return this }
+  enableDriverValidation() { return this }
+  setPhysicalDevice() { return this }
+  enableSwapChain() { return this }
+  createVBO() { }
+  createImgView() { }
+}
+const v = new VulkanRenderGraph();
+
+v
+  .window()
+  .enableDriverValidation()
+  .setPhysicalDevice(0)
+  .enableSwapChain(2)
+
+const vbo1 = v.createVBO(model1)
+const imgView1 = v.createImgView(img1)
 // #endregion
