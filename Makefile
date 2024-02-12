@@ -4,7 +4,7 @@ CL_ARGS = \
 	/nologo \
 	/Zi \
 	/EHsc \
-	/permissive- /std:c++20
+	/permissive- /std:c++23
 INCLUDE_PATHS = \
 	/I C:/VulkanSDK/1.3.236.0/Include \
 	/I ../vendor/sdl-2.26.1/include \
