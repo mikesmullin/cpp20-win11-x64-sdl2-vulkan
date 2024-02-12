@@ -9,6 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "../../src/lib/Audio.hpp"
+#include "../../src/lib/Base.hpp"
 #include "../../src/lib/Gamepad.hpp"
 #include "../../src/lib/Logger.hpp"
 #include "../../src/lib/Lua.hpp"
@@ -89,6 +90,8 @@ int lua_AdjustVBO(lua_State* L) {
 
 int main() {
   try {
+    test();
+
     mks::Logger::Infof("Begin Pong test.");
 
     a.init();
@@ -125,20 +128,24 @@ int main() {
     w.v.InitSwapChain();
     w.v.SetVertexBufferData(vertices, indices);
 
-    w.v.CreateImageViews();                           // pre
-    w.v.CreateRenderPass();                           // pre
-    w.v.CreateDescriptorSetLayout();                  // pre
-    w.v.CreateGraphicsPipeline();                     // pre
-    w.v.CreateFrameBuffers();                         // pre
-    w.v.CreateCommandPool();                          // setting
+    w.v.CreateImageViews();           // pre
+    w.v.CreateRenderPass();           // pre
+    w.v.CreateDescriptorSetLayout();  // pre
+    w.v.CreateGraphicsPipeline();     // pre
+    w.v.CreateFrameBuffers();         // pre
+    w.v.CreateCommandPool();          // setting
+
     w.v.CreateTextureImage(textureFiles[0].c_str());  // cmd
     w.v.CreateTextureImageView();                     // setting
-    w.v.CreateTextureSampler();                       // setting
+
+    w.v.CreateTextureSampler();  // setting
+
     w.v.CreateVertexBuffer();                         // cmd
     w.v.CreateIndexBuffer();                          // cmd
     w.v.CreateUniformBuffers(sizeof(ubo_MVPMatrix));  // cmd
-    w.v.CreateDescriptorPool();                       // setting
-    w.v.CreateDescriptorSets();                       // setting
+
+    w.v.CreateDescriptorPool();  // setting
+    w.v.CreateDescriptorSets();  // setting
     w.v.CreateCommandBuffers();  // these theoretically would get used in render loop by me
     w.v.CreateSyncObjects();     // fence and semaphores
 
