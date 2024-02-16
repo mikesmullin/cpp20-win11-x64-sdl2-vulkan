@@ -90,8 +90,6 @@ int lua_AdjustVBO(lua_State* L) {
 
 int main() {
   try {
-    test();
-
     mks::Logger::Infof("Begin Pong test.");
 
     a.init();
