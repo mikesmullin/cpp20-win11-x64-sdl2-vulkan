@@ -1,0 +1,41 @@
+cxx_binary(
+    name = "Pong_test",
+    compiler_flags = [
+        #"-O0",
+        #"-gdwarf",
+        #"-m64",
+        #"-std=c++23",
+
+        "/nologo",
+        "/Zi",
+        "/EHsc",
+        "/permissive-",
+        "/std:c++20",
+        "/FS",
+        "/NODEFAULTLIB:library",
+    ],
+    include_directories = [
+        "C:/VulkanSDK/1.3.236.0/Include",
+        "vendor/sdl-2.26.1/include",
+        "vendor/sdl-mixer-2.6.2/include",
+        "vendor/glm-0.9.9.8",
+        "vendor/tinyobjloader/include",
+        "vendor/stb",
+        "vendor/protobuf-25.2/include",
+        "vendor/lua-5.4.2/include",
+    ],
+    srcs = glob([
+        "tests/lib/Pong_test.cpp",
+        "src/components/*.cpp",
+        "src/lib/*.cpp",
+        "src/proto/*.cc",
+    ]),
+    linker_flags = [
+        "/LIBPATH:vendor/sdl-2.26.1/lib/x64","SDL2.lib",
+        "/LIBPATH:vendor/sdl-mixer-2.6.2/lib/x64","SDL2_mixer.lib",
+        "/LIBPATH:C:/VulkanSDK/1.3.236.0/Lib","vulkan-1.lib",
+        "/LIBPATH:vendor/protobuf-25.2/x64","libprotobuf-lite.lib",
+        "/LIBPATH:vendor/lua-5.4.2/x64","lua54.lib",
+    ],    
+    link_style = "shared",
+)
