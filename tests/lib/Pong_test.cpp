@@ -124,24 +124,22 @@ int main() {
       throw mks::Logger::Errorf(l.GetError());
     }
 
-    w.v.InitSwapChain();
     w.v.SetVertexBufferData(vertices, indices);
 
-    w.v.CreateImageViews();           // pre
-    w.v.CreateRenderPass();           // pre
-    w.v.CreateDescriptorSetLayout();  // pre
-    w.v.CreateGraphicsPipeline();     // pre
-    w.v.CreateFrameBuffers();         // pre
-    w.v.CreateCommandPool();          // setting
+    w.v.InitSwapChain();
+    w.v.CreateImageViews();
+    w.v.CreateRenderPass();
+    w.v.CreateDescriptorSetLayout();  // takes user data inputs
+    w.v.CreateGraphicsPipeline();     // reads shaders in
+    w.v.CreateFrameBuffers();
+    w.v.CreateCommandPool();
 
-    w.v.CreateTextureImage(textureFiles[0].c_str());  // cmd
-    w.v.CreateTextureImageView();                     // setting
-
-    w.v.CreateTextureSampler();  // setting
-
-    w.v.CreateVertexBuffer();                         // cmd
-    w.v.CreateIndexBuffer();                          // cmd
-    w.v.CreateUniformBuffers(sizeof(ubo_MVPMatrix));  // cmd
+    w.v.CreateTextureImage(textureFiles[0].c_str());
+    w.v.CreateTextureImageView();
+    w.v.CreateTextureSampler();
+    w.v.CreateVertexBuffer();
+    w.v.CreateIndexBuffer();
+    w.v.CreateUniformBuffers(sizeof(ubo_MVPMatrix));
 
     w.v.CreateDescriptorPool();  // setting
     w.v.CreateDescriptorSets();  // setting
