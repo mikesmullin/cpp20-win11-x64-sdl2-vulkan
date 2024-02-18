@@ -4,5 +4,3 @@
 .vs/
 /.cache/
 /compile_commands.json
-/buck-out
-/*.pdb

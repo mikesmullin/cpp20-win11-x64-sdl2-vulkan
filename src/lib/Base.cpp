@@ -17,7 +17,7 @@ void test() {
 
   EvalPrint(ArrayCount(foo));
 
-  EvalPrint(Min(1, 10));
+  EvalPrint(Min(1, 1));
   EvalPrint(Min(100, 10));
   EvalPrint(Max(1, 10));
   EvalPrint(Max(100, 10));

@@ -1,10 +1,11 @@
 import { glob } from 'glob'
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const CONCURRENCY = 48; // threadripper ftw!
 const BUILD_PATH = "build";
 const COMPILER_PATH = "clang++";
 const OUT_FILE = "compile_commands.json";
@@ -70,7 +71,7 @@ const generate_clangd_compile_commands = async () => {
   }
 
   console.log(`writing ${OUT_FILE}...`)
-  fs.writeFileSync(OUT_FILE, JSON.stringify(compile_commands, null, 2));
+  await fs.writeFile(OUT_FILE, JSON.stringify(compile_commands, null, 2));
 
   console.log("done.");
 };
@@ -91,19 +92,87 @@ const child_spawn = async (cmd, args = []) => {
   return code;
 };
 
-const compile_pong_test = async () => {
-  console.log("compiling...");
-  const code = await child_spawn(COMPILER_PATH, [
-    ...DEBUG_COMPILER_ARGS,
-    ...COMPILER_ARGS,
-    ...LINKER_LIBS,
-    ...LINKER_LIB_PATHS,
-    rel(workspaceFolder, 'tests', 'lib', 'Pong_test.cpp'),
-    ...COMPILER_TRANSLATION_UNITS,
-    '-oPong_test.exe',
-  ]);
+const promiseBatch = async function* (concurrency, list, fn) {
+  for (let p = [], i = 0, l = list.length; i < l || p.length > 0;) {
+    if (i < l) {
+      let _p;
+      _p = fn(list[i]).then(r => [_p.__id, r]);
+      _p.__id = i++;
+      if (p.push(_p) < concurrency) {
+        continue;
+      }
+    }
+    const [id, res] = await Promise.race(p);
+    p = p.filter(x => x.__id !== id);
+    yield res;
+  }
+};
+
+const compile_test = async (basename) => {
+  console.log(`compiling ${basename}...`);
+  const absbuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
+
+  // compile translation units in parallel (N-at-once)
+  const unit_files = [`tests/lib/${basename}.cpp`];
+  for (const u of COMPILER_TRANSLATION_UNITS) {
+    unit_files.push(...await glob(path.relative(workspaceFolder, absbuild(u)).replace(/\\/g, '/')));
+  }
+  const dsts = [];
+  const compileTranslationUnit = async (unit) => {
+    const RX_EXT = /\.[\w\d]{1,3}$/i;
+    const dir = path.relative(process.cwd(), absbuild(path.dirname(unit)));
+    await fs.mkdir(dir, { recursive: true });
+
+    const src = rel(workspaceFolder, unit);
+    const dst = rel(workspaceFolder, BUILD_PATH, unit.replace(RX_EXT, '.o'));
+    dsts.push(dst);
+
+    let dstExists = false;
+    try {
+      await fs.access(path.join(BUILD_PATH, dst), fs.constants.F_OK);
+      dstExists = true;
+    }
+    catch (e) {
+    }
+    if (dstExists) {
+      const srcStat = await fs.stat(path.join(BUILD_PATH, src));
+      const dstStat = await fs.stat(path.join(BUILD_PATH, dst));
+      if (srcStat.mtime < dstStat.mtime) {
+        return;
+      }
+    }
+
+    const code = await child_spawn(COMPILER_PATH, [
+      ...DEBUG_COMPILER_ARGS,
+      ...COMPILER_ARGS,
+      src,
+      '-c',
+      '-o', dst,
+    ]);
+
+    return dst;
+  };
+  const objs = [];
+  for await (const obj of promiseBatch(CONCURRENCY, unit_files, compileTranslationUnit)) {
+    if (obj) {
+      objs.push(obj);
+    }
+  }
+
+  // linker stage
+  let code = 0;
+  if (objs.length > 0) {
+    code = await child_spawn(COMPILER_PATH, [
+      ...DEBUG_COMPILER_ARGS,
+      ...COMPILER_ARGS,
+      ...LINKER_LIBS,
+      ...LINKER_LIB_PATHS,
+      ...dsts,
+      '-o', `${basename}.exe`,
+    ]);
+  }
   if (0 == code) {
-    const code2 = await child_spawn('Pong_test.exe');
+    const code2 = await child_spawn(`${basename}.exe`);
   }
   console.log("done.");
 };
@@ -113,7 +182,40 @@ switch (cmd) {
   case 'compile_commands':
     await generate_clangd_compile_commands();
     break;
+  case 'Audio_test':
+  case 'Gamepad_test':
+  case 'Lua_test':
   case 'Pong_test':
-    await compile_pong_test();
+  case 'Protobuf_test':
+  case 'Vulkan_test':
+  case 'Window_test':
+    await compile_test(cmd);
+    break;
+  case 'help':
+  default:
+    console.log(`
+Mike's hand-rolled build system.
+
+USAGE:
+  node build_scripts\\Makefile.mjs <SUBCOMMAND>
+
+SUBCOMMANDS:
+  compile_commands
+    Generate the .json file needed for clangd for vscode extension
+  Audio_test
+    Test SDL audio integration
+  Gamepad_test
+    Test SDL gamepad integration
+  Lua_test
+    Test Lua sandbox integration
+  Pong_test
+    Test everything (game demo)
+  Protobuf_test
+    Test Google Protobuf data read/write
+  Vulkan_test
+    Test Vulkan driver init (triangle demo)
+  Window_test
+    Test SDL window integration
+`);
     break;
 }

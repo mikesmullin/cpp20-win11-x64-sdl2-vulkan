@@ -6,14 +6,14 @@
 #define COMPILER_CLANG 1
 #else
 #define COMPILER_CLANG 0
-// #error compiler not supported
+#error compiler not supported
 #endif
 
 #ifdef _WIN32
 #define OS_WINDOWS 1
 #else
 #define OS_WINDOWS 0
-// #error os not supported
+#error os not supported
 #endif
 
 #ifdef __amd64__
@@ -25,7 +25,7 @@
 #else
 #define ARCH_X86 0
 #define ARCH_X64 0
-// #error arch not supported
+#error arch not supported
 #endif
 
 // Helpers
