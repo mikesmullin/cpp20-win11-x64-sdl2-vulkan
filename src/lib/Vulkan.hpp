@@ -10,6 +10,8 @@
 #include <optional>
 #include <vector>
 
+#include "Base.hpp"
+
 /**
  * Enables Vulkan validation layer handler
  * (performance penalty) and corresponding stderr log output.
@@ -43,15 +45,6 @@ struct SwapChainSupportDetails {
   VkSurfaceCapabilitiesKHR capabilities;
   std::vector<VkSurfaceFormatKHR> formats;
   std::vector<VkPresentModeKHR> presentModes;
-};
-
-struct Vertex {
-  glm::vec2 pos;
-  glm::vec3 color;
-  glm::vec2 texCoord;
-
-  static VkVertexInputBindingDescription getBindingDescription();
-  static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions();
 };
 
 class Vulkan {
@@ -150,13 +143,11 @@ class Vulkan {
 
   void CreateImageViews();
   void CreateRenderPass();
-  void CreateGraphicsPipeline();
+  void CreateGraphicsPipeline(u32 vertexSize, u32 offset1, u32 offset2, u32 offset3);
   void CreateDescriptorSetLayout();
   void CreateFrameBuffers();
   void CreateCommandPool();
   void CreateCommandBuffers();
-  const void SetVertexBufferData(
-      const std::vector<mks::Vertex> vertices, const std::vector<uint16_t> indices);
   void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
   void CreateSyncObjects();
   void CreateBuffer(
@@ -171,9 +162,9 @@ class Vulkan {
   void TransitionImageLayout(
       VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
   void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-  void CreateVertexBuffer();
-  void UpdateVertexBuffer();
-  void CreateIndexBuffer();
+  void CreateVertexBuffer(u64 size, const void* indata);
+  void UpdateVertexBuffer(u64 size, const void* indata);
+  void CreateIndexBuffer(u64 size, const void* indata);
   void CreateUniformBuffers(const unsigned int length);
   void UpdateUniformBuffer(uint32_t frame, void* data);
   void CreateDescriptorPool();
@@ -208,6 +199,7 @@ class Vulkan {
   uint32_t imageIndex = 0;
   uint8_t currentFrame = 0;
   VkExtent2D swapChainExtent = {};
+  u32 drawIndexCount = 0;
 
  private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -242,8 +234,6 @@ class Vulkan {
   VkDeviceMemory textureImageMemory;
   VkImageView textureImageView;
   VkSampler textureSampler;
-  std::vector<mks::Vertex> vertices;
-  std::vector<uint16_t> indices;
 };
 
 }  // namespace mks

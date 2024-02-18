@@ -17,13 +17,19 @@
 
 namespace {
 
+struct Vertex {
+  glm::vec2 pos;
+  glm::vec3 color;
+  glm::vec2 texCoord;
+};
+
 struct ubo_MVPMatrix {
   glm::mat4 model;
   glm::mat4 view;
   glm::mat4 proj;
 };
 
-std::vector<mks::Vertex> vertices = {
+std::vector<Vertex> vertices = {
     {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.2f, 0.0f}},
     {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
     {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.25f}},
@@ -81,7 +87,6 @@ int lua_AdjustVBO(lua_State* L) {
   vertices[2].texCoord[1] += 0.25f;
   vertices[3].texCoord[0] += 0.2f;
   vertices[3].texCoord[1] += 0.25f;
-  ww->v.SetVertexBufferData(vertices, indices);
   isVBODirty = true;
   return 0;
 }
@@ -124,21 +129,23 @@ int main() {
       throw mks::Logger::Errorf(l.GetError());
     }
 
-    w.v.SetVertexBufferData(vertices, indices);
-
     w.v.InitSwapChain();
     w.v.CreateImageViews();
     w.v.CreateRenderPass();
     w.v.CreateDescriptorSetLayout();  // takes user data inputs
-    w.v.CreateGraphicsPipeline();     // reads shaders in
+    w.v.CreateGraphicsPipeline(       // reads shaders in
+        sizeof(Vertex),
+        offsetof(Vertex, pos),
+        offsetof(Vertex, color),
+        offsetof(Vertex, texCoord));
     w.v.CreateFrameBuffers();
     w.v.CreateCommandPool();
 
     w.v.CreateTextureImage(textureFiles[0].c_str());
     w.v.CreateTextureImageView();
     w.v.CreateTextureSampler();
-    w.v.CreateVertexBuffer();
-    w.v.CreateIndexBuffer();
+    w.v.CreateVertexBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data());
+    w.v.CreateIndexBuffer(sizeof(indices[0]) * indices.size(), indices.data());
     w.v.CreateUniformBuffers(sizeof(ubo_MVPMatrix));
 
     w.v.CreateDescriptorPool();  // setting
@@ -147,6 +154,7 @@ int main() {
     w.v.CreateSyncObjects();     // fence and semaphores
 
     ubo_MVPMatrix ubo{};  // model_view_projection_matrix
+    w.v.drawIndexCount = static_cast<uint32_t>(indices.size());
 
     w.RenderLoop(
         60,
@@ -175,7 +183,7 @@ int main() {
 
           if (isVBODirty) {
             isVBODirty = false;
-            w.v.UpdateVertexBuffer();
+            w.v.UpdateVertexBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data());
           }
           w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
         });

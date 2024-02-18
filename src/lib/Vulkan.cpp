@@ -8,36 +8,37 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "Base.hpp"
 #include "Logger.hpp"
 #include "Shader.hpp"
 
 namespace mks {
 
-VkVertexInputBindingDescription Vertex::getBindingDescription() {
+VkVertexInputBindingDescription getBindingDescription(u32 size) {
   VkVertexInputBindingDescription bindingDescription{};
   bindingDescription.binding = 0;
-  bindingDescription.stride = sizeof(Vertex);
+  bindingDescription.stride = size;
   bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
   return bindingDescription;
 }
 
-std::array<VkVertexInputAttributeDescription, 3> Vertex::getAttributeDescriptions() {
+std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions(u32 o1, u32 o2, u32 o3) {
   std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
   attributeDescriptions[0].binding = 0;
   attributeDescriptions[0].location = 0;
   attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-  attributeDescriptions[0].offset = offsetof(Vertex, pos);
+  attributeDescriptions[0].offset = o1;
 
   attributeDescriptions[1].binding = 0;
   attributeDescriptions[1].location = 1;
   attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-  attributeDescriptions[1].offset = offsetof(Vertex, color);
+  attributeDescriptions[1].offset = o2;
 
   attributeDescriptions[2].binding = 0;
   attributeDescriptions[2].location = 2;
   attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-  attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+  attributeDescriptions[2].offset = o3;
 
   return attributeDescriptions;
 }
@@ -851,7 +852,7 @@ void Vulkan::CreateDescriptorSetLayout() {
   }
 }
 
-void Vulkan::CreateGraphicsPipeline() {
+void Vulkan::CreateGraphicsPipeline(u32 vertexSize, u32 offset1, u32 offset2, u32 offset3) {
   // NOTICE: pipeline state is immutable; you will make many of these instances
 
   Shader s = {};
@@ -885,8 +886,8 @@ void Vulkan::CreateGraphicsPipeline() {
   dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
   dynamicState.pDynamicStates = dynamicStates.data();
 
-  auto bindingDescription = Vertex::getBindingDescription();
-  auto attributeDescriptions = Vertex::getAttributeDescriptions();
+  auto bindingDescription = getBindingDescription(vertexSize);
+  auto attributeDescriptions = getAttributeDescriptions(offset1, offset2, offset3);
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -1046,12 +1047,6 @@ void Vulkan::CreateCommandBuffers() {
   }
 }
 
-const void Vulkan::SetVertexBufferData(
-    const std::vector<mks::Vertex> vertices, const std::vector<uint16_t> indices) {
-  this->vertices = vertices;
-  this->indices = indices;
-}
-
 void Vulkan::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex) {
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1103,7 +1098,7 @@ void Vulkan::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
       0,
       nullptr);
 
-  vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+  vkCmdDrawIndexed(commandBuffer, drawIndexCount, 1, 0, 0, 0);
 
   vkCmdEndRenderPass(commandBuffer);
 
@@ -1296,8 +1291,8 @@ void Vulkan::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, u
   EndSingleTimeCommands(commandBuffer);
 }
 
-void Vulkan::CreateVertexBuffer() {
-  VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+void Vulkan::CreateVertexBuffer(u64 size, const void* indata) {
+  VkDeviceSize bufferSize = size;
 
   VkBuffer stagingBuffer;
   VkDeviceMemory stagingBufferMemory;
@@ -1310,7 +1305,7 @@ void Vulkan::CreateVertexBuffer() {
 
   void* data;
   vkMapMemory(logicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-  memcpy(data, vertices.data(), (size_t)bufferSize);
+  memcpy(data, indata, (size_t)bufferSize);
   vkUnmapMemory(logicalDevice, stagingBufferMemory);
 
   CreateBuffer(
@@ -1326,8 +1321,8 @@ void Vulkan::CreateVertexBuffer() {
   vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
 }
 
-void Vulkan::UpdateVertexBuffer() {
-  VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+void Vulkan::UpdateVertexBuffer(u64 size, const void* indata) {
+  VkDeviceSize bufferSize = size;
 
   VkBuffer stagingBuffer;
   VkDeviceMemory stagingBufferMemory;
@@ -1340,7 +1335,7 @@ void Vulkan::UpdateVertexBuffer() {
 
   void* data;
   vkMapMemory(logicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-  memcpy(data, vertices.data(), (size_t)bufferSize);
+  memcpy(data, indata, (size_t)bufferSize);
   vkUnmapMemory(logicalDevice, stagingBufferMemory);
 
   CopyBuffer(stagingBuffer, vertexBuffer, bufferSize);
@@ -1363,8 +1358,8 @@ uint32_t Vulkan::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags prope
   throw Logger::Errorf("failed to find suitable memory type!");
 }
 
-void Vulkan::CreateIndexBuffer() {
-  VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+void Vulkan::CreateIndexBuffer(u64 size, const void* indata) {
+  VkDeviceSize bufferSize = size;
 
   VkBuffer stagingBuffer;
   VkDeviceMemory stagingBufferMemory;
@@ -1377,7 +1372,7 @@ void Vulkan::CreateIndexBuffer() {
 
   void* data;
   vkMapMemory(logicalDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-  memcpy(data, indices.data(), (size_t)bufferSize);
+  memcpy(data, indata, (size_t)bufferSize);
   vkUnmapMemory(logicalDevice, stagingBufferMemory);
 
   CreateBuffer(

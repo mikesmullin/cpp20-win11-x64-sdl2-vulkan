@@ -71,8 +71,8 @@ void Window::RenderLoop(
   auto lastMeasure = startTime;
   const std::chrono::duration<double, std::milli> frameDelay(1000.0 / fps);
   float deltaTime = 0;
-  U8 frameCount = 0;
-  U8 fpsAvg = 0;
+  u8 frameCount = 0;
+  u8 fpsAvg = 0;
   char title[255];
 
   bool quit = false;

@@ -13,13 +13,19 @@
 
 namespace {
 
+struct Vertex {
+  glm::vec2 pos;
+  glm::vec3 color;
+  glm::vec2 texCoord;
+};
+
 struct ubo_MVPMatrix {
   glm::mat4 model;
   glm::mat4 view;
   glm::mat4 proj;
 };
 
-const std::vector<mks::Vertex> vertices = {
+const std::vector<Vertex> vertices = {
     {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.2f, 0.0f}},
     {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
     {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.25f}},
@@ -45,19 +51,21 @@ int main() {
     w.v.height = b.height;
 
     w.v.InitSwapChain();
-    w.v.SetVertexBufferData(vertices, indices);
-
     w.v.CreateImageViews();
     w.v.CreateRenderPass();
     w.v.CreateDescriptorSetLayout();
-    w.v.CreateGraphicsPipeline();
+    w.v.CreateGraphicsPipeline(
+        sizeof(Vertex),
+        offsetof(Vertex, pos),
+        offsetof(Vertex, color),
+        offsetof(Vertex, texCoord));
     w.v.CreateFrameBuffers();
     w.v.CreateCommandPool();
     w.v.CreateTextureImage("../assets/textures/crates.png");
     w.v.CreateTextureImageView();
     w.v.CreateTextureSampler();
-    w.v.CreateVertexBuffer();
-    w.v.CreateIndexBuffer();
+    w.v.CreateVertexBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data());
+    w.v.CreateIndexBuffer(sizeof(indices[0]) * indices.size(), indices.data());
     w.v.CreateUniformBuffers(sizeof(ubo_MVPMatrix));
     w.v.CreateDescriptorPool();
     w.v.CreateDescriptorSets();
@@ -65,6 +73,7 @@ int main() {
     w.v.CreateSyncObjects();
 
     ubo_MVPMatrix ubo{};  // model_view_projection_matrix
+    w.v.drawIndexCount = static_cast<uint32_t>(indices.size());
 
     w.RenderLoop(
         60,
