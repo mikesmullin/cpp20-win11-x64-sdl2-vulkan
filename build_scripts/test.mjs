@@ -1,4 +1,4 @@
-// @flow
+// uncomment if you want static typing: @ // flow
 
 const log = console.log
 
@@ -135,7 +135,6 @@ const Vulkan__InitSwapChain = () => {
   Vulkan__UseLogicalDevice()
   Vulkan__CreateSwapChain()
 }
-const Vulkan__SetVertexBufferData = () => { }
 const Vulkan__CreateImageViews = () => {
   vkCreateImageView()
 }
@@ -342,7 +341,6 @@ Window__Bind();
 Window__GetDrawableAreaExtentBounds();
 
 Vulkan__InitSwapChain();
-Vulkan__SetVertexBufferData();
 
 Vulkan__CreateImageViews();          // pre
 Vulkan__CreateRenderPass();          // pre
@@ -442,7 +440,7 @@ const node = {
   outputs: [
     {
       type: 'attachment',
-      name: 'gbuffer_colour',
+      name: 'gbuffer_color',
       format: 'VK_FORMAT_B8G8RR8A8_UNORM',
       resolution: [1280, 800],
       op: 'VK_ATTACHMENT_LOAD_OP_CLEAR',
