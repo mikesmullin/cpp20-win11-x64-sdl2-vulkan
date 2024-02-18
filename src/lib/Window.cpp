@@ -2,10 +2,12 @@
 
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <functional>
 #include <thread>
 #include <vector>
 
+#include "Base.hpp"
 #include "Logger.hpp"
 #include "SDL.hpp"
 
@@ -66,8 +68,12 @@ void Window::RenderLoop(
     std::function<void(float)> callback) {
   auto startTime = std::chrono::high_resolution_clock::now();
   auto lastRun = startTime;
+  auto lastMeasure = startTime;
   const std::chrono::duration<double, std::milli> frameDelay(1000.0 / fps);
   float deltaTime = 0;
+  U8 frameCount = 0;
+  U8 fpsAvg = 0;
+  char title[255];
 
   bool quit = false;
   SDL_Event e;
@@ -121,9 +127,22 @@ void Window::RenderLoop(
     // frame rate limiter
     auto frameEnd = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsedTime = frameEnd - frameStart;
-    std::this_thread::sleep_for(frameDelay - elapsedTime);
+    frameCount++;
+    if (frameCount >= fps) {
+      if (!v.minimized) {
+        deltaTime =
+            std::chrono::duration<float, std::chrono::seconds::period>(frameEnd - lastMeasure)
+                .count();
+        fpsAvg = 1 / (deltaTime / frameCount);
+        sprintf(title, "Pong | avgFPS: %u", fpsAvg);
+        SDL_SetWindowTitle(window, title);
+      }
+      frameCount = 0;
+      lastMeasure = frameEnd;
+    }
 
-    // TODO: wait remaining ms to target frame rate
+    // wait remaining ms to target frame rate
+    std::this_thread::sleep_for(frameDelay - elapsedTime);
   }
 }
 
