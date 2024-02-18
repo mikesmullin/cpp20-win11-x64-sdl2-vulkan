@@ -1,3 +1,5 @@
+// @flow
+
 const log = console.log
 
 // #region deps
@@ -418,4 +420,46 @@ v
 
 const vbo1 = v.createVBO(model1)
 const imgView1 = v.createImgView(img1)
+// #endregion
+
+
+// #region frame graph
+
+
+// schema
+const node = {
+  inputs: [
+    {
+      type: 'attachment',
+      name: 'lighting',
+    },
+    {
+      type: 'attachment',
+      name: 'depth',
+    },
+  ],
+  name: "gbuffer_pass",
+  outputs: [
+    {
+      type: 'attachment',
+      name: 'gbuffer_colour',
+      format: 'VK_FORMAT_B8G8RR8A8_UNORM',
+      resolution: [1280, 800],
+      op: 'VK_ATTACHMENT_LOAD_OP_CLEAR',
+    },
+    {
+      type: 'attachment',
+      name: 'gbuffer_normals',
+      format: 'VK_FORMAT_R16G16B16A16_SFLOAT',
+      resolution: [1280, 800],
+      op: 'VK_ATTACHMENT_LOAD_OP_CLEAR',
+    },
+    {
+      type: 'reference',
+      name: 'lighting',
+    },
+  ],
+};
+
+
 // #endregion
