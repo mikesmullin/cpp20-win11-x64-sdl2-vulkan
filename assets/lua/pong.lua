@@ -80,19 +80,19 @@ _G.LoadShader("../assets/shaders/simple_shader.frag.spv")
 _G.LoadShader("../assets/shaders/simple_shader.vert.spv")
 
 -- play music on loop
-_G.PlayAudio(0, true)
+-- _G.PlayAudio(0, true)
 
 -- position the camera
-world:set(1, 3, 5, 0, 0, 0)
+world:set(0, 0, 1, 0, 0, 0)
 world:push()
 
 -- put three entities on screen
 local background = _G.AddInstance()
 _G.WriteInstanceVBO(background, 0, 0, 0, 0, 0, 0, 1, 0)
 local paddle = _G.AddInstance()
--- _G.WriteInstanceVBO(paddle, 0, 1, 0, 0, 0, 0, 1, 1)
--- local ball = _G.AddInstance()
--- _G.WriteInstanceVBO(ball, 1, 1, 0, 0, 0, 0, 1, 2)
+_G.WriteInstanceVBO(paddle, 0, 1, 0, 0, 0, 0, 1, 1)
+local ball = _G.AddInstance()
+_G.WriteInstanceVBO(ball, 1, 1, 0, 0, 0, 0, 1, 2)
 
 -- helper functions
 function FixJoyDrift(x)
@@ -121,34 +121,34 @@ function OnUpdate(deltaTime)
   end
 
   -- apply joystick movement over time
-  --x = (FixJoyDrift(x1) * MOVE_SPEED * deltaTime)
-  --y = (FixJoyDrift(-y1) * MOVE_SPEED * deltaTime)
-  --z = (FixJoyDrift(-y2) * MOVE_SPEED * deltaTime)
-  u = (FixJoyDrift(-x1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  v = (FixJoyDrift(-y1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  w = (FixJoyDrift(-x2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  h = (FixJoyDrift(-y2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  x = (FixJoyDrift(x1) * MOVE_SPEED * deltaTime)
+  y = (FixJoyDrift(-y1) * MOVE_SPEED * deltaTime)
+  z = (FixJoyDrift(-y2) * MOVE_SPEED * deltaTime)
+  -- u = (FixJoyDrift(-x1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  -- v = (FixJoyDrift(-y1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  -- w = (FixJoyDrift(-x2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  -- h = (FixJoyDrift(-y2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
 
-  --if x ~= 0 or y ~= 0 or z ~= 0 then
-  if u ~= 0 or v ~= 0 or w ~= 0 or h ~= 0 then
+  if x ~= 0 or y ~= 0 or z ~= 0 then
+    -- if u ~= 0 or v ~= 0 or w ~= 0 or h ~= 0 then
     -- -- by moving camera
-    -- world.camX = world.camX + x
-    -- world.camY = world.camY + y
-    -- world.camZ = world.camZ + z
-    -- print("[Lua] world.cam x " .. world.camX .. " y " .. world.camY .. " z " .. world.camZ)
-    -- world:push()
+    world.camX = world.camX + x
+    world.camY = world.camY + y
+    world.camZ = world.camZ + z
+    print("[Lua] world.cam x " .. world.camX .. " y " .. world.camY .. " z " .. world.camZ)
+    world:push()
 
     -- by moving texture UVs
-    world.user1X = world.user1X + u
-    world.user1Y = world.user1Y + v
-    world.user2X = world.user2X + w
-    world.user2Y = world.user2Y + h
-    print("[Lua] world.user" ..
-      " u " .. world.user1X ..
-      " v " .. world.user1Y ..
-      " w " .. world.user2X ..
-      " h " .. world.user2Y)
-    world:push()
+    -- world.user1X = world.user1X + u
+    -- world.user1Y = world.user1Y + v
+    -- world.user2X = world.user2X + w
+    -- world.user2Y = world.user2Y + h
+    -- print("[Lua] world.user" ..
+    --   " u " .. world.user1X ..
+    --   " v " .. world.user1Y ..
+    --   " w " .. world.user2X ..
+    --   " h " .. world.user2Y)
+    -- world:push()
   end
 end
 

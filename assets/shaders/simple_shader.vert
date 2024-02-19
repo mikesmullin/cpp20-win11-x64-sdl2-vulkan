@@ -69,53 +69,42 @@ void main() {
     mat4 model = generateModelMatrix(pos, rot, scale);
     gl_Position = ubo1.proj * ubo1.view * model * vec4(xy, 0.0, 1.0);
 
-    // calculate x,y,w,h of texture from texture id
-    // 4x4 grid, -1 because last item in grid is black
-    uint x = 0;
-    uint y = 0;
-    if      (texId == 0)  { x = 0; y = 0; }
-    else if (texId == 1)  { x = 1; y = 0; }
-    else if (texId == 2)  { x = 2; y = 0; }
-    else if (texId == 3)  { x = 3; y = 0; }
+    // hard-coded map of texId to uvwh coords in texture atlas
+    vec4 uvwh;
+    if (0 == texId) { // background
+        uvwh = vec4(-0.99699125814731,0.081695377707851,0.99911651130726,0.82168017871098);
+    }
+    else if (1 == texId) { // paddle
+        uvwh = vec4(0.00041967857539781, 0.93061139238235, 0.28865594350274, 0.066830996592963);
+    }
+    else if (2 == texId) { // ball
+        uvwh = vec4(0.31366626362349, 0.93399233307363, 0.077279650284362, 0.066458183637589);
+    }
 
-    else if (texId == 4)  { x = 0; y = 1; }
-    else if (texId == 5)  { x = 1; y = 1; }
-    else if (texId == 6)  { x = 2; y = 1; }
-    else if (texId == 7)  { x = 3; y = 1; }
-
-    else if (texId == 8)  { x = 0; y = 2; }
-    else if (texId == 9)  { x = 1; y = 2; }
-    else if (texId == 10) { x = 2; y = 2; }
-    else if (texId == 11) { x = 3; y = 2; }
-
-    else if (texId == 12) { x = 0; y = 3; }
-    else if (texId == 13) { x = 1; y = 3; }
-    else if (texId == 14) { x = 2; y = 3; }
-
-    // if (xy.x == 0.5 && xy.y == -0.5) {
-    //     fragTexCoord = vec2(0.2*x, 0.25*y); // top-left
-    // }
-    // else if (xy.x == -0.5 && xy.y == -0.5) {
-    //     fragTexCoord = vec2(0.2*(x+1), 0.25*y); // top-right
-    // }
-    // else if (xy.x == -0.5 && xy.y == 0.5) {
-    //     fragTexCoord = vec2(0.2*(x+1), 0.25*(y+1)); // bottom-right
-    // }
-    // else if (xy.x == 0.5 && xy.y == 0.5) {
-    //     fragTexCoord = vec2(0.2*x, 0.25*(y+1)); // bottom-left
-    // }
-
-    // TODO: support stretching vert along instanced WxH dims
     if (xy.x == 0.5 && xy.y == -0.5) {
-        fragTexCoord = vec2(ubo1.user1.x, ubo1.user1.y); // top-left
+        fragTexCoord = vec2(uvwh.x, uvwh.y); // top-left
     }
     else if (xy.x == -0.5 && xy.y == -0.5) {
-        fragTexCoord = vec2(ubo1.user1.x+ubo1.user2.x, ubo1.user1.y); // top-right
+        fragTexCoord = vec2(uvwh.x+uvwh.z, uvwh.y); // top-right
     }
     else if (xy.x == -0.5 && xy.y == 0.5) {
-        fragTexCoord = vec2(ubo1.user1.x+ubo1.user2.x, ubo1.user1.y+ubo1.user2.y); // bottom-right
+        fragTexCoord = vec2(uvwh.x+uvwh.z, uvwh.y+uvwh.w); // bottom-right
     }
     else if (xy.x == 0.5 && xy.y == 0.5) {
-        fragTexCoord = vec2(ubo1.user1.x, ubo1.user1.y+ubo1.user2.y); // bottom-left
+        fragTexCoord = vec2(uvwh.x, uvwh.y+uvwh.w); // bottom-left
     }
+
+    // TODO: support stretching vert along instanced WxH dims
+    // if (xy.x == 0.5 && xy.y == -0.5) {
+    //     fragTexCoord = vec2(ubo1.user1.x, ubo1.user1.y); // top-left
+    // }
+    // else if (xy.x == -0.5 && xy.y == -0.5) {
+    //     fragTexCoord = vec2(ubo1.user1.x+ubo1.user2.x, ubo1.user1.y); // top-right
+    // }
+    // else if (xy.x == -0.5 && xy.y == 0.5) {
+    //     fragTexCoord = vec2(ubo1.user1.x+ubo1.user2.x, ubo1.user1.y+ubo1.user2.y); // bottom-right
+    // }
+    // else if (xy.x == 0.5 && xy.y == 0.5) {
+    //     fragTexCoord = vec2(ubo1.user1.x, ubo1.user1.y+ubo1.user2.y); // bottom-left
+    // }
 }
