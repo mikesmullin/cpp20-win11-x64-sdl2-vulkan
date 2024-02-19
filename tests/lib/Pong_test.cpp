@@ -17,25 +17,29 @@
 
 namespace {
 
-struct Vertex {
-  glm::vec2 pos;
-  glm::vec3 color;
-  glm::vec2 texCoord;
+const u8 MAX_FPS = 60;
+
+struct Mesh {
+  glm::vec2 vertex;
 };
 
-struct ubo_MVPMatrix {
-  glm::mat4 model;
-  glm::mat4 view;
+struct Instance {
+  glm::vec3 pos;
+  glm::vec3 rot;
+  f32 scale{0.0f};
+  u32 texId{0};
+};
+
+struct ubo_ProjView {
   glm::mat4 proj;
+  glm::mat4 view;
 };
 
-std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.2f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.25f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.2f, 0.25f}}};
+std::vector<Mesh> vertices = {{{-0.5f, -0.5f}}, {{0.5f, -0.5f}}, {{0.5f, 0.5f}}, {{-0.5f, 0.5f}}};
 
 std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
+
+std::vector<Instance> instances;
 
 mks::Audio a{};
 
@@ -74,28 +78,35 @@ int lua_LoadTexture(lua_State* L) {
   return 0;
 }
 
+std::vector<bool> isUBODirty{true, true};
+
 mks::Window* ww;
-bool isVBODirty;
+bool isVBODirty = true;
 int lua_AdjustVBO(lua_State* L) {
   auto u = lua_tointeger(L, 1);
   auto v = lua_tointeger(L, 2);
-  vertices[0].texCoord[0] += 0.2f;
-  vertices[0].texCoord[1] += 0.25f;
-  vertices[1].texCoord[0] += 0.2f;
-  vertices[1].texCoord[1] += 0.25f;
-  vertices[2].texCoord[0] += 0.2f;
-  vertices[2].texCoord[1] += 0.25f;
-  vertices[3].texCoord[0] += 0.2f;
-  vertices[3].texCoord[1] += 0.25f;
+  instances[0].texId++;
   isVBODirty = true;
   return 0;
+}
+
+f32 random(f32 a, f32 b) {
+  return a + (((f32)rand()) / (f32)RAND_MAX) * (b - a);
+}
+
+s32 srandom(s32 a, s32 b) {
+  return a + (((s32)rand()) / (s32)RAND_MAX) * (b - a);
+}
+
+u32 urandom(u32 a, u32 b) {
+  return a + ((rand() / (f32)RAND_MAX) * (b - a));
 }
 
 }  // namespace
 
 int main() {
   try {
-    test();
+    // test();
     mks::Logger::Infof("Begin Pong test.");
 
     a.init();
@@ -129,63 +140,98 @@ int main() {
       throw mks::Logger::Errorf(l.GetError());
     }
 
+    // generate a random set of instances
+    instances.resize(100);
+    const f32 MAX_X = 1.0f;
+    const f32 MAX_Y = 1.0f;
+    const f32 MAX_Z = 10.0f;
+    const f32 MAX_SCALE = 0.4f;
+    srand((unsigned)time(NULL));  // use current time as random seed
+    for (u8 i = 0; i < instances.size(); i++) {
+      instances[i] = {
+          // TODO: fix x coord sign is rendered inverted
+          {random(-MAX_X, MAX_X), random(-MAX_Y, MAX_Y), random(-MAX_Z, MAX_Z)},
+          {0.0f, 0.0f, 0.0f},
+          random(0.0f, MAX_SCALE),
+          urandom(0, 14),
+      };
+    }
+
     w.v.InitSwapChain();
     w.v.CreateImageViews();
     w.v.CreateRenderPass();
     w.v.CreateDescriptorSetLayout();  // takes user data inputs
     w.v.CreateGraphicsPipeline(       // reads shaders in
-        sizeof(Vertex),
-        offsetof(Vertex, pos),
-        offsetof(Vertex, color),
-        offsetof(Vertex, texCoord));
+        "../assets/shaders/simple_shader.frag.spv",
+        "../assets/shaders/simple_shader.vert.spv",
+        sizeof(Mesh),
+        sizeof(Instance),
+        5,
+        {0, 1, 1, 1, 1},
+        {0, 1, 2, 3, 4},
+        {/*VK_FORMAT_R32G32_SFLOAT*/ 103,
+         /*VK_FORMAT_R32G32B32_SFLOAT*/ 106,
+         /*VK_FORMAT_R32G32B32_SFLOAT*/ 106,
+         /*VK_FORMAT_R32_SFLOAT*/ 100,
+         /*VK_FORMAT_R32_UINT*/ 98},
+        {offsetof(Mesh, vertex),
+         offsetof(Instance, pos),
+         offsetof(Instance, rot),
+         offsetof(Instance, scale),
+         offsetof(Instance, texId)});
     w.v.CreateFrameBuffers();
     w.v.CreateCommandPool();
 
     w.v.CreateTextureImage(textureFiles[0].c_str());
     w.v.CreateTextureImageView();
     w.v.CreateTextureSampler();
-    w.v.CreateVertexBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data());
+    w.v.CreateVertexBuffer(0, VectorSize(vertices), vertices.data());
+    w.v.CreateVertexBuffer(1, VectorSize(instances), instances.data());
     w.v.CreateIndexBuffer(sizeof(indices[0]) * indices.size(), indices.data());
-    w.v.CreateUniformBuffers(sizeof(ubo_MVPMatrix));
+    w.v.CreateUniformBuffers(sizeof(ubo_ProjView));
 
     w.v.CreateDescriptorPool();  // setting
     w.v.CreateDescriptorSets();  // setting
     w.v.CreateCommandBuffers();  // these theoretically would get used in render loop by me
     w.v.CreateSyncObjects();     // fence and semaphores
 
-    ubo_MVPMatrix ubo{};  // model_view_projection_matrix
-    w.v.drawIndexCount = static_cast<uint32_t>(indices.size());
+    ubo_ProjView ubo1{};                                    // projection x view matrices
+    w.v.drawIndexCount = static_cast<u32>(indices.size());  // vertices per mesh (two triangles)
+    w.v.instanceCount = instances.size();
 
     w.RenderLoop(
-        60,
+        MAX_FPS,
         [&l](auto& e) { mks::Gamepad::OnInput(e); },
-        [&w, &ubo, &l](float deltaTime) {
+        [&w, &ubo1, &l](float deltaTime) {
           lua_getglobal(l.L, "OnUpdate");
           lua_pushnumber(l.L, deltaTime);
           int result = lua_pcall(l.L, 1, 4, 0);
-          float angle = lua_tonumber(l.L, -4);
-          float x = lua_tonumber(l.L, -3);
-          float y = lua_tonumber(l.L, -2);
-          float z = lua_tonumber(l.L, -1);
+          f32 angle = lua_tonumber(l.L, -4);
+          f32 x = lua_tonumber(l.L, -3);
+          f32 y = lua_tonumber(l.L, -2);
+          f32 z = lua_tonumber(l.L, -1);
 
-          ubo.model =
-              glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 0.0f, 1.0f));
-          ubo.view = glm::lookAt(
+          if (isVBODirty) {
+            isVBODirty = false;
+            w.v.UpdateVertexBuffer(1, VectorSize(instances), instances.data());
+          }
+
+          // TODO: cache lua inputs so not always dirty on every frame
+          // if (isUBODirty[w.v.currentFrame]) {
+          //   isUBODirty[w.v.currentFrame] = false;
+          ubo1.view = glm::lookAt(
               glm::vec3(x, y, z),
               glm::vec3(0.0f, 0.0f, 0.0f),
               glm::vec3(0.0f, 0.0f, 1.0f));
-          ubo.proj = glm::perspective(
+          ubo1.proj = glm::perspective(
               glm::radians(45.0f),
               w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
               0.1f,
               10.0f);
-          ubo.proj[1][1] *= -1;
-
-          if (isVBODirty) {
-            isVBODirty = false;
-            w.v.UpdateVertexBuffer(sizeof(vertices[0]) * vertices.size(), vertices.data());
-          }
-          w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo);
+          ubo1.proj[1][1] *= -1;
+          // TODO: not sure i make use of one UBO per frame, really
+          w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo1);
+          // }
         });
 
     w.v.DeviceWaitIdle();
@@ -198,8 +244,11 @@ int main() {
   } catch (const std::runtime_error& e) {
     std::cerr << "Fatal: " << e.what() << std::endl;
     return EXIT_FAILURE;
+  } catch (const std::exception& e) {
+    std::cerr << "Caught exception: " << e.what() << std::endl;
+    return EXIT_FAILURE;
   } catch (...) {
-    std::cerr << "Unexpected error" << std::endl;
+    std::cerr << "Unidentifiable error" << std::endl;
     return EXIT_FAILURE;
   }
 }

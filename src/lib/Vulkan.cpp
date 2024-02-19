@@ -14,35 +14,6 @@
 
 namespace mks {
 
-VkVertexInputBindingDescription getBindingDescription(u32 size) {
-  VkVertexInputBindingDescription bindingDescription{};
-  bindingDescription.binding = 0;
-  bindingDescription.stride = size;
-  bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-  return bindingDescription;
-}
-
-std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions(u32 o1, u32 o2, u32 o3) {
-  std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-
-  attributeDescriptions[0].binding = 0;
-  attributeDescriptions[0].location = 0;
-  attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-  attributeDescriptions[0].offset = o1;
-
-  attributeDescriptions[1].binding = 0;
-  attributeDescriptions[1].location = 1;
-  attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-  attributeDescriptions[1].offset = o2;
-
-  attributeDescriptions[2].binding = 0;
-  attributeDescriptions[2].location = 2;
-  attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-  attributeDescriptions[2].offset = o3;
-
-  return attributeDescriptions;
-}
-
 Vulkan::Vulkan() {
 }
 
@@ -852,13 +823,25 @@ void Vulkan::CreateDescriptorSetLayout() {
   }
 }
 
-void Vulkan::CreateGraphicsPipeline(u32 vertexSize, u32 offset1, u32 offset2, u32 offset3) {
+void Vulkan::CreateGraphicsPipeline(
+    const std::string& frag_shader,
+    const std::string& vert_shader,
+    u32 vertexSize,
+    u32 instanceSize,
+    u8 attrCount,
+    std::vector<u32> bindings,
+    std::vector<u32> locations,
+    std::vector<u32> formats,
+    std::vector<u32> offsets) {
   // NOTICE: pipeline state is immutable; you will make many of these instances
+
+  vertexBuffers.resize(2);  // TODO: hard-code as std::array<,2>
+  vertexBufferMemories.resize(2);
 
   Shader s = {};
   // TODO: Make shaders configurable via input
-  auto shader1 = s.readFile("../assets/shaders/simple_shader.frag.spv");
-  auto shader2 = s.readFile("../assets/shaders/simple_shader.vert.spv");
+  auto shader1 = s.readFile(frag_shader);
+  auto shader2 = s.readFile(vert_shader);
 
   VkShaderModule vertShaderModule, fragShaderModule;
   CreateShaderModule(shader1, &fragShaderModule);
@@ -886,15 +869,35 @@ void Vulkan::CreateGraphicsPipeline(u32 vertexSize, u32 offset1, u32 offset2, u3
   dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
   dynamicState.pDynamicStates = dynamicStates.data();
 
-  auto bindingDescription = getBindingDescription(vertexSize);
-  auto attributeDescriptions = getAttributeDescriptions(offset1, offset2, offset3);
+  std::array<VkVertexInputBindingDescription, 2> bindingDescriptions;
+  bindingDescriptions[0].binding = 0;
+  bindingDescriptions[0].stride = vertexSize;
+  bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+  bindingDescriptions[1].binding = 1;
+  bindingDescriptions[1].stride = instanceSize;
+  bindingDescriptions[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+  std::vector<VkVertexInputAttributeDescription> attributeDescriptions(attrCount);
+  for (u8 i = 0; i < attrCount; i++) {
+    attributeDescriptions[i].binding = bindings[i];
+    attributeDescriptions[i].location = locations[i];
+    attributeDescriptions[i].format = static_cast<VkFormat>(formats[i]);
+    // VK_FORMAT_R32G32_SFLOAT;  // 103
+    // VK_FORMAT_R32G32B32_SFLOAT;  // 106
+    // VK_FORMAT_R32G32B32A32_SFLOAT;  // 109
+    // VK_FORMAT_R32_UINT; // 98
+    // VK_FORMAT_R32G32B32_SFLOAT; // 106
+    // VK_FORMAT_R32_SFLOAT; // 100
+    attributeDescriptions[i].offset = offsets[i];
+  }
+
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
   vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputInfo.vertexBindingDescriptionCount = 1;
+  vertexInputInfo.vertexBindingDescriptionCount = 2;
+  vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
   vertexInputInfo.vertexAttributeDescriptionCount =
       static_cast<uint32_t>(attributeDescriptions.size());
-  vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;             // Optional
-  vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();  // Optional
+  vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
   // specify what kind of geometry will be drawn from the vertices, and
   // if primitive restart should be enabled.
@@ -1069,9 +1072,16 @@ void Vulkan::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
   vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-  VkBuffer vertexBuffers[] = {vertexBuffer};
-  VkDeviceSize offsets[] = {0};
-  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+  std::vector<VkDeviceSize> offsets(vertexBuffers.size());
+  for (u8 i = 0; i < vertexBuffers.size(); i++) {
+    offsets[i] = 0;
+  }
+  vkCmdBindVertexBuffers(
+      commandBuffer,
+      0,
+      vertexBuffers.size(),
+      vertexBuffers.data(),
+      offsets.data());
   vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
   VkViewport viewport{};
@@ -1098,7 +1108,7 @@ void Vulkan::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
       0,
       nullptr);
 
-  vkCmdDrawIndexed(commandBuffer, drawIndexCount, 1, 0, 0, 0);
+  vkCmdDrawIndexed(commandBuffer, drawIndexCount, instanceCount, 0, 0, 0);
 
   vkCmdEndRenderPass(commandBuffer);
 
@@ -1291,7 +1301,7 @@ void Vulkan::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, u
   EndSingleTimeCommands(commandBuffer);
 }
 
-void Vulkan::CreateVertexBuffer(u64 size, const void* indata) {
+void Vulkan::CreateVertexBuffer(u8 idx, u64 size, const void* indata) {
   VkDeviceSize bufferSize = size;
 
   VkBuffer stagingBuffer;
@@ -1312,16 +1322,16 @@ void Vulkan::CreateVertexBuffer(u64 size, const void* indata) {
       bufferSize,
       VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-      vertexBuffer,
-      vertexBufferMemory);
+      vertexBuffers[idx],
+      vertexBufferMemories[idx]);
 
-  CopyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+  CopyBuffer(stagingBuffer, vertexBuffers[idx], bufferSize);
 
   vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
   vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
 }
 
-void Vulkan::UpdateVertexBuffer(u64 size, const void* indata) {
+void Vulkan::UpdateVertexBuffer(u8 idx, u64 size, const void* indata) {
   VkDeviceSize bufferSize = size;
 
   VkBuffer stagingBuffer;
@@ -1338,7 +1348,7 @@ void Vulkan::UpdateVertexBuffer(u64 size, const void* indata) {
   memcpy(data, indata, (size_t)bufferSize);
   vkUnmapMemory(logicalDevice, stagingBufferMemory);
 
-  CopyBuffer(stagingBuffer, vertexBuffer, bufferSize);
+  CopyBuffer(stagingBuffer, vertexBuffers[idx], bufferSize);
 
   vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
   vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
@@ -1786,11 +1796,11 @@ void Vulkan::Cleanup() {
         vkFreeMemory(logicalDevice, indexBufferMemory, nullptr);
       }
 
-      if (vertexBuffer) {
-        vkDestroyBuffer(logicalDevice, vertexBuffer, nullptr);
+      for (u8 i = 0; i < vertexBuffers.size(); i++) {
+        vkDestroyBuffer(logicalDevice, vertexBuffers[i], nullptr);
       }
-      if (vertexBufferMemory) {
-        vkFreeMemory(logicalDevice, vertexBufferMemory, nullptr);
+      for (u8 i = 0; i < vertexBufferMemories.size(); i++) {
+        vkFreeMemory(logicalDevice, vertexBufferMemories[i], nullptr);
       }
 
       if (graphicsPipeline) {

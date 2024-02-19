@@ -33,6 +33,6 @@ class Window {
 
   SDL_Window* window;
   Vulkan v = {};
-  std::vector<const char*> requiredExtensionNames{};
+  std::vector<const char*> requiredExtensionNames;
 };
 }  // namespace mks

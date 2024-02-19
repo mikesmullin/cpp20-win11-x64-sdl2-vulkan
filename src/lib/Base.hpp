@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>  // IWYU pragma: keep
+
 // Compiler context
 
 #ifdef __clang__
@@ -30,6 +32,8 @@
 
 // Helpers
 
+#define DEBUG_TRACE std::cout << "*** TRACE " << __FILE__ << ":" << __LINE__ << std::endl;
+
 #ifndef ENABLE_ASSERT
 #define ENABLE_ASSERT 1
 #endif
@@ -51,6 +55,7 @@
 #define Glue(A, B) A##B
 
 #define ArrayCount(a) (sizeof(a) / sizeof(*(a)))
+#define VectorSize(a) sizeof(a[0]) * a.size()
 
 #define IntFromPtr(p) (unsigned long long)((char*)p - (char*)0)
 #define PtrFromInt(n) (void*)((char*)0 + (n))

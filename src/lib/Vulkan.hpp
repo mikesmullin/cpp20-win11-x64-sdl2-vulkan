@@ -8,6 +8,7 @@
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "Base.hpp"
@@ -143,7 +144,16 @@ class Vulkan {
 
   void CreateImageViews();
   void CreateRenderPass();
-  void CreateGraphicsPipeline(u32 vertexSize, u32 offset1, u32 offset2, u32 offset3);
+  void CreateGraphicsPipeline(
+      const std::string& frag_shader,
+      const std::string& vert_shader,
+      u32 vertexSize,
+      u32 instanceSize,
+      u8 attrCount,
+      std::vector<u32> bindings,
+      std::vector<u32> locations,
+      std::vector<u32> formats,
+      std::vector<u32> offsets);
   void CreateDescriptorSetLayout();
   void CreateFrameBuffers();
   void CreateCommandPool();
@@ -162,8 +172,8 @@ class Vulkan {
   void TransitionImageLayout(
       VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
   void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-  void CreateVertexBuffer(u64 size, const void* indata);
-  void UpdateVertexBuffer(u64 size, const void* indata);
+  void CreateVertexBuffer(u8 idx, u64 size, const void* indata);
+  void UpdateVertexBuffer(u8 idx, u64 size, const void* indata);
   void CreateIndexBuffer(u64 size, const void* indata);
   void CreateUniformBuffers(const unsigned int length);
   void UpdateUniformBuffer(uint32_t frame, void* data);
@@ -200,6 +210,7 @@ class Vulkan {
   uint8_t currentFrame = 0;
   VkExtent2D swapChainExtent = {};
   u32 drawIndexCount = 0;
+  u32 instanceCount = 1;
 
  private:
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -220,8 +231,8 @@ class Vulkan {
   std::vector<VkSemaphore> imageAvailableSemaphores;
   std::vector<VkSemaphore> renderFinishedSemaphores;
   std::vector<VkFence> inFlightFences;
-  VkBuffer vertexBuffer;
-  VkDeviceMemory vertexBufferMemory;
+  std::vector<VkBuffer> vertexBuffers = {};
+  std::vector<VkDeviceMemory> vertexBufferMemories = {};
   VkBuffer indexBuffer;
   VkDeviceMemory indexBufferMemory;
   std::vector<VkBuffer> uniformBuffers;

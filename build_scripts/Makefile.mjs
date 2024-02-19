@@ -187,7 +187,6 @@ switch (cmd) {
   case 'Lua_test':
   case 'Pong_test':
   case 'Protobuf_test':
-  case 'Vulkan_test':
   case 'Window_test':
     await compile_test(cmd);
     break;
@@ -212,8 +211,6 @@ SUBCOMMANDS:
     Test everything (game demo)
   Protobuf_test
     Test Google Protobuf data read/write
-  Vulkan_test
-    Test Vulkan driver init (triangle demo)
   Window_test
     Test SDL window integration
 `);

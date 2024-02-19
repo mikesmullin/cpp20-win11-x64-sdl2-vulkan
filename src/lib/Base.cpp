@@ -10,8 +10,8 @@ void test() {
   printf("arch64 = %d\n", ARCH_X64);
   printf("arch86 = %d\n", ARCH_X86);
 
-  U8 foo[100];
-  for (U8 i = 0; i < ArrayCount(foo); i += 1) {
+  u8 foo[100];
+  for (u8 i = 0; i < ArrayCount(foo); i += 1) {
     foo[i] = i;
   }
 
