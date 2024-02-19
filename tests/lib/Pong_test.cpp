@@ -17,6 +17,7 @@
 
 namespace {
 
+const char* WINDOW_TITLE = "Pong";
 const u8 MAX_FPS = 60;
 
 struct Mesh {
@@ -39,7 +40,43 @@ std::vector<Mesh> vertices = {{{-0.5f, -0.5f}}, {{0.5f, -0.5f}}, {{0.5f, 0.5f}},
 
 std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
-std::vector<Instance> instances;
+f32 random(f32 a, f32 b) {
+  return a + (((f32)rand()) / (f32)RAND_MAX) * (b - a);
+}
+
+s32 srandom(s32 a, s32 b) {
+  return a + (((s32)rand()) / (s32)RAND_MAX) * (b - a);
+}
+
+u32 urandom(u32 a, u32 b) {
+  return a + ((rand() / (f32)RAND_MAX) * (b - a));
+}
+
+f32 mymap(u32 n, u32 x, f32 a, f32 b) {
+  return a + (((f32)n) / (f32)x) * (b - a);
+}
+
+bool isVBODirty = true;
+
+const f32 MAX_X = 1.0f;
+const f32 MAX_Y = 1.0f;
+const f32 MAX_Z = 10.0f;
+const f32 MAX_SCALE = 0.4f;
+const u32 MAX_INSTANCES = 255;  // TODO: find out how to exceed this limit
+std::vector<Instance> instances(0);
+int lua_AddInstance(lua_State* L) {
+  instances.push_back({
+      // TODO: fix x coord sign is rendered inverted
+      {random(-MAX_X, MAX_X),
+       random(-MAX_Y, MAX_Y),
+       mymap(instances.size(), MAX_INSTANCES, -MAX_Z, MAX_Z) /*random(-MAX_Z, MAX_Z)*/},
+      {0.0f, 0.0f, 0.0f},
+      random(0.1f, MAX_SCALE),
+      urandom(0, 14),
+  });
+  isVBODirty = true;
+  return 0;
+}
 
 mks::Audio a{};
 
@@ -88,7 +125,6 @@ int lua_LoadShader(lua_State* L) {
 std::vector<bool> isUBODirty{true, true};
 
 mks::Window* ww;
-bool isVBODirty = true;
 u32 SELECTED_INSTANCE = 0;
 int lua_AdjustVBO(lua_State* L) {
   auto u = lua_tointeger(L, 1);
@@ -98,28 +134,14 @@ int lua_AdjustVBO(lua_State* L) {
   return 0;
 }
 
-f32 random(f32 a, f32 b) {
-  return a + (((f32)rand()) / (f32)RAND_MAX) * (b - a);
-}
-
-s32 srandom(s32 a, s32 b) {
-  return a + (((s32)rand()) / (s32)RAND_MAX) * (b - a);
-}
-
-u32 urandom(u32 a, u32 b) {
-  return a + ((rand() / (f32)RAND_MAX) * (b - a));
-}
-
-f32 mymap(u32 n, u32 x, f32 a, f32 b) {
-  return a + (((f32)n) / (f32)x) * (b - a);
-}
-
 }  // namespace
 
 int main() {
   try {
     // test();
-    mks::Logger::Infof("Begin Pong test.");
+    mks::Logger::Infof("Begin %s test.", WINDOW_TITLE);
+
+    srand((unsigned)time(NULL));  // use current time as random seed
 
     a.init();
 
@@ -127,6 +149,7 @@ int main() {
     lua_register(l.L, "LoadSoundEffect", lua_LoadSoundEffect);
     lua_register(l.L, "PlaySoundEffect", lua_PlaySoundEffect);
     lua_register(l.L, "GetGamepadInput", lua_GetGamepadInput);
+    lua_register(l.L, "AddInstance", lua_AddInstance);
     lua_register(l.L, "LoadTexture", lua_LoadTexture);
     lua_register(l.L, "LoadShader", lua_LoadShader);
     lua_register(l.L, "AdjustVBO", lua_AdjustVBO);
@@ -135,10 +158,12 @@ int main() {
 
     auto w = mks::Window{};
     ww = &w;
-    w.Begin("Pong", 1024, 768);
+    w.Begin(WINDOW_TITLE, 1024, 768);
     w.v.AssertDriverValidationLayersSupported();
     w.v.AssertDriverExtensionsSupported(w.requiredExtensionNames);
-    w.v.CreateInstance("Pong_test", 1, 0, 0);
+    char* instance_name;
+    sprintf(instance_name, "%s_test", WINDOW_TITLE);
+    w.v.CreateInstance(instance_name, 1, 0, 0);
     w.v.UsePhysicalDevice(0);
     w.Bind();
     auto b = w.GetDrawableAreaExtentBounds();
@@ -151,27 +176,6 @@ int main() {
 
     if (!l.ReloadScript("../assets/lua/pong.lua")) {
       throw mks::Logger::Errorf(l.GetError());
-    }
-
-    // generate a random set of instances
-    instances.resize(255);
-    const f32 MAX_X = 1.0f;
-    const f32 MAX_Y = 1.0f;
-    const f32 MAX_Z = 10.0f;
-    const f32 MAX_SCALE = 0.4f;
-    srand((unsigned)time(NULL));  // use current time as random seed
-    SELECTED_INSTANCE = urandom(0, instances.size());
-    mks::Logger::Debugf("selected instance: %u", SELECTED_INSTANCE);
-    for (u8 i = 0; i < instances.size(); i++) {
-      instances[i] = {
-          // TODO: fix x coord sign is rendered inverted
-          {random(-MAX_X, MAX_X),
-           random(-MAX_Y, MAX_Y),
-           mymap(i, instances.size(), -MAX_Z, MAX_Z) /*random(-MAX_Z, MAX_Z)*/},
-          {0.0f, 0.0f, 0.0f},
-          random(0.1f, MAX_SCALE),
-          urandom(0, 14),
-      };
     }
 
     w.v.InitSwapChain();
@@ -203,7 +207,10 @@ int main() {
     w.v.CreateTextureImageView();
     w.v.CreateTextureSampler();
     w.v.CreateVertexBuffer(0, VectorSize(vertices), vertices.data());
-    w.v.CreateVertexBuffer(1, VectorSize(instances), instances.data());
+    w.v.CreateVertexBuffer(
+        1,
+        sizeof(Instance) * MAX_INSTANCES /*VectorSize(instances)*/,
+        instances.data());
     w.v.CreateIndexBuffer(sizeof(indices[0]) * indices.size(), indices.data());
     w.v.CreateUniformBuffers(sizeof(ubo_ProjView));
 
@@ -218,7 +225,6 @@ int main() {
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 0.0f, 1.0f));
     w.v.drawIndexCount = static_cast<u32>(indices.size());  // vertices per mesh (two triangles)
-    w.v.instanceCount = instances.size();
 
     w.RenderLoop(
         MAX_FPS,
@@ -234,6 +240,7 @@ int main() {
 
           if (isVBODirty) {
             isVBODirty = false;
+            w.v.instanceCount = instances.size();
             w.v.UpdateVertexBuffer(1, VectorSize(instances), instances.data());
           }
 

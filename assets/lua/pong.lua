@@ -5,6 +5,10 @@ LoadSoundEffect("../assets/audio/sfx/mop2.ogg")
 LoadShader("../assets/shaders/simple_shader.frag.spv")
 LoadShader("../assets/shaders/simple_shader.vert.spv")
 
+for i = 0, 25 do
+  AddInstance()
+end
+
 local angle = 0
 local ROT_SPEED = 30
 local pressed = false
@@ -22,7 +26,8 @@ function OnUpdate(deltaTime)
   local x1, y1, x2, y2, b1, b2, b3, b4 = GetGamepadInput(0)
   if b1 and not pressed then
     pressed = true
-    print("button1")
+    --print("button1")
+    AddInstance()
     PlaySoundEffect(0)
     AdjustVBO();
   elseif not b1 and pressed then

@@ -32,6 +32,7 @@ class Window {
   void End();
 
   SDL_Window* window;
+  const char* title;
   Vulkan v = {};
   std::vector<const char*> requiredExtensionNames;
 };

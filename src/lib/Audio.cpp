@@ -53,7 +53,7 @@ void Audio::playSoundEffect(const unsigned int id) const {
   if (ok == -1) {
     throw mks::Logger::Errorf("Unable to play sound effect. id: %u, error: %s", id, Mix_GetError());
   }
-  mks::Logger::Infof("Playing sound: %u", id);
+  // mks::Logger::Infof("Playing sound: %u", id);
 }
 
 void Audio::addMusic(const char* path) {

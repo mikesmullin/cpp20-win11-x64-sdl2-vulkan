@@ -23,6 +23,7 @@ void Window::Begin(const char* title, const int width, const int height) {
   // SDL2
   mks::SDL::defaultInstance.enableVideo();
   mks::SDL::defaultInstance.init();
+  this->title = title;
 
   window = SDL_CreateWindow(
       title,
@@ -134,7 +135,7 @@ void Window::RenderLoop(
             std::chrono::duration<float, std::chrono::seconds::period>(frameEnd - lastMeasure)
                 .count();
         fpsAvg = 1 / (deltaTime / frameCount);
-        sprintf(title, "Pong | avgFPS: %u", fpsAvg);
+        sprintf(title, "%s | avgFPS: %u", this->title, fpsAvg);
         SDL_SetWindowTitle(window, title);
       }
       frameCount = 0;
