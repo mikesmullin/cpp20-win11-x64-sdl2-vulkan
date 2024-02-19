@@ -25,17 +25,17 @@ struct Mesh {
 };
 
 struct Instance {
-  glm::vec3 pos;
-  glm::vec3 rot;
-  f32 scale{0.0f};
+  glm::vec3 pos{0.0f, 0.0f, 0.0f};
+  glm::vec3 rot{0.0f, 0.0f, 0.0f};
+  glm::vec3 scale{1.0f, 1.0f, 1.0f};
   u32 texId{0};
 };
 
 struct World {
-  glm::vec3 cam;
-  glm::vec3 look;
-  glm::vec2 user1;
-  glm::vec2 user2;
+  glm::vec3 cam{0.0f, 0.0f, 0.0f};
+  glm::vec3 look{0.0f, 0.0f, 0.0f};
+  glm::vec2 user1{0.0f, 0.0f};
+  glm::vec2 user2{0.0f, 0.0f};
 };
 
 struct ubo_ProjView {
@@ -74,15 +74,7 @@ bool isVBODirty = true;
 std::vector<Instance> instances(0);
 int lua_AddInstance(lua_State* L) {
   const u8 id = instances.size();
-  instances.push_back({
-      // TODO: fix x coord sign is rendered inverted
-      {random(-MAX_X, MAX_X),
-       random(-MAX_Y, MAX_Y),
-       mymap(instances.size(), MAX_INSTANCES, -MAX_Z, MAX_Z) /*random(-MAX_Z, MAX_Z)*/},
-      {0.0f, 0.0f, 0.0f},
-      random(0.1f, MAX_SCALE),
-      urandom(0, 14),
-  });
+  instances.push_back({});
   isVBODirty = true;
   lua_pushnumber(L, id);
   return 1;
@@ -144,10 +136,12 @@ int lua_ReadInstanceVBO(lua_State* L) {
   lua_pushnumber(L, instance.rot.x);
   lua_pushnumber(L, instance.rot.y);
   lua_pushnumber(L, instance.rot.z);
-  lua_pushnumber(L, instance.scale);
+  lua_pushnumber(L, instance.scale.x);
+  lua_pushnumber(L, instance.scale.y);
+  lua_pushnumber(L, instance.scale.z);
   lua_pushnumber(L, instance.texId);
 
-  return 9;
+  return 11;
 }
 
 int lua_WriteInstanceVBO(lua_State* L) {
@@ -158,15 +152,17 @@ int lua_WriteInstanceVBO(lua_State* L) {
   const f32 rot_x = lua_tonumber(L, 5);
   const f32 rot_y = lua_tonumber(L, 6);
   const f32 rot_z = lua_tonumber(L, 7);
-  const f32 scale = lua_tonumber(L, 8);
-  const u8 texId = lua_tointeger(L, 9);
+  const f32 scale_x = lua_tonumber(L, 8);
+  const f32 scale_y = lua_tonumber(L, 9);
+  const f32 scale_z = lua_tonumber(L, 10);
+  const u8 texId = lua_tointeger(L, 11);
   auto& instance = instances[id];
   instance.pos = glm::vec3(pos_x, pos_y, pos_z);
   instance.rot = glm::vec3(rot_x, rot_y, rot_z);
-  instance.scale = scale;
+  instance.scale = glm::vec3(scale_x, scale_y, scale_z);
   instance.texId = texId;
   isVBODirty = true;
-  return 9;
+  return 11;
 }
 
 World world{{0.0f, 1.0f, 2.0f}, {0.0f, 0.0f, 0.0f}};
@@ -254,7 +250,7 @@ int main(int argc, char* argv[]) {
         {/*VK_FORMAT_R32G32_SFLOAT*/ 103,
          /*VK_FORMAT_R32G32B32_SFLOAT*/ 106,
          /*VK_FORMAT_R32G32B32_SFLOAT*/ 106,
-         /*VK_FORMAT_R32_SFLOAT*/ 100,
+         /*VK_FORMAT_R32G32B32_SFLOAT*/ 106,
          /*VK_FORMAT_R32_UINT*/ 98},
         {offsetof(Mesh, vertex),
          offsetof(Instance, pos),

@@ -8,8 +8,8 @@ print("[Lua] pong script loading.")
 ---@field package PlayAudio fun(id: number, loop: boolean): nil
 ---@field package AddInstance fun(): number
 ---@field package GetGamepadInput fun(id: number): number, number, number, number, boolean, boolean, boolean, boolean
----@field package ReadInstanceVBO fun(id: number): number, number, number, number, number, number, number, number
----@field package WriteInstanceVBO fun(id: number, posX: number, posY: number, posZ: number, rotX: number, rotY: number, rotZ: number, scale: number, texId: number): nil
+---@field package ReadInstanceVBO fun(id: number): number, number, number, number, number, number, number, number, number, number
+---@field package WriteInstanceVBO fun(id: number, posX: number, posY: number, posZ: number, rotX: number, rotY: number, rotZ: number, scaleX: number, scaleY: number, scaleZ: number, texId: number): nil
 ---@field package WriteWorldUBO fun(camX: number, camY: number, camZ: number, lookX: number, lookY: number, lookZ: number, user1X: number, user1Y: number, user2X: number, user2Y: number): nil
 
 -- internal OOP
@@ -58,6 +58,41 @@ end
 
 local world = World.new()
 
+---@class Instance
+---@field public id number
+---@field public posX number
+---@field public posY number
+---@field public posZ number
+---@field public rotX number
+---@field public rotY number
+---@field public rotZ number
+---@field public scaleX number
+---@field public scaleY number
+---@field public scaleZ number
+---@field public texId number
+local Instance = {}
+Instance.__index = Instance
+function Instance.new()
+  local self = setmetatable({}, Instance)
+  self.id = _G.AddInstance()
+  self.posX = 0
+  self.posY = 0
+  self.posZ = 0
+  self.rotX = 0
+  self.rotY = 0
+  self.rotZ = 0
+  self.scaleX = 1
+  self.scaleY = 1
+  self.scaleZ = 1
+  self.texId = 0
+  return self
+end
+
+function Instance:push()
+  _G.WriteInstanceVBO(self.id, self.posX, self.posY, self.posZ, self.rotX, self.rotY, self.rotZ, self.scaleX, self
+    .scaleY, self.scaleZ, self.texId)
+end
+
 -- preload assets
 _G.LoadTexture("../assets/textures/pong-atlas.png")
 _G.LoadAudioFile("../assets/audio/music/retro.wav")
@@ -87,12 +122,23 @@ world:set(0, 0, 1, 0, 0, 0)
 world:push()
 
 -- put three entities on screen
-local background = _G.AddInstance()
-_G.WriteInstanceVBO(background, 0, 0, 0, 0, 0, 0, 1, 0)
-local paddle = _G.AddInstance()
-_G.WriteInstanceVBO(paddle, 0, 1, 0, 0, 0, 0, 1, 1)
-local ball = _G.AddInstance()
-_G.WriteInstanceVBO(ball, 1, 1, 0, 0, 0, 0, 1, 2)
+local background = Instance.new()
+background.texId = 0
+background:push()
+local paddle = Instance.new()
+paddle.posY = 6 / 16
+paddle.scaleX = 1 / 4
+paddle.scaleY = 1 / 16
+paddle.scaleZ = 1 / 16
+paddle.texId = 1
+paddle:push()
+local ball = Instance.new()
+ball.posY = 5 / 16
+ball.scaleX = 1 / 16
+ball.scaleY = 1 / 16
+ball.scaleZ = 1 / 16
+ball.texId = 2
+ball:push()
 
 -- helper functions
 function FixJoyDrift(x)
@@ -121,22 +167,22 @@ function OnUpdate(deltaTime)
   end
 
   -- apply joystick movement over time
-  x = (FixJoyDrift(x1) * MOVE_SPEED * deltaTime)
-  y = (FixJoyDrift(-y1) * MOVE_SPEED * deltaTime)
-  z = (FixJoyDrift(-y2) * MOVE_SPEED * deltaTime)
-  -- u = (FixJoyDrift(-x1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  -- v = (FixJoyDrift(-y1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  -- w = (FixJoyDrift(-x2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  -- h = (FixJoyDrift(-y2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  -- x = (FixJoyDrift(x1) * MOVE_SPEED * deltaTime)
+  -- y = (FixJoyDrift(-y1) * MOVE_SPEED * deltaTime)
+  -- z = (FixJoyDrift(-y2) * MOVE_SPEED * deltaTime)
+  u = (FixJoyDrift(-x1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  v = (FixJoyDrift(-y1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  w = (FixJoyDrift(-x2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  h = (FixJoyDrift(-y2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
 
-  if x ~= 0 or y ~= 0 or z ~= 0 then
-    -- if u ~= 0 or v ~= 0 or w ~= 0 or h ~= 0 then
-    -- -- by moving camera
-    world.camX = world.camX + x
-    world.camY = world.camY + y
-    world.camZ = world.camZ + z
-    print("[Lua] world.cam x " .. world.camX .. " y " .. world.camY .. " z " .. world.camZ)
-    world:push()
+  -- if x ~= 0 or y ~= 0 or z ~= 0 then
+  if u ~= 0 or v ~= 0 or w ~= 0 or h ~= 0 then
+    -- by moving camera
+    -- world.camX = world.camX + x
+    -- world.camY = world.camY + y
+    -- world.camZ = world.camZ + z
+    -- print("[Lua] world.cam x " .. world.camX .. " y " .. world.camY .. " z " .. world.camZ)
+    -- world:push()
 
     -- by moving texture UVs
     -- world.user1X = world.user1X + u
@@ -149,6 +195,20 @@ function OnUpdate(deltaTime)
     --   " w " .. world.user2X ..
     --   " h " .. world.user2Y)
     -- world:push()
+
+    -- by moving instance X,Y and WxH
+
+
+    world.user1X = world.user1X + u
+    world.user1Y = world.user1Y + v
+    world.user2X = world.user2X + w
+    world.user2Y = world.user2Y + h
+    print("[Lua] world.user" ..
+      " x " .. world.user1X ..
+      " y " .. world.user1Y ..
+      " w " .. world.user2X ..
+      " h " .. world.user2Y)
+    world:push()
   end
 end
 

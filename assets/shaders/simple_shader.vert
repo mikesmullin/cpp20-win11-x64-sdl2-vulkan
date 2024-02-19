@@ -6,7 +6,7 @@ layout(location = 0) in vec2 xy;
 // instanced attrs
 layout(location = 1) in vec3 pos;
 layout(location = 2) in vec3 rot;
-layout(location = 3) in float scale;
+layout(location = 3) in vec3 scale;
 layout(location = 4) in uint texId;
 
 layout(binding = 0) uniform UBO1 {
@@ -19,7 +19,7 @@ layout(binding = 0) uniform UBO1 {
 layout(location = 0) out vec2 fragTexCoord;
 
 // generate model matrix from position, rotation, and scale
-mat4 generateModelMatrix(vec3 position, vec3 rotation, float scale) {
+mat4 generateModelMatrix(vec3 position, vec3 rotation, vec3 scale) {
     // Rotation matrices for each axis
     mat4 rotX = mat4(
         1.0, 0.0, 0.0, 0.0,
@@ -45,9 +45,9 @@ mat4 generateModelMatrix(vec3 position, vec3 rotation, float scale) {
 
     // Scale matrix
     mat4 scaleMatrix = mat4(
-        scale, 0.0, 0.0, 0.0,
-        0.0, scale, 0.0, 0.0,
-        0.0, 0.0, scale, 0.0,
+        scale.x, 0.0, 0.0, 0.0,
+        0.0, scale.y, 0.0, 0.0,
+        0.0, 0.0, scale.z, 0.0,
         0.0, 0.0, 0.0, 1.0
     );
 
