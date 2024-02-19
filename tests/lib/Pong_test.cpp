@@ -82,10 +82,11 @@ std::vector<bool> isUBODirty{true, true};
 
 mks::Window* ww;
 bool isVBODirty = true;
+u32 SELECTED_INSTANCE = 0;
 int lua_AdjustVBO(lua_State* L) {
   auto u = lua_tointeger(L, 1);
   auto v = lua_tointeger(L, 2);
-  instances[0].texId = (instances[0].texId + 1) % 14;
+  instances[SELECTED_INSTANCE].texId = (instances[SELECTED_INSTANCE].texId + 1) % 14;
   isVBODirty = true;
   return 0;
 }
@@ -100,6 +101,10 @@ s32 srandom(s32 a, s32 b) {
 
 u32 urandom(u32 a, u32 b) {
   return a + ((rand() / (f32)RAND_MAX) * (b - a));
+}
+
+f32 mymap(u32 n, u32 x, f32 a, f32 b) {
+  return a + (((f32)n) / (f32)x) * (b - a);
 }
 
 }  // namespace
@@ -147,12 +152,16 @@ int main() {
     const f32 MAX_Z = 10.0f;
     const f32 MAX_SCALE = 0.4f;
     srand((unsigned)time(NULL));  // use current time as random seed
+    SELECTED_INSTANCE = urandom(0, instances.size());
+    mks::Logger::Debugf("selected instance: %u", SELECTED_INSTANCE);
     for (u8 i = 0; i < instances.size(); i++) {
       instances[i] = {
           // TODO: fix x coord sign is rendered inverted
-          {random(-MAX_X, MAX_X), random(-MAX_Y, MAX_Y), random(-MAX_Z, MAX_Z)},
+          {random(-MAX_X, MAX_X),
+           random(-MAX_Y, MAX_Y),
+           mymap(i, instances.size(), -MAX_Z, MAX_Z) /*random(-MAX_Z, MAX_Z)*/},
           {0.0f, 0.0f, 0.0f},
-          random(0.0f, MAX_SCALE),
+          random(0.1f, MAX_SCALE),
           urandom(0, 14),
       };
     }
