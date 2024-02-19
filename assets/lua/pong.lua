@@ -2,6 +2,8 @@ print("[Lua] pong script loading.")
 
 LoadTexture("../assets/textures/crates.png")
 LoadSoundEffect("../assets/audio/sfx/mop2.ogg")
+LoadShader("../assets/shaders/simple_shader.frag.spv")
+LoadShader("../assets/shaders/simple_shader.vert.spv")
 
 local angle = 0
 local ROT_SPEED = 30

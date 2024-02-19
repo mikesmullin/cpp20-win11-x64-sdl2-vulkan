@@ -78,6 +78,13 @@ int lua_LoadTexture(lua_State* L) {
   return 0;
 }
 
+std::vector<std::string> shaderFiles;
+int lua_LoadShader(lua_State* L) {
+  auto file = lua_tostring(L, 1);
+  shaderFiles.push_back(static_cast<std::string>(file));
+  return 0;
+}
+
 std::vector<bool> isUBODirty{true, true};
 
 mks::Window* ww;
@@ -121,6 +128,7 @@ int main() {
     lua_register(l.L, "PlaySoundEffect", lua_PlaySoundEffect);
     lua_register(l.L, "GetGamepadInput", lua_GetGamepadInput);
     lua_register(l.L, "LoadTexture", lua_LoadTexture);
+    lua_register(l.L, "LoadShader", lua_LoadShader);
     lua_register(l.L, "AdjustVBO", lua_AdjustVBO);
 
     mks::Gamepad::Enable();
@@ -171,8 +179,8 @@ int main() {
     w.v.CreateRenderPass();
     w.v.CreateDescriptorSetLayout();  // takes user data inputs
     w.v.CreateGraphicsPipeline(       // reads shaders in
-        "../assets/shaders/simple_shader.frag.spv",
-        "../assets/shaders/simple_shader.vert.spv",
+        shaderFiles[0],
+        shaderFiles[1],
         sizeof(Mesh),
         sizeof(Instance),
         5,
