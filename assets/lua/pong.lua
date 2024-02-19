@@ -10,11 +10,16 @@ print("[Lua] pong script loading.")
 ---@field package GetGamepadInput fun(id: number): number, number, number, number, boolean, boolean, boolean, boolean
 ---@field package ReadInstanceVBO fun(id: number): number, number, number, number, number, number, number, number, number, number
 ---@field package WriteInstanceVBO fun(id: number, posX: number, posY: number, posZ: number, rotX: number, rotY: number, rotZ: number, scaleX: number, scaleY: number, scaleZ: number, texId: number): nil
----@field package WriteWorldUBO fun(camX: number, camY: number, camZ: number, lookX: number, lookY: number, lookZ: number, user1X: number, user1Y: number, user2X: number, user2Y: number): nil
+---@field package WriteWorldUBO fun(aspect: number, camX: number, camY: number, camZ: number, lookX: number, lookY: number, lookZ: number, user1X: number, user1Y: number, user2X: number, user2Y: number): nil
 
 -- internal OOP
 
+local ASPECT_16_9 = 16 / 9 -- Widescreen
+local ASPECT_4_3 = 4 / 3   -- CRT
+local ASPECT_1_1 = 1 / 1   -- Square
+
 ---@class World
+---@field public aspect number
 ---@field public camX number
 ---@field public camY number
 ---@field public camZ number
@@ -29,6 +34,7 @@ local World = {}
 World.__index = World
 function World.new()
   local self = setmetatable({}, World)
+  self.aspect = ASPECT_1_1
   self.camX = 0
   self.camY = 0
   self.camZ = 0
@@ -42,7 +48,8 @@ function World.new()
   return self
 end
 
-function World:set(camX, camY, camZ, lookX, lookY, lookZ)
+function World:set(aspect, camX, camY, camZ, lookX, lookY, lookZ)
+  self.aspect = aspect
   self.camX = camX
   self.camY = camY
   self.camZ = camZ
@@ -52,7 +59,8 @@ function World:set(camX, camY, camZ, lookX, lookY, lookZ)
 end
 
 function World:push()
-  _G.WriteWorldUBO(self.camX, self.camY, self.camZ, self.lookX, self.lookY, self.lookZ, self.user1X, self.user1Y,
+  _G.WriteWorldUBO(self.aspect, self.camX, self.camY, self.camZ, self.lookX, self.lookY, self.lookZ, self.user1X,
+    self.user1Y,
     self.user2X, self.user2Y)
 end
 
@@ -118,7 +126,7 @@ _G.LoadShader("../assets/shaders/simple_shader.vert.spv")
 -- _G.PlayAudio(0, true)
 
 -- position the camera
-world:set(0, 0, 1, 0, 0, 0)
+world:set(ASPECT_1_1, 0, 0, 1, 0, 0, 0)
 world:push()
 
 -- put three entities on screen
@@ -184,6 +192,16 @@ function OnUpdate(deltaTime)
     pressed = true
     -- play one-shot sound effect
     --_G.PlayAudio(math.random(1, 15), false)
+
+    -- rotate aspect ratio
+    if ASPECT_1_1 == world.aspect then
+      world.aspect = ASPECT_16_9
+    elseif ASPECT_16_9 == world.aspect then
+      world.aspect = ASPECT_4_3
+    elseif ASPECT_4_3 == world.aspect then
+      world.aspect = ASPECT_1_1
+    end
+    world:push()
   elseif not b1 and pressed then
     pressed = false
   end

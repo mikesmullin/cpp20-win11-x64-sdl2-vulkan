@@ -36,6 +36,7 @@ struct World {
   glm::vec3 look{0.0f, 0.0f, 0.0f};
   glm::vec2 user1{0.0f, 0.0f};
   glm::vec2 user2{0.0f, 0.0f};
+  f32 aspect = 1.0f / 1;  // square
 };
 
 struct ubo_ProjView {
@@ -172,22 +173,24 @@ void markWorldDirty() {
   isUBODirty[1] = true;
 }
 int lua_WriteWorldUBO(lua_State* L) {
-  const f32 camX = lua_tonumber(L, 1);
-  const f32 camY = lua_tonumber(L, 2);
-  const f32 camZ = lua_tonumber(L, 3);
-  const f32 lookX = lua_tonumber(L, 4);
-  const f32 lookY = lua_tonumber(L, 5);
-  const f32 lookZ = lua_tonumber(L, 6);
-  const f32 user1X = lua_tonumber(L, 7);
-  const f32 user1Y = lua_tonumber(L, 8);
-  const f32 user2X = lua_tonumber(L, 9);
-  const f32 user2Y = lua_tonumber(L, 10);
+  const f32 aspect = lua_tonumber(L, 1);
+  const f32 camX = lua_tonumber(L, 2);
+  const f32 camY = lua_tonumber(L, 3);
+  const f32 camZ = lua_tonumber(L, 4);
+  const f32 lookX = lua_tonumber(L, 5);
+  const f32 lookY = lua_tonumber(L, 6);
+  const f32 lookZ = lua_tonumber(L, 7);
+  const f32 user1X = lua_tonumber(L, 8);
+  const f32 user1Y = lua_tonumber(L, 9);
+  const f32 user2X = lua_tonumber(L, 10);
+  const f32 user2Y = lua_tonumber(L, 11);
+  world.aspect = aspect;
   world.cam = glm::vec3(camX, camY, camZ);
   world.look = glm::vec3(lookX, lookY, lookZ);
   world.user1 = glm::vec2(user1X, user1Y);
   world.user2 = glm::vec2(user2X, user2Y);
   markWorldDirty();
-  return 10;
+  return 11;
 }
 
 }  // namespace
@@ -302,7 +305,8 @@ int main(int argc, char* argv[]) {
             // ubo1.view = glm::translate(ubo1.view, glm::vec3(x, y, z));
             ubo1.proj = glm::perspective(
                 glm::radians(45.0f),
-                w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
+                // w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
+                world.aspect,
                 0.1f,  // TODO: adjust clipping range for z depth?
                 10.0f);
             ubo1.proj[1][1] *= -1;
