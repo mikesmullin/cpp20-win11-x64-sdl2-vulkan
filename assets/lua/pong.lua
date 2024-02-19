@@ -6,8 +6,8 @@ LoadSoundEffect("../assets/audio/sfx/mop2.ogg")
 local angle = 0
 local ROT_SPEED = 30
 local pressed = false
-local MOVE_SPEED = 2.0 -- per sec
-local x, y, z = 0.0, 1.0, 2.0
+local MOVE_SPEED = 1.0 -- per sec
+local x, y, z = 0.0, 0.0, 0.0
 function OnUpdate(deltaTime)
   --angle = angle + (ROT_SPEED * deltaTime)
   --while angle > 360 do
@@ -27,9 +27,13 @@ function OnUpdate(deltaTime)
     pressed = false
   end
 
-  x = x + (x1 * MOVE_SPEED * deltaTime);
-  y = y + (-y1 * MOVE_SPEED * deltaTime);
-  z = z + (-y2 * MOVE_SPEED * deltaTime);
+  function FixJoyDrift(x)
+    if x > -0.1 and x < 0.1 then return 0 else return x end
+  end
+
+  x = (FixJoyDrift(x1) * MOVE_SPEED * deltaTime);
+  y = (FixJoyDrift(-y1) * MOVE_SPEED * deltaTime);
+  z = (FixJoyDrift(-y2) * MOVE_SPEED * deltaTime);
 
   return angle, x, y, z
 end

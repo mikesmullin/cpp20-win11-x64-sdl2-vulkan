@@ -85,7 +85,7 @@ bool isVBODirty = true;
 int lua_AdjustVBO(lua_State* L) {
   auto u = lua_tointeger(L, 1);
   auto v = lua_tointeger(L, 2);
-  instances[0].texId++;
+  instances[0].texId = (instances[0].texId + 1) % 14;
   isVBODirty = true;
   return 0;
 }
@@ -141,7 +141,7 @@ int main() {
     }
 
     // generate a random set of instances
-    instances.resize(100);
+    instances.resize(255);
     const f32 MAX_X = 1.0f;
     const f32 MAX_Y = 1.0f;
     const f32 MAX_Z = 10.0f;
@@ -195,7 +195,11 @@ int main() {
     w.v.CreateCommandBuffers();  // these theoretically would get used in render loop by me
     w.v.CreateSyncObjects();     // fence and semaphores
 
-    ubo_ProjView ubo1{};                                    // projection x view matrices
+    ubo_ProjView ubo1{};  // projection x view matrices
+    ubo1.view = glm::lookAt(
+        glm::vec3(0.0f, 1.0f, 2.0f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f));
     w.v.drawIndexCount = static_cast<u32>(indices.size());  // vertices per mesh (two triangles)
     w.v.instanceCount = instances.size();
 
@@ -219,10 +223,7 @@ int main() {
           // TODO: cache lua inputs so not always dirty on every frame
           // if (isUBODirty[w.v.currentFrame]) {
           //   isUBODirty[w.v.currentFrame] = false;
-          ubo1.view = glm::lookAt(
-              glm::vec3(x, y, z),
-              glm::vec3(0.0f, 0.0f, 0.0f),
-              glm::vec3(0.0f, 0.0f, 1.0f));
+          ubo1.view = glm::translate(ubo1.view, glm::vec3(x, y, z));
           ubo1.proj = glm::perspective(
               glm::radians(45.0f),
               w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
