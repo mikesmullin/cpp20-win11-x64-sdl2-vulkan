@@ -34,11 +34,15 @@ struct Instance {
 struct World {
   glm::vec3 cam;
   glm::vec3 look;
+  glm::vec2 user1;
+  glm::vec2 user2;
 };
 
 struct ubo_ProjView {
   glm::mat4 proj;
   glm::mat4 view;
+  glm::vec2 user1;
+  glm::vec2 user2;
 };
 
 std::vector<Mesh> vertices = {{{-0.5f, -0.5f}}, {{0.5f, -0.5f}}, {{0.5f, 0.5f}}, {{-0.5f, 0.5f}}};
@@ -178,10 +182,16 @@ int lua_WriteWorldUBO(lua_State* L) {
   const f32 lookX = lua_tonumber(L, 4);
   const f32 lookY = lua_tonumber(L, 5);
   const f32 lookZ = lua_tonumber(L, 6);
+  const f32 user1X = lua_tonumber(L, 7);
+  const f32 user1Y = lua_tonumber(L, 8);
+  const f32 user2X = lua_tonumber(L, 9);
+  const f32 user2Y = lua_tonumber(L, 10);
   world.cam = glm::vec3(camX, camY, camZ);
   world.look = glm::vec3(lookX, lookY, lookZ);
+  world.user1 = glm::vec2(user1X, user1Y);
+  world.user2 = glm::vec2(user2X, user2Y);
   markWorldDirty();
-  return 6;
+  return 10;
 }
 
 }  // namespace
@@ -289,11 +299,6 @@ int main(int argc, char* argv[]) {
 
           if (isUBODirty[w.v.currentFrame]) {
             isUBODirty[w.v.currentFrame] = false;
-            mks::Logger::Debugf(
-                "world.cam x %2.3f y %2.3f z %2.3f",
-                world.cam.x,
-                world.cam.y,
-                world.cam.z);
             ubo1.view = glm::lookAt(
                 glm::vec3(world.cam.x, world.cam.y, world.cam.z),
                 glm::vec3(world.look.x, world.look.y, world.look.z),
@@ -305,6 +310,8 @@ int main(int argc, char* argv[]) {
                 0.1f,  // TODO: adjust clipping range for z depth?
                 10.0f);
             ubo1.proj[1][1] *= -1;
+            ubo1.user1 = world.user1;
+            ubo1.user2 = world.user2;
             // TODO: not sure i make use of one UBO per frame, really
             w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo1);
           }

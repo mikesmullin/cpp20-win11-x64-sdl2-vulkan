@@ -183,5 +183,7 @@
   "clangd.arguments": [
     "--compile-commands-dir=${workspaceFolder}"
   ],
-  "cSpell.customDictionaries": {}
+  "cSpell.customDictionaries": {},
+  "shaderc-lint.additionalFileExtensions": [],
+  "shaderc-lint.glslcPath": "C:\\VulkanSDK\\1.3.236.0\\Bin\\glslc.exe"
 }

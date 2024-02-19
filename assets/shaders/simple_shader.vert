@@ -12,6 +12,8 @@ layout(location = 4) in uint texId;
 layout(binding = 0) uniform UBO1 {
     mat4 proj;
     mat4 view;
+    vec2 user1;
+    vec2 user2;
 } ubo1;
 
 layout(location = 0) out vec2 fragTexCoord;
@@ -90,16 +92,30 @@ void main() {
     else if (texId == 13) { x = 1; y = 3; }
     else if (texId == 14) { x = 2; y = 3; }
 
+    // if (xy.x == 0.5 && xy.y == -0.5) {
+    //     fragTexCoord = vec2(0.2*x, 0.25*y); // top-left
+    // }
+    // else if (xy.x == -0.5 && xy.y == -0.5) {
+    //     fragTexCoord = vec2(0.2*(x+1), 0.25*y); // top-right
+    // }
+    // else if (xy.x == -0.5 && xy.y == 0.5) {
+    //     fragTexCoord = vec2(0.2*(x+1), 0.25*(y+1)); // bottom-right
+    // }
+    // else if (xy.x == 0.5 && xy.y == 0.5) {
+    //     fragTexCoord = vec2(0.2*x, 0.25*(y+1)); // bottom-left
+    // }
+
+    // TODO: support stretching vert along instanced WxH dims
     if (xy.x == 0.5 && xy.y == -0.5) {
-        fragTexCoord = vec2(0.2*x, 0.25*y); // top-left
+        fragTexCoord = vec2(ubo1.user1.x, ubo1.user1.y); // top-left
     }
     else if (xy.x == -0.5 && xy.y == -0.5) {
-        fragTexCoord = vec2(0.2*(x+1), 0.25*y); // top-right
+        fragTexCoord = vec2(ubo1.user1.x+ubo1.user2.x, ubo1.user1.y); // top-right
     }
     else if (xy.x == -0.5 && xy.y == 0.5) {
-        fragTexCoord = vec2(0.2*(x+1), 0.25*(y+1)); // bottom-right
+        fragTexCoord = vec2(ubo1.user1.x+ubo1.user2.x, ubo1.user1.y+ubo1.user2.y); // bottom-right
     }
     else if (xy.x == 0.5 && xy.y == 0.5) {
-        fragTexCoord = vec2(0.2*x, 0.25*(y+1)); // bottom-left
+        fragTexCoord = vec2(ubo1.user1.x, ubo1.user1.y+ubo1.user2.y); // bottom-left
     }
 }
