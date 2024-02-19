@@ -31,6 +31,11 @@ struct Instance {
   u32 texId{0};
 };
 
+struct World {
+  glm::vec3 cam;
+  glm::vec3 look;
+};
+
 struct ubo_ProjView {
   glm::mat4 proj;
   glm::mat4 view;
@@ -56,15 +61,15 @@ f32 mymap(u32 n, u32 x, f32 a, f32 b) {
   return a + (((f32)n) / (f32)x) * (b - a);
 }
 
-bool isVBODirty = true;
-
 const f32 MAX_X = 1.0f;
 const f32 MAX_Y = 1.0f;
 const f32 MAX_Z = 10.0f;
 const f32 MAX_SCALE = 0.4f;
 const u32 MAX_INSTANCES = 255;  // TODO: find out how to exceed this limit
+bool isVBODirty = true;
 std::vector<Instance> instances(0);
 int lua_AddInstance(lua_State* L) {
+  const u8 id = instances.size();
   instances.push_back({
       // TODO: fix x coord sign is rendered inverted
       {random(-MAX_X, MAX_X),
@@ -75,7 +80,8 @@ int lua_AddInstance(lua_State* L) {
       urandom(0, 14),
   });
   isVBODirty = true;
-  return 0;
+  lua_pushnumber(L, id);
+  return 1;
 }
 
 mks::Audio a{};
@@ -123,16 +129,59 @@ int lua_LoadShader(lua_State* L) {
   return 1;
 }
 
-std::vector<bool> isUBODirty{true, true};
+int lua_ReadInstanceVBO(lua_State* L) {
+  const u8 id = lua_tointeger(L, 1);
 
-mks::Window* ww;
-u32 SELECTED_INSTANCE = 0;
-int lua_AdjustVBO(lua_State* L) {
-  auto u = lua_tointeger(L, 1);
-  auto v = lua_tointeger(L, 2);
-  instances[SELECTED_INSTANCE].texId = (instances[SELECTED_INSTANCE].texId + 1) % 14;
+  auto& instance = instances[id];
+
+  lua_pushnumber(L, instance.pos.x);
+  lua_pushnumber(L, instance.pos.y);
+  lua_pushnumber(L, instance.pos.z);
+  lua_pushnumber(L, instance.rot.x);
+  lua_pushnumber(L, instance.rot.y);
+  lua_pushnumber(L, instance.rot.z);
+  lua_pushnumber(L, instance.scale);
+  lua_pushnumber(L, instance.texId);
+
+  return 9;
+}
+
+int lua_WriteInstanceVBO(lua_State* L) {
+  const u8 id = lua_tointeger(L, 1);
+  const f32 pos_x = lua_tonumber(L, 2);
+  const f32 pos_y = lua_tonumber(L, 3);
+  const f32 pos_z = lua_tonumber(L, 4);
+  const f32 rot_x = lua_tonumber(L, 5);
+  const f32 rot_y = lua_tonumber(L, 6);
+  const f32 rot_z = lua_tonumber(L, 7);
+  const f32 scale = lua_tonumber(L, 8);
+  const u8 texId = lua_tointeger(L, 9);
+  auto& instance = instances[id];
+  instance.pos = glm::vec3(pos_x, pos_y, pos_z);
+  instance.rot = glm::vec3(rot_x, rot_y, rot_z);
+  instance.scale = scale;
+  instance.texId = texId;
   isVBODirty = true;
-  return 2;
+  return 9;
+}
+
+World world{{0.0f, 1.0f, 2.0f}, {0.0f, 0.0f, 0.0f}};
+std::vector<bool> isUBODirty{true, true};
+void markWorldDirty() {
+  isUBODirty[0] = true;
+  isUBODirty[1] = true;
+}
+int lua_WriteWorldUBO(lua_State* L) {
+  const f32 camX = lua_tonumber(L, 1);
+  const f32 camY = lua_tonumber(L, 2);
+  const f32 camZ = lua_tonumber(L, 3);
+  const f32 lookX = lua_tonumber(L, 4);
+  const f32 lookY = lua_tonumber(L, 5);
+  const f32 lookZ = lua_tonumber(L, 6);
+  world.cam = glm::vec3(camX, camY, camZ);
+  world.look = glm::vec3(lookX, lookY, lookZ);
+  markWorldDirty();
+  return 6;
 }
 
 }  // namespace
@@ -153,12 +202,13 @@ int main(int argc, char* argv[]) {
     lua_register(l.L, "AddInstance", lua_AddInstance);
     lua_register(l.L, "LoadTexture", lua_LoadTexture);
     lua_register(l.L, "LoadShader", lua_LoadShader);
-    lua_register(l.L, "AdjustVBO", lua_AdjustVBO);
+    lua_register(l.L, "ReadInstanceVBO", lua_ReadInstanceVBO);
+    lua_register(l.L, "WriteInstanceVBO", lua_WriteInstanceVBO);
+    lua_register(l.L, "WriteWorldUBO", lua_WriteWorldUBO);
 
     mks::Gamepad::Enable();
 
     auto w = mks::Window{};
-    ww = &w;
     w.Begin(WINDOW_TITLE, 1024, 768);
     w.v.AssertDriverValidationLayersSupported();
     w.v.AssertDriverExtensionsSupported(w.requiredExtensionNames);
@@ -220,11 +270,7 @@ int main(int argc, char* argv[]) {
     w.v.CreateCommandBuffers();  // these theoretically would get used in render loop by me
     w.v.CreateSyncObjects();     // fence and semaphores
 
-    ubo_ProjView ubo1{};  // projection x view matrices
-    ubo1.view = glm::lookAt(
-        glm::vec3(0.0f, 1.0f, 2.0f),
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo_ProjView ubo1{};                                    // projection x view matrices
     w.v.drawIndexCount = static_cast<u32>(indices.size());  // vertices per mesh (two triangles)
 
     w.RenderLoop(
@@ -233,11 +279,7 @@ int main(int argc, char* argv[]) {
         [&w, &ubo1, &l](float deltaTime) {
           lua_getglobal(l.L, "OnUpdate");
           lua_pushnumber(l.L, deltaTime);
-          int result = lua_pcall(l.L, 1, 4, 0);
-          f32 angle = lua_tonumber(l.L, -4);
-          f32 x = lua_tonumber(l.L, -3);
-          f32 y = lua_tonumber(l.L, -2);
-          f32 z = lua_tonumber(l.L, -1);
+          int result = lua_pcall(l.L, 1, 0, 0);
 
           if (isVBODirty) {
             isVBODirty = false;
@@ -245,19 +287,27 @@ int main(int argc, char* argv[]) {
             w.v.UpdateVertexBuffer(1, VectorSize(instances), instances.data());
           }
 
-          // TODO: cache lua inputs so not always dirty on every frame
-          // if (isUBODirty[w.v.currentFrame]) {
-          //   isUBODirty[w.v.currentFrame] = false;
-          ubo1.view = glm::translate(ubo1.view, glm::vec3(x, y, z));
-          ubo1.proj = glm::perspective(
-              glm::radians(45.0f),
-              w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
-              0.1f,
-              10.0f);
-          ubo1.proj[1][1] *= -1;
-          // TODO: not sure i make use of one UBO per frame, really
-          w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo1);
-          // }
+          if (isUBODirty[w.v.currentFrame]) {
+            isUBODirty[w.v.currentFrame] = false;
+            mks::Logger::Debugf(
+                "world.cam x %2.3f y %2.3f z %2.3f",
+                world.cam.x,
+                world.cam.y,
+                world.cam.z);
+            ubo1.view = glm::lookAt(
+                glm::vec3(world.cam.x, world.cam.y, world.cam.z),
+                glm::vec3(world.look.x, world.look.y, world.look.z),
+                glm::vec3(0.0f, 0.0f, 1.0f));
+            // ubo1.view = glm::translate(ubo1.view, glm::vec3(x, y, z));
+            ubo1.proj = glm::perspective(
+                glm::radians(45.0f),
+                w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,
+                0.1f,  // TODO: adjust clipping range for z depth?
+                10.0f);
+            ubo1.proj[1][1] *= -1;
+            // TODO: not sure i make use of one UBO per frame, really
+            w.v.UpdateUniformBuffer(w.v.currentFrame, &ubo1);
+          }
         });
 
     w.v.DeviceWaitIdle();
