@@ -6,7 +6,7 @@ LoadSoundEffect("../assets/audio/sfx/mop2.ogg")
 local angle = 0
 local ROT_SPEED = 30
 local pressed = false
-local MOVE_SPEED = 1.0 -- per sec
+local MOVE_SPEED = 2.0 -- per sec
 local x, y, z = 0.0, 0.0, 0.0
 function OnUpdate(deltaTime)
   --angle = angle + (ROT_SPEED * deltaTime)
