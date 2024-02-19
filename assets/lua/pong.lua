@@ -125,6 +125,7 @@ world:push()
 local background = Instance.new()
 background.texId = 0
 background:push()
+
 local paddle = Instance.new()
 paddle.posY = 6 / 16
 paddle.scaleX = 1 / 4
@@ -132,12 +133,34 @@ paddle.scaleY = 1 / 16
 paddle.scaleZ = 1 / 16
 paddle.texId = 1
 paddle:push()
+
+local PADDLE_SPEED = 1.0 -- per sec
+local PADDLE_BOUNDS = 0.37479170346279
+
 local ball = Instance.new()
 ball.posY = 5 / 16
 ball.scaleX = 1 / 16
 ball.scaleY = 1 / 16
 ball.scaleZ = 1 / 16
 ball.texId = 2
+
+local BALL_SPEED = 1.0 -- per sec
+local BALL_BOUNDS_X = 0.46737878714035
+local BALL_BOUNDS_Y = 0.38456072074621
+
+local bounceable__ball = {}
+bounceable__ball.dx = 0
+bounceable__ball.dy = 0
+
+function Bounceable__Reset(inst, bounceable)
+  inst.posX = 0.0
+  inst.posY = 0.0
+  bounceable.dx = BALL_SPEED
+  bounceable.dy = BALL_SPEED
+end
+
+Bounceable__Reset(ball, bounceable__ball)
+
 ball:push()
 
 -- helper functions
@@ -145,13 +168,14 @@ function FixJoyDrift(x)
   if x > -0.1 and x < 0.1 then return 0 else return x end
 end
 
+function Math__clamp(value, min, max)
+  return math.min(math.max(value, min), max)
+end
+
 -- main draw loop
 local pressed = false
-local MOVE_SPEED = 0.25 -- per sec
-local SLOW_SPEED = 0.25 -- multiplier
 local x, y, z = 0, 0, 0
 local u, v, w, h = 0, 0, 0, 0
-local slow = false
 function OnUpdate(deltaTime)
   -- read gamepad input
   local x1, y1, x2, y2, b1, b2, b3, b4 = _G.GetGamepadInput(0)
@@ -160,23 +184,25 @@ function OnUpdate(deltaTime)
     pressed = true
     -- play one-shot sound effect
     --_G.PlayAudio(math.random(1, 15), false)
-    slow = true
   elseif not b1 and pressed then
     pressed = false
-    slow = false
   end
 
   -- apply joystick movement over time
-  -- x = (FixJoyDrift(x1) * MOVE_SPEED * deltaTime)
-  -- y = (FixJoyDrift(-y1) * MOVE_SPEED * deltaTime)
-  -- z = (FixJoyDrift(-y2) * MOVE_SPEED * deltaTime)
-  u = (FixJoyDrift(-x1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  v = (FixJoyDrift(-y1) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  w = (FixJoyDrift(-x2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  h = (FixJoyDrift(-y2) * MOVE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  -- x = (FixJoyDrift(x1) * PADDLE_SPEED * deltaTime)
+  -- y = (FixJoyDrift(-y1) * PADDLE_SPEED * deltaTime)
+  -- z = (FixJoyDrift(-y2) * PADDLE_SPEED * deltaTime)
+  -- u = (FixJoyDrift(-x1) * PADDLE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  -- v = (FixJoyDrift(-y1) * PADDLE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  -- w = (FixJoyDrift(-x2) * PADDLE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  -- h = (FixJoyDrift(-y2) * PADDLE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
+  x = (FixJoyDrift(-x1) * PADDLE_SPEED * deltaTime)
+  -- w = (FixJoyDrift(-x2) * BALL_SPEED * deltaTime)
+  -- h = (FixJoyDrift(y2) * BALL_SPEED * deltaTime)
 
   -- if x ~= 0 or y ~= 0 or z ~= 0 then
-  if u ~= 0 or v ~= 0 or w ~= 0 or h ~= 0 then
+  -- if u ~= 0 or v ~= 0 or w ~= 0 or h ~= 0 then
+  if x ~= 0 then
     -- by moving camera
     -- world.camX = world.camX + x
     -- world.camY = world.camY + y
@@ -196,20 +222,31 @@ function OnUpdate(deltaTime)
     --   " h " .. world.user2Y)
     -- world:push()
 
-    -- by moving instance X,Y and WxH
+    -- by moving ball X,Y
+    ball.posX = Math__clamp(ball.posX + w, -BALL_BOUNDS_X, BALL_BOUNDS_X)
+    ball.posY = Math__clamp(ball.posY + h, -BALL_BOUNDS_Y, BALL_BOUNDS_Y)
+    -- print("[Lua] ball.pos" .. " x " .. ball.posX .. " y " .. ball.posY)
+    ball:push()
 
-
-    world.user1X = world.user1X + u
-    world.user1Y = world.user1Y + v
-    world.user2X = world.user2X + w
-    world.user2Y = world.user2Y + h
-    print("[Lua] world.user" ..
-      " x " .. world.user1X ..
-      " y " .. world.user1Y ..
-      " w " .. world.user2X ..
-      " h " .. world.user2Y)
-    world:push()
+    -- by moving paddle X
+    paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS, PADDLE_BOUNDS)
+    -- print("[Lua] paddle.pos" .. " x " .. paddle.posX)
+    paddle:push()
   end
+
+  -- ball physics
+  ball.posX = Math__clamp(ball.posX + bounceable__ball.dx * deltaTime, -BALL_BOUNDS_X, BALL_BOUNDS_X)
+  ball.posY = Math__clamp(ball.posY + bounceable__ball.dy * deltaTime, -BALL_BOUNDS_Y, BALL_BOUNDS_Y)
+
+  -- ball collision with walls
+  if ball.posX <= -BALL_BOUNDS_X or ball.posX >= BALL_BOUNDS_X then
+    bounceable__ball.dx = -bounceable__ball.dx
+  end
+  if ball.posY <= -BALL_BOUNDS_Y or ball.posY >= BALL_BOUNDS_Y then
+    bounceable__ball.dy = -bounceable__ball.dy
+  end
+
+  ball:push()
 end
 
 print("[Lua] pong script done loading.")
