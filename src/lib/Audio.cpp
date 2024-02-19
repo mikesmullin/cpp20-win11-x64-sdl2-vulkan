@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "Logger.hpp"
+#include "cmixer.h"
 
 namespace {
 
@@ -50,7 +51,7 @@ void Audio::init() {
   fmt.samples = 1024;
   fmt.callback = audio_callback;
 
-  dev = (void*)SDL_OpenAudioDevice(NULL, 0, &fmt, &got, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+  dev = SDL_OpenAudioDevice(NULL, 0, &fmt, &got, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
   if (dev == 0) {
     throw mks::Logger::Errorf("Error: failed to open audio device '%s'", SDL_GetError());
   }
@@ -61,19 +62,18 @@ void Audio::init() {
   cm_set_master_gain(0.5);
 
   /* Start audio */
-  SDL_PauseAudioDevice((SDL_AudioDeviceID)dev, 0);
+  SDL_PauseAudioDevice(dev, 0);
 }
 
 void Audio::shutdown() {
   for (const auto& src : audioSources) {
-    // TODO: stop audio playback
     cm_destroy_source(src);
   }
-  SDL_CloseAudioDevice((SDL_AudioDeviceID)dev);
+  SDL_CloseAudioDevice(dev);
 }
 
 void Audio::loadAudioFile(const char* path) {
-  auto src = cm_new_source_from_file(path);
+  cm_Source* src = cm_new_source_from_file(path);
   if (!src) {
     throw mks::Logger::Errorf("Error: failed to load audio file '%s'\n", cm_get_error());
   }
@@ -81,8 +81,11 @@ void Audio::loadAudioFile(const char* path) {
   mks::Logger::Infof("Audio file loaded. idx: %u, path: %s", audioSources.size() - 1, path);
 }
 
-void Audio::playAudio(const int id, const int loops) const {
-  cm_set_loop(audioSources[id], loops);
+void Audio::playAudio(const int id, const bool loop) const {
+  if (cm_get_state(audioSources[id]) == CM_STATE_PLAYING) {
+    cm_stop(audioSources[id]);
+  }
+  cm_set_loop(audioSources[id], loop ? 1 : 0);
   cm_play(audioSources[id]);
   // mks::Logger::Infof("Playing sound: %u", id);
 }

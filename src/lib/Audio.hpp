@@ -20,11 +20,11 @@ class Audio {
 
   void init();
   void loadAudioFile(const char* path);
-  void playAudio(const int id, const int loops) const;
+  void playAudio(const int id, const bool loop) const;
   void shutdown();
 
  private:
-  void* dev;
+  unsigned int dev;
   std::vector<cm_Source*> audioSources;
 };
 

@@ -1,11 +1,11 @@
 print("hello world from lua!")
 
-local paddle1 = RegisterEntity()
+local paddle1 = _G.RegisterEntity()
 print("[Lua] Got paddle1 eid = " .. paddle1 .. ".")
-local paddle2 = RegisterEntity()
+local paddle2 = _G.RegisterEntity()
 print("[Lua] Got paddle2 eid = " .. paddle2 .. ".")
 
-local transformable = RegisterComponent(function()
+local transformable = _G.RegisterComponent(function()
   print("[Lua] transformable Component::OnUpdate() called.")
 end)
 

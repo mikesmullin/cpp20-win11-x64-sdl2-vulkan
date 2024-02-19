@@ -15,8 +15,22 @@ int main(int argc, char* argv[]) {
     mks::Audio a{};
     a.init();
     a.loadAudioFile("../assets/audio/music/retro.wav");
-    a.loadAudioFile("../assets/audio/sfx/pong.wav");
-    a.playAudio(0, 999);
+    a.loadAudioFile("../assets/audio/sfx/pong-01.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-02.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-03.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-04.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-05.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-06.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-07.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-08.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-09.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-10.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-11.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-12.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-13.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-14.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong-15.wav");
+    a.playAudio(0, 1);
 
     int choice = 0;
     while (choice != -1) {
@@ -24,7 +38,7 @@ int main(int argc, char* argv[]) {
       std::cout << "Cmd> ";
       std::cin >> choice;
       if (choice != -1) {
-        a.playAudio(choice, 1);
+        a.playAudio(choice, 0);
       }
       std::cin.clear();
     }

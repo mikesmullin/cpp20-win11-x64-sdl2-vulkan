@@ -1,5 +1,5 @@
 import { glob } from 'glob'
-import cbfs from 'fs';
+import cbFs from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -35,24 +35,24 @@ const COMPILER_ARGS = [
   `-I${rel(workspaceFolder, 'vendor', 'stb')}`,
   `-I${rel(workspaceFolder, 'vendor', 'protobuf-25.2', 'include')}`,
   `-I${rel(workspaceFolder, 'vendor', 'lua-5.4.2', 'include')}`,
-  `-I${rel(workspaceFolder, 'vendor', 'rxi', 'cmixer-3592e0e', 'include')}`,
+  `-I${rel(workspaceFolder, 'vendor', 'Hirosam1', 'cmixer-076653c', 'include')}`,
 ];
 const LINKER_LIBS = [
-  '-luser32',
-  '-lshell32',
-  '-lgdi32',
+  '-l', 'user32',
+  '-l', 'shell32',
+  '-l', 'gdi32',
 ];
 const LINKER_LIB_PATHS = [
-  `-L${rel(workspaceFolder, 'vendor', 'sdl-2.26.1', 'lib', 'x64')}`, '-lSDL2',
-  `-L${abs('C:', 'VulkanSDK', '1.3.236.0', 'Lib')}`, '-lvulkan-1',
-  `-L${rel(workspaceFolder, 'vendor', 'protobuf-25.2', 'x64')}`, '-llibprotobuf-lite',
-  `-L${rel(workspaceFolder, 'vendor', 'lua-5.4.2', 'x64')}`, '-llua54',
+  '-L', `${rel(workspaceFolder, 'vendor', 'sdl-2.26.1', 'lib', 'x64')}`, '-l', 'SDL2',
+  '-L', `${abs('C:', 'VulkanSDK', '1.3.236.0', 'Lib')}`, '-l', 'vulkan-1',
+  '-L', `${rel(workspaceFolder, 'vendor', 'protobuf-25.2', 'x64')}`, '-l', 'libprotobuf-lite',
+  '-L', `${rel(workspaceFolder, 'vendor', 'lua-5.4.2', 'x64')}`, '-l', 'lua54',
 ];
 const COMPILER_TRANSLATION_UNITS = [
   rel(workspaceFolder, 'src', 'components', '*.cpp'),
   rel(workspaceFolder, 'src', 'lib', '*.cpp'),
   rel(workspaceFolder, 'src', 'proto', '*.cc'),
-  rel(workspaceFolder, 'vendor', 'rxi', 'cmixer-3592e0e', 'include', '*.c'),
+  rel(workspaceFolder, 'vendor', 'Hirosam1', 'cmixer-076653c', 'include', '*.c'),
 ];
 
 const generate_clangd_compile_commands = async () => {
@@ -88,15 +88,15 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
   const cwd = path.relative(process.cwd(), path.join(workspaceFolder, BUILD_PATH));
   console.log(`cd ${cwd}`);
   console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
-  let infd, stdin, outfd, stdout;
+  let stdin, stdout;
   const stdio = ['inherit', 'inherit', 'inherit'];
   if (opts.stdin) {
     stdio[0] = 'pipe';
-    stdin = cbfs.createReadStream(path.join(workspaceFolder, 'assets', 'proto', 'addressbook.pb'));
+    stdin = cbFs.createReadStream(path.join(workspaceFolder, 'assets', 'proto', 'addressbook.pb'));
   }
   if (opts.stdout) {
     stdio[1] = 'pipe';
-    stdout = await cbfs.createWriteStream(path.join(workspaceFolder, 'assets', 'proto', 'addressbook.bin'));
+    stdout = await cbFs.createWriteStream(path.join(workspaceFolder, 'assets', 'proto', 'addressbook.bin'));
   }
   const child = spawn(cmd, args, { cwd, stdio });
   if (opts.stdin) {
@@ -190,17 +190,17 @@ const clean = async () => {
 
 const compile_test = async (basename) => {
   console.log(`compiling ${basename}...`);
-  const absbuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
+  const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
 
   // compile translation units in parallel (N-at-once)
   const unit_files = [`tests/lib/${basename}.cpp`];
   const dsts = [`tests/lib/${basename}.o`];
   for (const u of COMPILER_TRANSLATION_UNITS) {
-    unit_files.push(...await glob(path.relative(workspaceFolder, absbuild(u)).replace(/\\/g, '/')));
+    unit_files.push(...await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/')));
     dsts.push(rel(workspaceFolder, BUILD_PATH, 'placeholder', u.replace(RX_EXT, '.o')));
   }
   const compileTranslationUnit = async (unit) => {
-    const dir = path.relative(process.cwd(), absbuild(path.dirname(unit)));
+    const dir = path.relative(process.cwd(), absBuild(path.dirname(unit)));
     await fs.mkdir(dir, { recursive: true });
 
     const src = rel(workspaceFolder, unit);
@@ -258,39 +258,40 @@ const compile_test = async (basename) => {
   console.log("done.");
 };
 
-const [, , ...cmds] = process.argv;
-loop:
-for (const cmd of cmds) {
-  switch (cmd) {
-    case 'all':
-      all();
-      break;
-    case 'clean':
-      await clean();
-      break;
-    case 'copy_dlls':
-      copy_dlls();
-      break;
-    case 'shaders':
-      shaders();
-      break;
-    case 'protobuf':
-      protobuf();
-      break;
-    case 'compile_commands':
-      await generate_clangd_compile_commands();
-      break;
-    case 'Audio_test':
-    case 'Gamepad_test':
-    case 'Lua_test':
-    case 'Pong_test':
-    case 'Protobuf_test':
-    case 'Window_test':
-      await compile_test(cmd);
-      break;
-    case 'help':
-    default:
-      console.log(`
+(async () => {
+  const [, , ...cmds] = process.argv;
+  loop:
+  for (const cmd of cmds) {
+    switch (cmd) {
+      case 'all':
+        all();
+        break;
+      case 'clean':
+        await clean();
+        break;
+      case 'copy_dlls':
+        await copy_dlls();
+        break;
+      case 'shaders':
+        await shaders();
+        break;
+      case 'protobuf':
+        await protobuf();
+        break;
+      case 'compile_commands':
+        await generate_clangd_compile_commands();
+        break;
+      case 'Audio_test':
+      case 'Gamepad_test':
+      case 'Lua_test':
+      case 'Pong_test':
+      case 'Protobuf_test':
+      case 'Window_test':
+        await compile_test(cmd);
+        break;
+      case 'help':
+      default:
+        console.log(`
 Mike's hand-rolled build system.
 
 USAGE:
@@ -322,6 +323,7 @@ SUBCOMMANDS:
   Window_test
     Test SDL window integration.
 `);
-      break loop;
+        break loop;
+    }
   }
-}
+})();

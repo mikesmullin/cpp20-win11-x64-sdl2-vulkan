@@ -83,14 +83,14 @@ mks::Audio a{};
 int lua_LoadAudioFile(lua_State* L) {
   auto file = lua_tostring(L, 1);
   a.loadAudioFile(file);
-  return 0;
+  return 1;
 }
 
 int lua_PlayAudio(lua_State* L) {
   const int id = lua_tointeger(L, 1);
-  const int loops = lua_tointeger(L, 1);
-  a.playAudio(id, loops);
-  return 0;
+  const bool loop = lua_toboolean(L, 2);
+  a.playAudio(id, loop);
+  return 2;
 }
 
 int lua_GetGamepadInput(lua_State* L) {
@@ -113,14 +113,14 @@ int lua_LoadTexture(lua_State* L) {
   auto file = lua_tostring(L, 1);
   // TODO: make it possible to load more than one texture atlas?
   textureFiles[0] = static_cast<std::string>(file);
-  return 0;
+  return 1;
 }
 
 std::vector<std::string> shaderFiles;
 int lua_LoadShader(lua_State* L) {
   auto file = lua_tostring(L, 1);
   shaderFiles.push_back(static_cast<std::string>(file));
-  return 0;
+  return 1;
 }
 
 std::vector<bool> isUBODirty{true, true};
@@ -132,7 +132,7 @@ int lua_AdjustVBO(lua_State* L) {
   auto v = lua_tointeger(L, 2);
   instances[SELECTED_INSTANCE].texId = (instances[SELECTED_INSTANCE].texId + 1) % 14;
   isVBODirty = true;
-  return 0;
+  return 2;
 }
 
 }  // namespace

@@ -1,15 +1,29 @@
 print("[Lua] pong script loading.")
 
-LoadTexture("../assets/textures/pong-atlas.png")
-LoadAudioFile("../assets/audio/music/retro.wav")
-LoadAudioFile("../assets/audio/sfx/pong.wav")
-LoadShader("../assets/shaders/simple_shader.frag.spv")
-LoadShader("../assets/shaders/simple_shader.vert.spv")
+_G.LoadTexture("../assets/textures/pong-atlas.png")
+_G.LoadAudioFile("../assets/audio/music/retro.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-01.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-02.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-03.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-04.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-05.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-06.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-07.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-08.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-09.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-10.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-11.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-12.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-13.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-14.wav")
+_G.LoadAudioFile("../assets/audio/sfx/pong-15.wav")
+_G.LoadShader("../assets/shaders/simple_shader.frag.spv")
+_G.LoadShader("../assets/shaders/simple_shader.vert.spv")
 
-PlayAudio(0, 999)
+_G.PlayAudio(0, true)
 
 for i = 0, 25 do
-  AddInstance()
+  _G.AddInstance()
 end
 
 local angle = 0
@@ -26,13 +40,13 @@ function OnUpdate(deltaTime)
   --    angle = angle + 360
   --  end
 
-  local x1, y1, x2, y2, b1, b2, b3, b4 = GetGamepadInput(0)
+  local x1, y1, x2, y2, b1, b2, b3, b4 = _G.GetGamepadInput(0)
   if b1 and not pressed then
     pressed = true
     --print("button1")
-    AddInstance()
-    PlayAudio(1, 1)
-    AdjustVBO();
+    _G.AddInstance()
+    _G.PlayAudio(math.random(1, 15), false)
+    _G.AdjustVBO();
   elseif not b1 and pressed then
     pressed = false
   end
