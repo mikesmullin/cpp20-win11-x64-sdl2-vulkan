@@ -1,6 +1,6 @@
 print("[Lua] pong script loading.")
 
-LoadTexture("../assets/textures/crates.png")
+LoadTexture("../assets/textures/pong-atlas.png")
 LoadSoundEffect("../assets/audio/sfx/mop2.ogg")
 LoadShader("../assets/shaders/simple_shader.frag.spv")
 LoadShader("../assets/shaders/simple_shader.vert.spv")
