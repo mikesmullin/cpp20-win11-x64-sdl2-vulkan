@@ -5,7 +5,7 @@
 #include "../../src/lib/Logger.hpp"
 #include "../../src/lib/SDL.hpp"
 
-int main() {
+int main(int argc, char* argv[]) {
   try {
     mks::Logger::Infof("Begin Audio test.");
 
@@ -14,9 +14,9 @@ int main() {
 
     mks::Audio a{};
     a.init();
-    a.addMusic("../assets/music/napoleon.ogg");
-    a.playMusic(0, 999);
-    a.addSoundEffect("../assets/sfx/monster_snarl.wav");
+    a.loadAudioFile("../assets/audio/music/retro.wav");
+    a.loadAudioFile("../assets/audio/sfx/pong.wav");
+    a.playAudio(0, 999);
 
     int choice = 0;
     while (choice != -1) {
@@ -24,11 +24,12 @@ int main() {
       std::cout << "Cmd> ";
       std::cin >> choice;
       if (choice != -1) {
-        a.playSoundEffect(choice);
+        a.playAudio(choice, 1);
       }
       std::cin.clear();
     }
 
+    a.shutdown();
     mks::Logger::Infof("End of test.");
   } catch (const std::exception& e) {
     std::cerr << e.what() << '\n';

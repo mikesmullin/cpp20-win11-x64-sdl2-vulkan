@@ -25,7 +25,7 @@ int main() {
       std::cout << "Cmd> ";
       std::cin >> choice;
       if (choice != -1) {
-        // a.playSoundEffect(choice);
+        // a.playAudio(choice);
       }
       std::cin.clear();
     }

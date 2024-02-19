@@ -80,15 +80,16 @@ int lua_AddInstance(lua_State* L) {
 
 mks::Audio a{};
 
-int lua_LoadSoundEffect(lua_State* L) {
+int lua_LoadAudioFile(lua_State* L) {
   auto file = lua_tostring(L, 1);
-  a.addSoundEffect(file);
+  a.loadAudioFile(file);
   return 0;
 }
 
-int lua_PlaySoundEffect(lua_State* L) {
-  const int index = lua_tointeger(L, 1);
-  a.playSoundEffect(index);
+int lua_PlayAudio(lua_State* L) {
+  const int id = lua_tointeger(L, 1);
+  const int loops = lua_tointeger(L, 1);
+  a.playAudio(id, loops);
   return 0;
 }
 
@@ -136,7 +137,7 @@ int lua_AdjustVBO(lua_State* L) {
 
 }  // namespace
 
-int main() {
+int main(int argc, char* argv[]) {
   try {
     // test();
     mks::Logger::Infof("Begin %s test.", WINDOW_TITLE);
@@ -146,8 +147,8 @@ int main() {
     a.init();
 
     mks::Lua l{};
-    lua_register(l.L, "LoadSoundEffect", lua_LoadSoundEffect);
-    lua_register(l.L, "PlaySoundEffect", lua_PlaySoundEffect);
+    lua_register(l.L, "LoadAudioFile", lua_LoadAudioFile);
+    lua_register(l.L, "PlayAudio", lua_PlayAudio);
     lua_register(l.L, "GetGamepadInput", lua_GetGamepadInput);
     lua_register(l.L, "AddInstance", lua_AddInstance);
     lua_register(l.L, "LoadTexture", lua_LoadTexture);
@@ -262,6 +263,7 @@ int main() {
     w.v.DeviceWaitIdle();
     gamePad1.Close();
     w.v.Cleanup();
+    a.shutdown();
     w.End();
 
     mks::Logger::Infof("End of test.");

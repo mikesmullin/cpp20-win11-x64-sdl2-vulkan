@@ -1,11 +1,30 @@
-
 #include "Audio.hpp"
 
 #include <SDL.h>
-
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "Logger.hpp"
+
+namespace {
+
+static SDL_mutex* audio_mutex;
+
+static void lock_handler(cm_Event* e) {
+  if (e->type == CM_EVENT_LOCK) {
+    SDL_LockMutex(audio_mutex);
+  }
+  if (e->type == CM_EVENT_UNLOCK) {
+    SDL_UnlockMutex(audio_mutex);
+  }
+}
+
+static void audio_callback(void* udata, Uint8* stream, int size) {
+  cm_process((cm_Int16*)stream, size / 2);
+}
+
+}  // namespace
 
 namespace mks {
 
@@ -16,68 +35,56 @@ Audio::~Audio() {
 }
 
 void Audio::init() {
-  const int audio_rate = 22050;
-  const Uint16 audio_format = AUDIO_S16SYS;
-  const int audio_channels = 2;
-  const int audio_buffers = 4096;
+  SDL_AudioSpec fmt, got;
+  cm_Source* src;
 
-  int ok2 = Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers);
-  if (ok2 != 0) {
-    throw mks::Logger::Errorf("Couldn't init audio: %s", Mix_GetError());
+  /* Init SDL */
+  SDL_Init(SDL_INIT_AUDIO);
+  audio_mutex = SDL_CreateMutex();
+
+  /* Init SDL audio */
+  memset(&fmt, 0, sizeof(fmt));
+  fmt.freq = 44100;
+  fmt.format = AUDIO_S16;
+  fmt.channels = 2;
+  fmt.samples = 1024;
+  fmt.callback = audio_callback;
+
+  dev = (void*)SDL_OpenAudioDevice(NULL, 0, &fmt, &got, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+  if (dev == 0) {
+    throw mks::Logger::Errorf("Error: failed to open audio device '%s'", SDL_GetError());
   }
+
+  /* Init library */
+  cm_init(got.freq);
+  cm_set_lock(lock_handler);
+  cm_set_master_gain(0.5);
+
+  /* Start audio */
+  SDL_PauseAudioDevice((SDL_AudioDeviceID)dev, 0);
 }
 
-void Audio::addSoundEffect(const char* path) {
-  Mix_Chunk* f = Mix_LoadWAV(path);
-  if (f != nullptr) {
-    mSoundEffectBank.push_back(f);
-    unsigned int l = mSoundEffectBank.size() - 1;
-    mks::Logger::Infof("Sound effect loaded. idx: %u, path: %s", l, path);
-  } else {
-    auto err = Mix_GetError();
-    std::cout << err << std::endl;
-    throw mks::Logger::Errorf(
-        "Couldn't add sound effect. path: %s, error: %s",
-        path,
-        Mix_GetError());
+void Audio::shutdown() {
+  for (const auto& src : audioSources) {
+    // TODO: stop audio playback
+    cm_destroy_source(src);
   }
+  SDL_CloseAudioDevice((SDL_AudioDeviceID)dev);
 }
 
-void Audio::playSoundEffect(const unsigned int id) const {
-  int l = mSoundEffectBank.size() - 1;
-  if (id > l) {
-    throw mks::Logger::Errorf("Invalid sound efefct id: %d, max: %d", id, l);
+void Audio::loadAudioFile(const char* path) {
+  auto src = cm_new_source_from_file(path);
+  if (!src) {
+    throw mks::Logger::Errorf("Error: failed to load audio file '%s'\n", cm_get_error());
   }
+  audioSources.push_back(src);
+  mks::Logger::Infof("Audio file loaded. idx: %u, path: %s", audioSources.size() - 1, path);
+}
 
-  int ok = Mix_PlayChannel(-1, mSoundEffectBank[id], 0);
-  if (ok == -1) {
-    throw mks::Logger::Errorf("Unable to play sound effect. id: %u, error: %s", id, Mix_GetError());
-  }
+void Audio::playAudio(const int id, const int loops) const {
+  cm_set_loop(audioSources[id], loops);
+  cm_play(audioSources[id]);
   // mks::Logger::Infof("Playing sound: %u", id);
-}
-
-void Audio::addMusic(const char* path) {
-  Mix_Music* f = Mix_LoadMUS(path);
-  if (f != nullptr) {
-    mMusicBank.push_back(f);
-    unsigned int l = mMusicBank.size() - 1;
-    mks::Logger::Infof("Music loaded. idx: %u, path: %s", l, path);
-  } else {
-    throw mks::Logger::Errorf("Couldn't add music. path: %s, error: %s", path, Mix_GetError());
-  }
-}
-
-void Audio::playMusic(const unsigned int id, const unsigned int loops) const {
-  int l = mMusicBank.size() - 1;
-  if (id > l) {
-    throw mks::Logger::Errorf("Invalid music id: %d, max: %d", id, l);
-  }
-
-  int ok = Mix_PlayMusic(mMusicBank[id], loops);
-  if (ok == -1) {
-    throw mks::Logger::Errorf("Unable to play music. id: %u, error: %s", id, Mix_GetError());
-  }
-  mks::Logger::Infof("Playing music: %u", id);
 }
 
 }  // namespace mks

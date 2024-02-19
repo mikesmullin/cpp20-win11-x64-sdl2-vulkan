@@ -1,8 +1,10 @@
 #pragma once
 
-#include <SDL_mixer.h>
-
 #include <vector>
+
+extern "C" {
+#include "cmixer.h"
+}
 
 /*
 AudioListener & AudioMixer --> AudioSource --> AudioClip
@@ -17,14 +19,13 @@ class Audio {
   ~Audio();
 
   void init();
-  void addSoundEffect(const char* path);
-  void playSoundEffect(const unsigned int which) const;
-  void addMusic(const char* path);
-  void playMusic(const unsigned int id, const unsigned int loops) const;
+  void loadAudioFile(const char* path);
+  void playAudio(const int id, const int loops) const;
+  void shutdown();
 
  private:
-  std::vector<Mix_Chunk*> mSoundEffectBank;
-  std::vector<Mix_Music*> mMusicBank;
+  void* dev;
+  std::vector<cm_Source*> audioSources;
 };
 
 }  // namespace mks

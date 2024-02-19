@@ -1,9 +1,12 @@
 print("[Lua] pong script loading.")
 
 LoadTexture("../assets/textures/pong-atlas.png")
-LoadSoundEffect("../assets/audio/sfx/mop2.ogg")
+LoadAudioFile("../assets/audio/music/retro.wav")
+LoadAudioFile("../assets/audio/sfx/pong.wav")
 LoadShader("../assets/shaders/simple_shader.frag.spv")
 LoadShader("../assets/shaders/simple_shader.vert.spv")
+
+PlayAudio(0, 999)
 
 for i = 0, 25 do
   AddInstance()
@@ -28,7 +31,7 @@ function OnUpdate(deltaTime)
     pressed = true
     --print("button1")
     AddInstance()
-    PlaySoundEffect(0)
+    PlayAudio(1, 1)
     AdjustVBO();
   elseif not b1 and pressed then
     pressed = false
