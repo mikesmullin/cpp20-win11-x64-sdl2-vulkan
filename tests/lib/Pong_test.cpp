@@ -218,7 +218,7 @@ int main(int argc, char* argv[]) {
     mks::Gamepad::Enable();
 
     auto w = mks::Window{};
-    w.Begin(WINDOW_TITLE, 1024, 768);
+    w.Begin(WINDOW_TITLE, 960, 540);
     w.v.AssertDriverValidationLayersSupported();
     w.v.AssertDriverExtensionsSupported(w.requiredExtensionNames);
     char* instance_name;

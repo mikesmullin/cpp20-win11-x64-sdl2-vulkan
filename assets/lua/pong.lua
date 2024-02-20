@@ -126,7 +126,7 @@ _G.LoadShader("../assets/shaders/simple_shader.vert.spv")
 -- _G.PlayAudio(0, true)
 
 -- position the camera
-world:set(ASPECT_1_1, 0, 0, 1, 0, 0, 0)
+world:set(ASPECT_16_9, 0, 0, 1, 0, 0, 0)
 world:push()
 
 -- put three entities on screen
