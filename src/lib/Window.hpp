@@ -25,6 +25,7 @@ class Window {
   void Begin(const char* title, const int width, const int height);
   void Bind();
   DrawableArea GetDrawableAreaExtentBounds();
+  void KeepAspectRatio(const u32 width, const u32 height);
   void RenderLoop(
       const int fps,
       std::function<void(SDL_Event&)> sdl_callback,

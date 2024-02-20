@@ -97,7 +97,6 @@ void Vulkan::CreateInstance(
   // a pointer to an array of enabledExtensionCount null-terminated UTF-8 strings containing the
   // names of extensions to enable.
   createInfo.ppEnabledExtensionNames = requiredExtensionNames.data();
-
   // Create a new Vulkan instance
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCreateInstance.html
   if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
@@ -636,8 +635,8 @@ void Vulkan::CreateSwapChain() {
   // preceded by an SDL resize event. (e.g.,. color-depth change?) Then we are missing a function to
   // determine the new bounds. So we risk a crash here!
   VkExtent2D extent;
-  extent.width = width;
-  extent.height = height;
+  extent.width = bufferWidth;
+  extent.height = bufferHeight;
 
   const uint32_t imageCount = std::clamp(
       swapChainSupport.capabilities.minImageCount + 1,
@@ -1085,10 +1084,10 @@ void Vulkan::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIn
   vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
   VkViewport viewport{};
-  viewport.x = 0.0f;
-  viewport.y = 0.0f;
-  viewport.width = static_cast<float>(swapChainExtent.width);
-  viewport.height = static_cast<float>(swapChainExtent.height);
+  viewport.x = static_cast<f32>(viewportX);
+  viewport.y = static_cast<f32>(viewportY);
+  viewport.width = static_cast<f32>(viewportWidth);
+  viewport.height = static_cast<f32>(viewportHeight);
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
   vkCmdSetViewport(commandBuffer, 0, 1, &viewport);

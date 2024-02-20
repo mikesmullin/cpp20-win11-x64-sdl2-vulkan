@@ -203,9 +203,28 @@ class Vulkan {
   VkInstance instance = nullptr;
   VkSurfaceKHR surface = 0;
   PhysicalDeviceQueues pdqs = PhysicalDeviceQueues{};
-  uint32_t width, height = 0;
+
+  f32 aspectRatio = 1.0f / 1;  // ASPECT_SQUARE
+
+  // window size may differ (ie. viewport may have fixed aspect
+  // ratio, while window has letterbox/pillarbox)
+  u32 windowWidth = 0;
+  u32 windowHeight = 0;
+
+  // viewport will upsample/downsample buffer to a particular screen size
+  u32 viewportX = 0;
+  u32 viewportY = 0;
+  u32 viewportWidth = 0;
+  u32 viewportHeight = 0;
+
+  // buffers may be larger or smaller than they appear on
+  // screen (especially HDPI retina)
+  u32 bufferWidth = 0;
+  u32 bufferHeight = 0;
+
   bool framebufferResized = false;
   bool minimized = false;
+  bool maximized = false;
   uint32_t imageIndex = 0;
   uint8_t currentFrame = 0;
   VkExtent2D swapChainExtent = {};

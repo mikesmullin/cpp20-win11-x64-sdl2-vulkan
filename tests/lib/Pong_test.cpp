@@ -218,17 +218,19 @@ int main(int argc, char* argv[]) {
     mks::Gamepad::Enable();
 
     auto w = mks::Window{};
-    w.Begin(WINDOW_TITLE, 960, 540);
+    w.Begin(WINDOW_TITLE, 800, 800);
+    // w.v.aspectRatio = 1.0f / 1;  // ASPECT_SQUARE (default)
+    // w.v.aspectRatio = 16.0f / 9; // ASPECT_WIDESCREEN
     w.v.AssertDriverValidationLayersSupported();
     w.v.AssertDriverExtensionsSupported(w.requiredExtensionNames);
-    char* instance_name;
-    sprintf(instance_name, "%s_test", WINDOW_TITLE);
+    char instance_name[255];
+    std::sprintf(instance_name, "%s_test", WINDOW_TITLE);
     w.v.CreateInstance(instance_name, 1, 0, 0);
     w.v.UsePhysicalDevice(0);
     w.Bind();
+
     auto b = w.GetDrawableAreaExtentBounds();
-    w.v.width = b.width;
-    w.v.height = b.height;
+    w.KeepAspectRatio(b.width, b.height);
 
     auto gamePad1 = mks::Gamepad{0};
     mks::Logger::Infof("Controller Id: %d, Name: %s", gamePad1.index, gamePad1.GetControllerName());
@@ -303,6 +305,7 @@ int main(int argc, char* argv[]) {
                 glm::vec3(world.look.x, world.look.y, world.look.z),
                 glm::vec3(0.0f, -1.0f, 0.0f));
             // ubo1.view = glm::translate(ubo1.view, glm::vec3(x, y, z));
+            w.v.aspectRatio = world.aspect;  // sync viewport
             ubo1.proj = glm::perspective(
                 glm::radians(45.0f),
                 // w.v.swapChainExtent.width / (float)w.v.swapChainExtent.height,

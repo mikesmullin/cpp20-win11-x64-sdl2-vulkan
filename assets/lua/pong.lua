@@ -126,7 +126,7 @@ _G.LoadShader("../assets/shaders/simple_shader.vert.spv")
 -- _G.PlayAudio(0, true)
 
 -- position the camera
-world:set(ASPECT_16_9, 0, 0, 1, 0, 0, 0)
+world:set(ASPECT_1_1, 0, 0, 1, 0, 0, 0)
 world:push()
 
 -- put three entities on screen
@@ -194,13 +194,13 @@ function OnUpdate(deltaTime)
     --_G.PlayAudio(math.random(1, 15), false)
 
     -- rotate aspect ratio
-    if ASPECT_1_1 == world.aspect then
-      world.aspect = ASPECT_16_9
-    elseif ASPECT_16_9 == world.aspect then
-      world.aspect = ASPECT_4_3
-    elseif ASPECT_4_3 == world.aspect then
-      world.aspect = ASPECT_1_1
-    end
+    -- if ASPECT_1_1 == world.aspect then
+    --   world.aspect = ASPECT_16_9
+    -- elseif ASPECT_16_9 == world.aspect then
+    --   world.aspect = ASPECT_4_3
+    -- elseif ASPECT_4_3 == world.aspect then
+    --   world.aspect = ASPECT_1_1
+    -- end
     world:push()
   elseif not b1 and pressed then
     pressed = false
