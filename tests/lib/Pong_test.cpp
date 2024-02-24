@@ -305,12 +305,12 @@ int main(int argc, char* argv[]) {
                 glm::vec3(world.look.x, world.look.y, world.look.z),
                 glm::vec3(0.0f, 1.0f, 0.0f));  // Y-axis points upwards (GLM default)
             w.v.aspectRatio = world.aspect;    // sync viewport
-            ubo1.proj = glm::perspective(
-                glm::radians(45.0f),  // half the actual 90deg fov
-                world.aspect,
-                0.1f,  // TODO: adjust clipping range for z depth?
-                10.0f);
-            // ubo1.proj = glm::ortho(-30.0f, +30.0f, -24.0f, +24.0f);
+            // ubo1.proj = glm::perspective(
+            //     glm::radians(45.0f),  // half the actual 90deg fov
+            //     world.aspect,
+            //     0.1f,  // TODO: adjust clipping range for z depth?
+            //     10.0f);
+            ubo1.proj = glm::ortho(-0.5f, +0.5f, -0.5f, +0.5f, 0.1f, 10.0f);
             ubo1.user1 = world.user1;
             ubo1.user2 = world.user2;
             // TODO: not sure i make use of one UBO per frame, really
