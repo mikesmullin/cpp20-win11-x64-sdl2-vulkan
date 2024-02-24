@@ -130,52 +130,109 @@ world:set(ASPECT_1_1, 0, 0, -1, 0, 0, 0)
 world:push()
 
 -- put three entities on screen
+
+local BACKGROUND_WH = 800
 local background = Instance.new()
 background.texId = 0
 background:push()
 
--- NOTICE: we assume square aspect ratio
-local PIXELS_PER_UNIT = 800
+local PIXELS_PER_UNIT = BACKGROUND_WH
 function PixelsToUnits(pixels)
   return pixels / PIXELS_PER_UNIT
 end
 
+---@class Rigidbody
+---@field public inst Instance
+---@field public vx number
+---@field public vy number
+local Rigidbody = {}
+Rigidbody.__index = Rigidbody
+function Rigidbody.new(inst, vx, vy)
+  local self = setmetatable({}, Rigidbody)
+  self.inst = inst
+  self.vx = vx or 0 -- Velocity along x-axis
+  self.vy = vy or 0 -- Velocity along y-axis
+  return self
+end
+
+-- Update the position of the rigid body based on its velocity
+---@param dt number
+function Rigidbody:update(dt)
+  self.inst.posX = self.inst.posX + self.vx * dt
+  self.inst.posY = self.inst.posY + self.vy * dt
+end
+
+---@class BoxCollider2d
+---@field public rb Rigidbody
+---@field public width number
+---@field public height number
+local BoxCollider2d = {}
+BoxCollider2d.__index = BoxCollider2d
+function BoxCollider2d.new(rb, width, height)
+  local self = setmetatable({}, BoxCollider2d)
+  self.rb = rb
+  self.width = width or 0
+  self.height = height or 0
+  return self
+end
+
+-- Check collision between two rectangles
+---@param other BoxCollider2d
+function BoxCollider2d:checkCollision(other)
+  return false
+  -- return self.rb.inst.posX + self.width >= other.rb.inst.posX and -- r1 right edge past r2 left
+  --     self.rb.inst.posX <= other.rb.inst.posX + other.width and   -- r1 left edge past r2 right
+  --     self.rb.inst.posY + self.height >= other.rb.inst.posY and   -- r1 top edge past r2 bottom
+  --     self.rb.inst.posY <= other.rb.inst.posY + other.height      -- r1 bottom edge past r2 top
+end
+
+local PADDLE_START_Y = 720
+local PADDLE_W = 170
+local PADDLE_H = 45
+local PADDLE_SPEED = 1.0 -- per sec
+local PADDLE_BOUNDS_X = PixelsToUnits(BACKGROUND_WH / 2)
+
 local paddle = Instance.new()
 -- NOTICE: coordinate system is 0,0 == center of screen
 -- TODO: do I want 0,0 to be in a corner, instead?
-paddle.posX = PixelsToUnits(0)
-paddle.posY = PixelsToUnits(720 / 2)
-paddle.scaleX = PixelsToUnits(170)
-paddle.scaleY = PixelsToUnits(45)
-paddle.scaleZ = 1
+paddle.posX = 0
+paddle.posY = PixelsToUnits(PADDLE_START_Y) / 2
+paddle.scaleX = PixelsToUnits(PADDLE_W)
+paddle.scaleY = PixelsToUnits(PADDLE_H)
 paddle.texId = 1
+
+---@type Rigidbody
+local paddle_rb = Rigidbody.new(paddle, 0, 0)
+---@type BoxCollider2d
+local paddle_collider = BoxCollider2d.new(paddle_rb, PADDLE_W, PADDLE_H)
+
 paddle:push()
 
-local PADDLE_SPEED = 1.0 -- per sec
-local PADDLE_BOUNDS_X = PixelsToUnits(800 / 2)
+local BALL_START_Y = 100
+local BALL_SIZE_WH = 45
+local BALL_SPEED = 1.0 -- per sec
+local BALL_BOUNDS_X = PixelsToUnits(BACKGROUND_WH / 2)
+local BALL_BOUNDS_Y = PixelsToUnits(BACKGROUND_WH / 2)
 
 local ball = Instance.new()
-ball.scaleX = PixelsToUnits(45)
-ball.scaleY = PixelsToUnits(45)
-ball.scaleZ = 1
+ball.scaleX = PixelsToUnits(BALL_SIZE_WH)
+ball.scaleY = PixelsToUnits(BALL_SIZE_WH)
 ball.texId = 2
 
-local BALL_SPEED = 1.0 -- per sec
-local BALL_BOUNDS_X = PixelsToUnits(800 / 2)
-local BALL_BOUNDS_Y = PixelsToUnits(800 / 2)
+---@type Rigidbody
+local ball_rb = Rigidbody.new(ball, 0, 0)
+---@type BoxCollider2d
+local ball_collider = BoxCollider2d.new(ball_rb, BALL_SIZE_WH, BALL_SIZE_WH)
 
-local bounceable__ball = {}
-bounceable__ball.dx = 0
-bounceable__ball.dy = 0
-
-function Bounceable__Reset(inst, bounceable)
-  ball.posX = PixelsToUnits(0)
-  ball.posY = PixelsToUnits(100 / 2)
-  bounceable.dx = BALL_SPEED
-  bounceable.dy = BALL_SPEED
+---@param rb Rigidbody
+function Ball__Reset(rb)
+  rb.inst.posX = PixelsToUnits(0)
+  rb.inst.posY = PixelsToUnits(BALL_START_Y / 2)
+  rb.vx = BALL_SPEED
+  rb.vy = BALL_SPEED
 end
 
-Bounceable__Reset(ball, bounceable__ball)
+Ball__Reset(ball_rb)
 
 ball:push()
 
@@ -248,28 +305,46 @@ function OnUpdate(deltaTime)
     --   " h " .. world.user2Y)
     -- world:push()
 
-    -- by moving ball X,Y
-    ball.posX = Math__clamp(ball.posX + w, -BALL_BOUNDS_X, BALL_BOUNDS_X)
-    ball.posY = Math__clamp(ball.posY + h, -BALL_BOUNDS_Y, BALL_BOUNDS_Y)
-    -- print("[Lua] ball.pos" .. " x " .. ball.posX .. " y " .. ball.posY)
-    ball:push()
-
-    -- by moving paddle X
+    -- player moving paddle X
     paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS_X, PADDLE_BOUNDS_X)
-    -- print("[Lua] paddle.pos" .. " x " .. paddle.posX)
     paddle:push()
+
+    print("[Lua] paddle collider x " ..
+      paddle_collider.rb.inst.posX ..
+      " y " .. paddle_collider.rb.inst.posY .. " w " .. paddle_collider.width .. " h " .. paddle_collider.height)
   end
 
-  -- ball physics
-  ball.posX = Math__clamp(ball.posX + bounceable__ball.dx * deltaTime, -BALL_BOUNDS_X, BALL_BOUNDS_X)
-  ball.posY = Math__clamp(ball.posY + bounceable__ball.dy * deltaTime, -BALL_BOUNDS_Y, BALL_BOUNDS_Y)
-
-  -- ball collision with walls
-  if ball.posX <= -BALL_BOUNDS_X or ball.posX >= BALL_BOUNDS_X then
-    bounceable__ball.dx = -bounceable__ball.dx
+  -- physics moving ball X,Y
+  ball_rb:update(deltaTime)
+  -- ball bounce off top wall
+  if ball.posY <= -BALL_BOUNDS_Y then
+    ball_rb.vy = -ball_rb.vy
   end
-  if ball.posY <= -BALL_BOUNDS_Y or ball.posY >= BALL_BOUNDS_Y then
-    bounceable__ball.dy = -bounceable__ball.dy
+
+  -- ball collision w paddle
+  if ball_collider:checkCollision(paddle_collider) then
+    -- play one-shot sound effect
+    --_G.PlayAudio(math.random(1, 15), false)
+
+    print("[Lua] ball collider x " ..
+      ball_collider.rb.inst.posX ..
+      " y " .. ball_collider.rb.inst.posY .. " w " .. ball_collider.width .. " h " .. ball_collider.height)
+    print("[Lua] collide!")
+
+    ball_rb.vy = -ball_rb.vy
+  end
+
+  -- ball missed paddle
+  if ball.posY >= BALL_BOUNDS_Y then
+    ball_rb.vy = -ball_rb.vy
+
+    print("[Lua] point loss.")
+  end
+
+  -- ball collision with side walls
+  if ball.posX >= BALL_BOUNDS_X or
+      ball.posX <= -BALL_BOUNDS_X then
+    ball_rb.vx = -ball_rb.vx
   end
 
   ball:push()
