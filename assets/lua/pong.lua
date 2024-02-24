@@ -134,35 +134,43 @@ local background = Instance.new()
 background.texId = 0
 background:push()
 
+-- NOTICE: we assume square aspect ratio
+local PIXELS_PER_UNIT = 800
+function PixelsToUnits(pixels)
+  return pixels / PIXELS_PER_UNIT
+end
+
 local paddle = Instance.new()
-paddle.posY = 6 / 16
-paddle.scaleX = 1 / 4
-paddle.scaleY = 1 / 16
-paddle.scaleZ = 1 / 16
+-- NOTICE: coordinate system is 0,0 == center of screen
+-- TODO: do I want 0,0 to be in a corner, instead?
+paddle.posX = PixelsToUnits(0)
+paddle.posY = PixelsToUnits(720 / 2)
+paddle.scaleX = PixelsToUnits(170)
+paddle.scaleY = PixelsToUnits(45)
+paddle.scaleZ = 1
 paddle.texId = 1
 paddle:push()
 
 local PADDLE_SPEED = 1.0 -- per sec
-local PADDLE_BOUNDS = 0.37479170346279
+local PADDLE_BOUNDS_X = PixelsToUnits(800 / 2)
 
 local ball = Instance.new()
-ball.posY = 5 / 16
-ball.scaleX = 1 / 16
-ball.scaleY = 1 / 16
-ball.scaleZ = 1 / 16
+ball.scaleX = PixelsToUnits(45)
+ball.scaleY = PixelsToUnits(45)
+ball.scaleZ = 1
 ball.texId = 2
 
 local BALL_SPEED = 1.0 -- per sec
-local BALL_BOUNDS_X = 0.46737878714035
-local BALL_BOUNDS_Y = 0.38456072074621
+local BALL_BOUNDS_X = PixelsToUnits(800 / 2)
+local BALL_BOUNDS_Y = PixelsToUnits(800 / 2)
 
 local bounceable__ball = {}
 bounceable__ball.dx = 0
 bounceable__ball.dy = 0
 
 function Bounceable__Reset(inst, bounceable)
-  inst.posX = 0.0
-  inst.posY = 0.0
+  ball.posX = PixelsToUnits(0)
+  ball.posY = PixelsToUnits(100 / 2)
   bounceable.dx = BALL_SPEED
   bounceable.dy = BALL_SPEED
 end
@@ -247,7 +255,7 @@ function OnUpdate(deltaTime)
     ball:push()
 
     -- by moving paddle X
-    paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS, PADDLE_BOUNDS)
+    paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS_X, PADDLE_BOUNDS_X)
     -- print("[Lua] paddle.pos" .. " x " .. paddle.posX)
     paddle:push()
   end
