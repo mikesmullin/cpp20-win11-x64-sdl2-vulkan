@@ -59,6 +59,8 @@ Intermediate:
   https://vkguide.dev/docs/gpudriven/gpu_driven_engines/
 - Vulkan API Demos  
   https://github.com/SaschaWillems/Vulkan/tree/master
+- Vulkan API diagrams  
+  https://github.com/David-DiGioia/vulkan-diagrams
 
 Advanced:
 - Debugging in RenderDoc + nVidia nSight Graphics  
