@@ -160,7 +160,6 @@ function CreateGlyphs(x, y, scale, txt)
     t.posY = PixelsToUnits(y)
     t.scaleX = PixelsToUnits(GLYPH_W * scale)
     t.scaleY = PixelsToUnits(GLYPH_H * scale)
-    print("[Lua] glyph code " .. code)
     t.texId = code
     t:push()
 
