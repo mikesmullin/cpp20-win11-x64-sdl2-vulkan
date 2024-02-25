@@ -7,12 +7,36 @@
 - GLM (included)
 - Clang (recommended)
 
-## Building
+## Building 
+
+### on Windows
 1. Start > Run... > "cmd.exe"
 2. Build with Node.js script (uses `clang++`)
    ```
    node build_scripts/Makefile.mjs Pong_test
    ```
+
+### on Linux
+```bash
+# Install Vulkan SDK
+wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
+sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
+sudo apt update
+sudo apt install vulkan-sdk
+
+# Install SDL2
+sudo apt install libsdl2-dev
+
+# Install Clang compiler
+sudo apt install clang
+
+# Install Node.js
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+nvm install latest
+
+# Build
+node build_scripts/Makefile.mjs Pong_test
+```
 
 ## Debugging
 - Can use VSCode (see `.vscode/tasks.json`), or;
