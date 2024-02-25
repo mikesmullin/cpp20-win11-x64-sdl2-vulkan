@@ -18,7 +18,7 @@
 namespace {
 
 const char* WINDOW_TITLE = "Pong";
-const u8 PHYSICS_FPS = 50;
+const u8 PHYSICS_FPS = 120;
 const u8 RENDER_FPS = 60;
 
 struct Mesh {
