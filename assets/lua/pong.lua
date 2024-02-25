@@ -145,6 +145,7 @@ end
 
 local GLYPH_W = 4
 local GLYPH_H = 6
+local GLYPH_SCALE = 4
 function CreateGlyphs(x, y, scale, txt)
   local glyphs = {}
   local t
@@ -155,7 +156,7 @@ function CreateGlyphs(x, y, scale, txt)
     local code = string.byte(char)
 
     t = Instance.new()
-    t.posX = PixelsToUnits(x + (GLYPH_W * scale * i))
+    t.posX = PixelsToUnits(x + (GLYPH_W * scale * (i - 1)))
     t.posY = PixelsToUnits(y)
     t.scaleX = PixelsToUnits(GLYPH_W * scale)
     t.scaleY = PixelsToUnits(GLYPH_H * scale)
@@ -168,7 +169,9 @@ function CreateGlyphs(x, y, scale, txt)
   return glyphs
 end
 
-local txtScore = CreateGlyphs(-100, (-BACKGROUND_WH + (GLYPH_H * 4)) / 2, 4, "Score: 0  ")
+local OFFSET_X = ((-BACKGROUND_WH + (GLYPH_W * GLYPH_SCALE * 2)) / 2)
+local OFFSET_Y = ((-BACKGROUND_WH + (GLYPH_H * GLYPH_SCALE * 2)) / 2)
+local txtScore = CreateGlyphs(OFFSET_X, OFFSET_Y, GLYPH_SCALE, "Score: 0  ")
 
 ---@class Rigidbody
 ---@field public inst Instance
