@@ -1,6 +1,6 @@
 #include "SDL.hpp"
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 #include "Logger.hpp"
 

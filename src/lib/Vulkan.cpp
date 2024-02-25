@@ -14,6 +14,9 @@
 
 namespace mks {
 
+std::vector<const char*> Vulkan::requiredValidationLayers{};
+std::vector<const char*> Vulkan::requiredDriverExtensionNames{};
+
 Vulkan::Vulkan() {
 }
 
@@ -69,7 +72,13 @@ void Vulkan::CreateInstance(
 
   // a bitmask of VkInstanceCreateFlagBits indicating the behavior of the instance.
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkInstanceCreateFlagBits.html
-  createInfo.flags = 0x0;  // default
+#if OS_MAC == 1
+  createInfo.flags =
+      // enable MoltenVK support for MacOS cross-platform support
+      VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#else
+  createInfo.flags = 0;  // default
+#endif
 
   // NULL or a pointer to a VkApplicationInfo structure. If not NULL, this information helps
   // implementations recognize behavior inherent to classes of applications.
@@ -92,11 +101,11 @@ void Vulkan::CreateInstance(
 #endif
 
   // the number of global extensions to enable
-  createInfo.enabledExtensionCount = requiredExtensionNames.size();
+  createInfo.enabledExtensionCount = requiredDriverExtensionNames.size();
 
   // a pointer to an array of enabledExtensionCount null-terminated UTF-8 strings containing the
   // names of extensions to enable.
-  createInfo.ppEnabledExtensionNames = requiredExtensionNames.data();
+  createInfo.ppEnabledExtensionNames = requiredDriverExtensionNames.data();
   // Create a new Vulkan instance
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkCreateInstance.html
   if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
@@ -105,22 +114,20 @@ void Vulkan::CreateInstance(
 }
 
 void Vulkan::InitSwapChain() {
-  const std::vector<const char*> requiredPhysicalDeviceExtensions = {
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-  AssertSwapChainSupport(requiredPhysicalDeviceExtensions);
-  UseLogicalDevice(requiredPhysicalDeviceExtensions);
+  requiredPhysicalDeviceExtensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+  AssertSwapChainSupport();
+  UseLogicalDevice();
   CreateSwapChain();
 }
 
 void Vulkan::AssertDriverValidationLayersSupported() {
 #ifdef DEBUG_VULKAN
-  requiredValidationLayers.resize(1);
   // SDK-provided layer conveniently bundles all useful standard validation
-  requiredValidationLayers[0] = "VK_LAYER_KHRONOS_validation";
+  requiredValidationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
 #endif
 
   if (requiredValidationLayers.size() > 0) {
-    bool supported = Vulkan::CheckInstanceLayers(Vulkan::requiredValidationLayers);
+    bool supported = CheckInstanceLayers();
     if (!supported) {
       throw Logger::Errorf("Missing required Vulkan validation layers.");
     }
@@ -133,16 +140,15 @@ void Vulkan::AssertDriverValidationLayersSupported() {
   }
 }
 
-void Vulkan::AssertDriverExtensionsSupported(std::vector<const char*> requiredExtensionNames) {
+void Vulkan::AssertDriverExtensionsSupported() {
   bool supported = false;
-  supported = Vulkan::CheckInstanceExtensions(requiredExtensionNames);
+  supported = CheckInstanceExtensions();
   if (!supported) {
     throw Logger::Errorf("Vulkan driver is missing required Vulkan extensions.");
   }
-  this->requiredExtensionNames = requiredExtensionNames;
 }
 
-const bool Vulkan::CheckInstanceLayers(const std::vector<const char*> requiredLayers) {
+const bool Vulkan::CheckInstanceLayers() {
   // BACKGROUND: There were formerly two different types of validation layers in Vulkan: instance
   // and device specific. The idea was that instance layers would only check calls related to global
   // Vulkan objects like instances, and device specific layers would only check calls related to a
@@ -170,7 +176,7 @@ const bool Vulkan::CheckInstanceLayers(const std::vector<const char*> requiredLa
   Logger::Debugf("validation layers:");
   for (const auto& layer : availableLayers) {
     found = false;
-    for (const auto& required : requiredLayers) {
+    for (const auto& required : requiredValidationLayers) {
       if (strcmp(required, layer.layerName) == 0) {
         found = true;
         break;
@@ -179,7 +185,7 @@ const bool Vulkan::CheckInstanceLayers(const std::vector<const char*> requiredLa
     Logger::Debugf("  %s%s", layer.layerName, found ? " (required)" : "");
   }
   // validate the required validation layers are all found
-  for (const auto& required : requiredLayers) {
+  for (const auto& required : requiredValidationLayers) {
     found = false;
     for (const auto& layer : availableLayers) {
       if (strcmp(required, layer.layerName) == 0) {
@@ -195,7 +201,7 @@ const bool Vulkan::CheckInstanceLayers(const std::vector<const char*> requiredLa
   return allRequiredSupported;
 }
 
-const bool Vulkan::CheckInstanceExtensions(const std::vector<const char*> requiredExtensions) {
+const bool Vulkan::CheckInstanceExtensions() {
   // list the extensions supported by this driver
   // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkEnumerateInstanceExtensionProperties.html
   uint32_t extensionCount = 0;
@@ -222,7 +228,7 @@ const bool Vulkan::CheckInstanceExtensions(const std::vector<const char*> requir
   bool found;
   for (const auto& extension : supportedExtensions) {
     found = false;
-    for (const auto& required : requiredExtensions) {
+    for (const auto& required : requiredDriverExtensionNames) {
       if (strcmp(required, extension.extensionName) == 0) {
         found = true;
         break;
@@ -232,7 +238,7 @@ const bool Vulkan::CheckInstanceExtensions(const std::vector<const char*> requir
   }
 
   // validate the required extensions are all found
-  for (const auto& required : requiredExtensions) {
+  for (const auto& required : requiredDriverExtensionNames) {
     found = false;
     for (const auto& extension : supportedExtensions) {
       if (strcmp(required, extension.extensionName) == 0) {
@@ -297,7 +303,7 @@ const void Vulkan::UsePhysicalDevice(const unsigned int requiredDeviceIndex) {
 
     // select one GPU to be the active/default/current for all subsequent Vulkan methods;
     // it must meet certain minimum requirements
-    if (i == requiredDeviceIndex && discrete && geometry) {
+    if (i == requiredDeviceIndex /*&& discrete*/ /*&& geometry*/) {
       physicalDevice = device;
       return;
     }
@@ -375,8 +381,7 @@ void Vulkan::LocateQueueFamilies() {
   Logger::Debugf("  selected: graphics: %u, present: %u", pdqs.graphics.index, pdqs.present.index);
 }
 
-const bool Vulkan::CheckPhysicalDeviceExtensions(
-    std::vector<const char*> requiredPhysicalDeviceExtensions) const {
+const bool Vulkan::CheckPhysicalDeviceExtensions() {
   // list the extensions supported by this physical device
   uint32_t extensionCount;
   if (vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr) !=
@@ -395,11 +400,25 @@ const bool Vulkan::CheckPhysicalDeviceExtensions(
         extensionCount);
   }
 
+  // quirk: vulkan spec says if this is supported, we must request it
+  const char* special1 = "VK_KHR_portability_subset";
+
+  // print all supported extensions to console
+  // Logger::Debugf("supported device extensions:");
+  bool special = false;
+  for (const auto& extension : supportedExtensions) {
+    if (strcmp(special1, extension.extensionName) == 0) {
+      requiredPhysicalDeviceExtensions.emplace_back(special1);
+      special = true;
+    }
+    // Logger::Debugf("  %s%s%s", extension.extensionName, special ? " (implicit-required)" : "");
+  }
+
   // debug: print list of extensions to console
   bool allRequiredSupported = true;
   Logger::Debugf("required device extensions:");
   // validate the required extensions are all found
-  bool found;
+  bool found = false;
   for (const auto& required : requiredPhysicalDeviceExtensions) {
     found = false;
     for (const auto& extension : supportedExtensions) {
@@ -416,9 +435,8 @@ const bool Vulkan::CheckPhysicalDeviceExtensions(
   return allRequiredSupported;
 }
 
-const void Vulkan::AssertSwapChainSupport(
-    std::vector<const char*> requiredPhysicalDeviceExtensions) {
-  const bool extensionsSupported = CheckPhysicalDeviceExtensions(requiredPhysicalDeviceExtensions);
+const void Vulkan::AssertSwapChainSupport() {
+  const bool extensionsSupported = CheckPhysicalDeviceExtensions();
   if (!extensionsSupported) {
     throw Logger::Errorf("Missing VK_KHR_swapchain extension on physical device.");
   }
@@ -476,7 +494,7 @@ const void Vulkan::AssertSwapChainSupport(
   }
 }
 
-void Vulkan::UseLogicalDevice(std::vector<const char*> requiredPhysicalDeviceExtensions) {
+void Vulkan::UseLogicalDevice() {
   if (VK_NULL_HANDLE == physicalDevice) {
     throw Logger::Errorf("physicalDevice is null.");
   }

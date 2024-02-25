@@ -4,3 +4,6 @@
 .vs/
 /.cache/
 /compile_commands.json
+/vendor/protobuf-25.2/mac
+/vendor/protobuf-25.2/nix
+/src/proto/*.pb.*

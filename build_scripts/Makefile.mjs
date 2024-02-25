@@ -5,9 +5,13 @@ import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
+const isWin = process.platform === "win32";
+const isMac = process.platform === "darwin";
+const isNix = process.platform === "linux";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CONCURRENCY = 48; // threadripper ftw!
-const GLSLC_PATH = path.join('C:', 'VulkanSDK', '1.3.236.0', 'Bin', 'glslc.exe');
+// NOTICE: assumes glslc is in path
+const GLSLC_PATH = isWin ? path.join('glslc.exe') : path.join('glslc');
 const BUILD_PATH = "build";
 const COMPILER_PATH = "clang++";
 const C_COMPILER_PATH = 'clang';
@@ -24,30 +28,60 @@ const DEBUG_COMPILER_ARGS = [
   // TODO: do we need to pass `-debug` to the linker? `-Xlinker -debug`?
 ];
 const CPP_COMPILER_ARGS = [
-  '-std=c++23',
+  //'-std=c++23',
+  '-std=c++20',
 ];
-const COMPILER_ARGS = [
-  '-m64',
-  `-I${abs('C:', 'VulkanSDK', '1.3.236.0', 'Include')}`,
-  `-I${rel(workspaceFolder, 'vendor', 'sdl-2.26.1', 'include')}`,
-  `-I${rel(workspaceFolder, 'vendor', 'glm-0.9.9.8')}`,
-  `-I${rel(workspaceFolder, 'vendor', 'tinyobjloader', 'include')}`,
-  `-I${rel(workspaceFolder, 'vendor', 'stb')}`,
-  `-I${rel(workspaceFolder, 'vendor', 'protobuf-25.2', 'include')}`,
-  `-I${rel(workspaceFolder, 'vendor', 'lua-5.4.2', 'include')}`,
-  `-I${rel(workspaceFolder, 'vendor', 'Hirosam1', 'cmixer-076653c', 'include')}`,
-];
-const LINKER_LIBS = [
-  '-l', 'user32',
-  '-l', 'shell32',
-  '-l', 'gdi32',
-];
-const LINKER_LIB_PATHS = [
-  '-L', `${rel(workspaceFolder, 'vendor', 'sdl-2.26.1', 'lib', 'x64')}`, '-l', 'SDL2',
-  '-L', `${abs('C:', 'VulkanSDK', '1.3.236.0', 'Lib')}`, '-l', 'vulkan-1',
-  '-L', `${rel(workspaceFolder, 'vendor', 'protobuf-25.2', 'x64')}`, '-l', 'libprotobuf-lite',
-  '-L', `${rel(workspaceFolder, 'vendor', 'lua-5.4.2', 'x64')}`, '-l', 'lua54',
-];
+const COMPILER_ARGS = [];
+COMPILER_ARGS.push('-Wdeprecated-declarations'); // having to use deprecated things for linux cross-platform compatibility
+COMPILER_ARGS.push('-m64');
+if (isWin) {
+  COMPILER_ARGS.push(`-I${abs('C:', 'VulkanSDK', '1.3.236.0', 'Include')}`);
+  COMPILER_ARGS.push(`-I${rel(workspaceFolder, 'vendor', 'sdl-2.26.1', 'include')}`);
+  COMPILER_ARGS.push(`-I${rel(workspaceFolder, 'vendor', 'lua-5.4.2', 'include')}`);
+}
+else if (isNix) {
+  COMPILER_ARGS.push(`-I/${abs('usr', 'include', 'vulkan')}`);
+  COMPILER_ARGS.push(`-I/${abs('usr', 'include', 'lua5.4')}`);
+}
+else if (isMac) {
+  COMPILER_ARGS.push(`-I/${abs('opt', 'homebrew', 'Cellar', 'sdl2', '2.30.0', 'include')}`);
+  COMPILER_ARGS.push(`-I/${abs('opt', 'homebrew', 'Cellar', 'lua', '5.4.6', 'include', 'lua5.4')}`);
+}
+COMPILER_ARGS.push(`-I${rel(workspaceFolder, 'vendor', 'glm-0.9.9.8')}`);
+COMPILER_ARGS.push(`-I${rel(workspaceFolder, 'vendor', 'tinyobjloader', 'include')}`);
+COMPILER_ARGS.push(`-I${rel(workspaceFolder, 'vendor', 'stb')}`);
+COMPILER_ARGS.push(`-I${rel(workspaceFolder, 'vendor', 'protobuf-25.2', isWin ? 'win' : isNix ? 'nix' : 'mac', 'include')}`);
+COMPILER_ARGS.push(`-I${rel(workspaceFolder, 'vendor', 'Hirosam1', 'cmixer-076653c', 'include')}`);
+const LINKER_LIBS = [];
+if (isWin) {
+  LINKER_LIBS.push('-l', 'user32');
+  LINKER_LIBS.push('-l', 'shell32');
+  LINKER_LIBS.push('-l', 'gdi32');
+}
+else if (isNix) {
+}
+else if (isMac) {
+}
+// NOTICE: we can lookup the compiler flags using command `sdl2-config --cflags --libs`
+const LINKER_LIB_PATHS = [];
+if (isWin) {
+  LINKER_LIB_PATHS.push('-L', `${rel(workspaceFolder, 'vendor', 'sdl-2.26.1', 'lib', 'x64')}`, '-l', 'SDL2');
+  LINKER_LIB_PATHS.push('-L', `${abs('C:', 'VulkanSDK', '1.3.236.0', 'Lib')}`, '-l', 'vulkan-1');
+  LINKER_LIB_PATHS.push('-L', `${rel(workspaceFolder, 'vendor', 'protobuf-25.2', 'win', 'x64')}`, '-l', 'libprotobuf-lite');
+  LINKER_LIB_PATHS.push('-L', `${rel(workspaceFolder, 'vendor', 'lua-5.4.2', 'x64')}`, '-l', 'lua54');
+}
+else if (isNix) {
+  LINKER_LIB_PATHS.push('-D_REENTRANT', '-lSDL2');
+  LINKER_LIB_PATHS.push('-lvulkan');
+  LINKER_LIB_PATHS.push('-L', `${rel(workspaceFolder, 'vendor', 'protobuf-25.2', 'nix', 'lib')}`, '-l', 'protobuf-lite');
+  LINKER_LIB_PATHS.push('-llua5.4');
+}
+else if (isMac) {
+  LINKER_LIB_PATHS.push(`-L/${abs('opt', 'homebrew', 'Cellar', 'sdl2', '2.30.0', 'lib')}`, '-D_REENTRANT', '-lSDL2');
+  LINKER_LIB_PATHS.push('-lvulkan');
+  LINKER_LIB_PATHS.push('-L', `${rel(workspaceFolder, 'vendor', 'protobuf-25.2', 'mac', 'lib')}`, '-l', 'protobuf-lite');
+  LINKER_LIB_PATHS.push(`-L/${abs('opt', 'homebrew', 'Cellar', 'lua', '5.4.6', 'lib')}`, '-llua5.4');
+}
 const COMPILER_TRANSLATION_UNITS = [
   rel(workspaceFolder, 'src', 'components', '*.cpp'),
   rel(workspaceFolder, 'src', 'lib', '*.cpp'),
@@ -71,7 +105,7 @@ const generate_clangd_compile_commands = async () => {
         ...CPP_COMPILER_ARGS,
         ...COMPILER_ARGS,
         "-c",
-        "-o", `${path.basename(unit_file).replace(RX_EXT, '.o')}`,
+        "-o", `${unit_file}.o`,
         rel(unit_file),
       ],
       file: rel(workspaceFolder, unit_file),
@@ -141,11 +175,12 @@ const all = async () => {
 };
 
 const copy_dlls = async () => {
-  const srcs = [
-    path.join(workspaceFolder, 'vendor', 'sdl-2.26.1', 'lib', 'x64', 'SDL2.dll'),
-    path.join(workspaceFolder, 'vendor', 'protobuf-25.2', 'x64', 'libprotobuf-lite.dll'),
-    path.join(workspaceFolder, 'vendor', 'lua-5.4.2', 'x64', 'lua54.dll'),
-  ];
+  const srcs = [];
+  if (isWin) {
+    srcs.push(path.join(workspaceFolder, 'vendor', 'sdl-2.26.1', 'lib', 'x64', 'SDL2.dll'));
+    srcs.push(path.join(workspaceFolder, 'vendor', 'protobuf-25.2', 'win', 'x64', 'libprotobuf-lite.dll'));
+    srcs.push(path.join(workspaceFolder, 'vendor', 'lua-5.4.2', 'x64', 'lua54.dll'));
+  }
   const dest = path.join(workspaceFolder, BUILD_PATH);
   for (const src of srcs) {
     await fs.copyFile(src, path.join(dest, path.basename(src)));
@@ -161,7 +196,10 @@ const shaders = async () => {
 };
 
 const protobuf = async () => {
-  const PROTOC_PATH = path.join(workspaceFolder, 'vendor', 'protobuf-25.2', 'tools', 'protoc.exe');
+  const PROTOC_PATH =
+    isWin ? path.join(workspaceFolder, 'vendor', 'protobuf-25.2', 'win', 'tools', 'protoc.exe') :
+      isNix ? path.join(workspaceFolder, 'vendor', 'protobuf-25.2', 'nix', 'bin', 'protoc') :
+        path.join(workspaceFolder, 'vendor', 'protobuf-25.2', 'mac', 'bin', 'protoc');
   await child_spawn(PROTOC_PATH, [
     `--cpp_out=${path.join(workspaceFolder, 'src', 'proto')}`,
     '--proto_path', path.join(workspaceFolder, 'assets', 'proto'),
@@ -193,18 +231,21 @@ const compile_test = async (basename) => {
   const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
 
   // compile translation units in parallel (N-at-once)
-  const unit_files = [`tests/lib/${basename}.cpp`];
-  const dsts = [`tests/lib/${basename}.o`];
+  const main = `tests/lib/${basename}.cpp`;
+  const unit_files = [main];
+  const dsts = [`${main}.o`];
   for (const u of COMPILER_TRANSLATION_UNITS) {
-    unit_files.push(...await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/')));
-    dsts.push(rel(workspaceFolder, BUILD_PATH, 'placeholder', u.replace(RX_EXT, '.o')));
+    for (const file of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
+      unit_files.push(file);
+      dsts.push(rel(workspaceFolder, BUILD_PATH, `${file}.o`));
+    }
   }
   const compileTranslationUnit = async (unit) => {
     const dir = path.relative(process.cwd(), absBuild(path.dirname(unit)));
     await fs.mkdir(dir, { recursive: true });
 
     const src = rel(workspaceFolder, unit);
-    const dst = rel(workspaceFolder, BUILD_PATH, unit.replace(RX_EXT, '.o'));
+    const dst = rel(workspaceFolder, BUILD_PATH, `${unit}.o`);
 
     let dstExists = false;
     try {
@@ -241,6 +282,7 @@ const compile_test = async (basename) => {
   }
 
   // linker stage
+  const executable = `${basename}${isWin ? '.exe' : ''}`;
   let code = 0;
   if (objs.length > 0) {
     code = await child_spawn(COMPILER_PATH, [
@@ -248,12 +290,24 @@ const compile_test = async (basename) => {
       ...COMPILER_ARGS,
       ...LINKER_LIBS,
       ...LINKER_LIB_PATHS,
-      ...dsts,
-      '-o', `${basename}.exe`,
+      ...dsts.filter(s => !s.includes(".pb.")),
+      '-o', executable,
     ]);
   }
   if (0 == code) {
-    await child_spawn(`${basename}.exe`);
+    if (isNix || isMac) {
+      // chmod +x
+      await fs.chmod(path.join(workspaceFolder, BUILD_PATH, executable), 0o755);
+    }
+    if (isMac) {
+      await child_spawn('install_name_tool', [
+        '-change', '@rpath/libvulkan.1.dylib', `${process.env.HOME}/VulkanSDK/1.3.236.0/macOS/lib/libvulkan.1.dylib`,
+        'Pong_test',
+      ]);
+      // or
+      // export DYLD_LIBRARY_PATH=$HOME/VulkanSDK/1.3.236.0/macOS/lib:$DYLD_LIBRARY_PATH
+    }
+    await child_spawn(path.join(workspaceFolder, BUILD_PATH, executable));
   }
   console.log("done.");
 };

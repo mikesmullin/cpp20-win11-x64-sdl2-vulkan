@@ -246,11 +246,16 @@ int main(int argc, char* argv[]) {
     // w.v.aspectRatio = 1.0f / 1;  // ASPECT_SQUARE (default)
     // w.v.aspectRatio = 16.0f / 9; // ASPECT_WIDESCREEN
     w.v.AssertDriverValidationLayersSupported();
-    w.v.AssertDriverExtensionsSupported(w.requiredExtensionNames);
+#if OS_MAC == 1
+    // enable MoltenVK support for MacOS cross-platform support
+    w.v.requiredDriverExtensionNames.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#endif
+    w.v.AssertDriverExtensionsSupported();
     char instance_name[255];
     std::sprintf(instance_name, "%s_test", WINDOW_TITLE);
     w.v.CreateInstance(instance_name, 1, 0, 0);
     w.v.UsePhysicalDevice(0);
+
     w.Bind();
 
     auto b = w.GetDrawableAreaExtentBounds();

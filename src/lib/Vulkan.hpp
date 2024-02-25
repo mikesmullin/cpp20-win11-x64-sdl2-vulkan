@@ -55,8 +55,9 @@ class Vulkan {
   Vulkan();
   ~Vulkan();
 
-  std::vector<const char*> requiredValidationLayers{};
-  std::vector<const char*> requiredExtensionNames{};
+  static std::vector<const char*> requiredValidationLayers;
+  static std::vector<const char*> requiredDriverExtensionNames;
+  std::vector<const char*> requiredPhysicalDeviceExtensions{};
 
   /**
    * The very first thing you need to do is initialize the Vulkan library by creating an instance.
@@ -79,15 +80,14 @@ class Vulkan {
   /**
    * Query the instance for a list of validation layers it supports.
    */
-  static const bool CheckInstanceLayers(const std::vector<const char*> requiredLayers);
+  static const bool CheckInstanceLayers();
 
   /**
    * Query the instance to verify it supports our list of required extensions.
    *
-   * @param requiredExtensions - list of required extensions
    * @return whether all required extensions are supported
    */
-  static const bool CheckInstanceExtensions(const std::vector<const char*> requiredExtensions);
+  static const bool CheckInstanceExtensions();
 
   /**
    * Abort unless all required Vulkan validation layers
@@ -98,10 +98,8 @@ class Vulkan {
   /**
    * Abort unless all extensions requested by the window surface
    * are supported by the Vulkan driver.
-   *
-   * @param requiredExtensionNames - list of required extensions.
    */
-  void AssertDriverExtensionsSupported(std::vector<const char*> requiredExtensionNames);
+  void AssertDriverExtensionsSupported();
 
   /**
    * Select the physical device we will use for subsequent calls.
@@ -121,18 +119,17 @@ class Vulkan {
    *
    * @return - Whether support was found for all in list.
    */
-  const bool CheckPhysicalDeviceExtensions(
-      std::vector<const char*> requiredPhysicalDeviceExtensions) const;
+  const bool CheckPhysicalDeviceExtensions();
 
   /**
    * Verify whether physical device supports Swap Chain feature.
    */
-  const void AssertSwapChainSupport(std::vector<const char*> requiredPhysicalDeviceExtensions);
+  const void AssertSwapChainSupport();
 
   /**
    * Set the current logical device, which will use the current physical device.
    */
-  void UseLogicalDevice(std::vector<const char*> requiredPhysicalDeviceExtensions);
+  void UseLogicalDevice();
 
   /**
    * Construct the swap chain.

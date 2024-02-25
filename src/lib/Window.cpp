@@ -13,7 +13,6 @@
 #include "Keyboard.hpp"
 #include "Logger.hpp"
 #include "SDL.hpp"
-#include "SDL_events.h"
 
 namespace mks {
 
@@ -46,17 +45,16 @@ void Window::Begin(const char* title, const int width, const int height) {
   // list required extensions, according to SDL window manager
   unsigned int extensionCount = 0;
   SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, nullptr);
-  requiredExtensionNames.resize(extensionCount);
-  SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, requiredExtensionNames.data());
+  v.requiredDriverExtensionNames.resize(extensionCount);
+  SDL_Vulkan_GetInstanceExtensions(window, &extensionCount, v.requiredDriverExtensionNames.data());
 }
 
 void Window::Bind() {
   // ask SDL to bind our Vulkan surface to the window surface
-  SDL_Surface* window_surface = SDL_GetWindowSurface(window);
-  if (!window_surface) {
-    throw mks::Logger::Errorf("Failed to get the surface from the window");
-  }
   SDL_Vulkan_CreateSurface(window, v.instance, &v.surface);
+  if (!v.surface) {
+    throw mks::Logger::Errorf("SDL failed to bind Window Surface to Vulkan. %s", SDL_GetError());
+  }
 }
 
 /**

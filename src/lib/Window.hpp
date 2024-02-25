@@ -1,10 +1,8 @@
 #pragma once
 
-#include <vector>
-
 #define SDL_MAIN_HANDLED
-#include <SDL.h>
-#include <SDL_vulkan.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
 
 #include <functional>
 
@@ -37,6 +35,5 @@ class Window {
   SDL_Window* window;
   const char* title;
   Vulkan v = {};
-  std::vector<const char*> requiredExtensionNames;
 };
 }  // namespace mks

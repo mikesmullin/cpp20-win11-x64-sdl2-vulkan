@@ -7,13 +7,22 @@
 - GLM (included)
 - Clang (recommended)
 
+## Screenshot
+![screenshot](docs/imgs/screenshot1.png)
+
+## Video
+[![video](docs/video/2024-02-25_Pong_test.gif)](docs/video/2024-02-25_Pong_test.mp4)
+
+## Test files:
+- [tests/lib/](tests/lib/)
+
 ## Building 
 
 ### on Windows
 1. Start > Run... > "cmd.exe"
 2. Build with Node.js script (uses `clang++`)
    ```
-   node build_scripts/Makefile.mjs Pong_test
+   node build_scripts/Makefile.mjs all
    ```
 
 ### on Linux
@@ -22,42 +31,91 @@
 wget -qO- https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo tee /etc/apt/trusted.gpg.d/lunarg.asc
 sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
 sudo apt update
-sudo apt install vulkan-sdk
+sudo apt install vulkan-sdk vulkan-tools vulkan-validationlayers-dev spirv-tools
 
 # Install SDL2
 sudo apt install libsdl2-dev
 
+# Install Lua
+sudo apt install liblua5.4-dev
+
 # Install Clang compiler
 sudo apt install clang
 
+# Install Protobuf 25.2
+sudo apt install libstdc++-12-dev # if nvidia-driver-* package is installed on Ubuntu, this may be necessary
+mkdir -p vendor/protobuf-25.2/nix/src
+git clone --branch v25.2 https://github.com/protocolbuffers/protobuf.git vendor/protobuf-25.2/nix/src
+cd vendor/protobuf-25.2/nix/src
+git submodule update --init --recursive
+cmake . -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_STANDARD=20
+cmake --build . --parallel 10
+cmake --install .
+cd -
+
 # Install Node.js
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-nvm install latest
+cd build_scripts/
+nvm install
+npm install
+cd ..
 
 # Build
-node build_scripts/Makefile.mjs Pong_test
+node build_scripts/Makefile.mjs all
+```
+
+### on Mac
+```bash
+# Install Vulkan SDK
+https://sdk.lunarg.com/sdk/download/1.3.275.0/mac/vulkansdk-macos-1.3.275.0.dmg
+
+# Install SDL2
+brew install sdl2
+
+# Install Lua
+brew install lua@5.4
+
+# Install Protobuf 25.2
+mkdir -p vendor/protobuf-25.2/mac/src
+git clone --branch v25.2 https://github.com/protocolbuffers/protobuf.git vendor/protobuf-25.2/mac/src
+cd vendor/protobuf-25.2/mac/src
+git submodule update --init --recursive
+brew install cmake
+cmake . -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../ -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_STANDARD=20
+cmake --build . --parallel 10
+cmake --install .
+cd -
+
+# Install Node.js
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+cd build_scripts/
+nvm install
+npm install
+cd ..
+
+# Build
+node build_scripts/Makefile.mjs all
 ```
 
 ## Debugging
 - Can use VSCode (see `.vscode/tasks.json`), or;
 - Can debug with `gdb`
 
-## Collaborate
-
-- Discord: Vulkan Game Engine Dev  
-  https://discord.gg/2XuShqjC
-- Discord: Global Game Jam (Jan - Feb)  
-  https://discord.gg/ggj
-
-## Screenshot
-![screenshot](docs/imgs/screenshot1.png)
-
-## Video
-[![video](docs/video/2024-02-25_Pong_test.gif)](docs/video/2024-02-25_Pong_test.mp4)
-
-
-## Test files:
-- [tests/lib/](tests/lib/)
+## Dependencies
+- Lua  
+  https://www.lua.org/  
+  tutorial: https://www.youtube.com/watch?v=4l5HdmPoynw
+- Google Protobuf  
+  https://github.com/protocolbuffers/protobuf/releases
+  - installed with vcpkg https://vcpkg.io/en/getting-started
+  ```
+  C:\> vcpkg install protobuf protobuf:x64-windows
+  ```
+  - legend for file extensions:
+    - `.proto`: schema (proto3) language-agnostic input code
+    - `.pb.{h,cc}`: schema output cpp implementation code
+    - `.pb`: json-like protobuf text-based input format (human-readable data)
+    - `.bin`: encoded protobuf binary output format (machine-readable data)
 
 ## References
 
@@ -107,21 +165,12 @@ Advanced:
 - How Supercell uses Vulkan  
   https://www.youtube.com/watch?v=Fwh-fzhREOU
 
-## Dependencies
-- Lua  
-  https://www.lua.org/  
-  tutorial: https://www.youtube.com/watch?v=4l5HdmPoynw
-- Google Protobuf  
-  https://github.com/protocolbuffers/protobuf/releases
-  - installed with vcpkg https://vcpkg.io/en/getting-started
-  ```
-  C:\> vcpkg install protobuf protobuf:x64-windows
-  ```
-  - legend for file extensions:
-    - `.proto`: schema (proto3) language-agnostic input code
-    - `.pb.{h,cc}`: schema output cpp implementation code
-    - `.pb`: json-like protobuf text-based input format (human-readable data)
-    - `.bin`: encoded protobuf binary output format (machine-readable data)
+## Collaborate
+
+- Discord: Vulkan Game Engine Dev  
+  https://discord.gg/2XuShqjC
+- Discord: Global Game Jam (Jan - Feb)  
+  https://discord.gg/ggj
 
 ## TODO
 
