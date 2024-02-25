@@ -123,7 +123,7 @@ _G.LoadShader("../assets/shaders/simple_shader.frag.spv")
 _G.LoadShader("../assets/shaders/simple_shader.vert.spv")
 
 -- play music on loop
--- _G.PlayAudio(0, true)
+_G.PlayAudio(0, true)
 
 -- position the camera
 world:set(ASPECT_1_1, 0, 0, -1, 0, 0, 0)
@@ -227,7 +227,7 @@ local ball_collider = BoxCollider2d.new(ball_rb, BALL_SIZE_WH, BALL_SIZE_WH)
 function Ball__Reset(rb)
   rb.inst.posX = 0
   rb.inst.posY = BALL_START_Y / 2
-  rb.vx = BALL_SPEED
+  rb.vx = BALL_SPEED / 2
   rb.vy = BALL_SPEED
 end
 
@@ -245,7 +245,28 @@ function Math__clamp(value, min, max)
 end
 
 -- main loop
+
+local score = 0
+local State = {
+  PLAYING = 0,
+  PAUSED = 1,
+}
+local gameState = State.PAUSED
+
+function TogglePause()
+  -- toggle game pause
+  if gameState == State.PLAYING then
+    gameState = State.PAUSED
+    print("[Lua] Paused.")
+  else
+    gameState = State.PLAYING
+    print("[Lua] Unpaused.")
+  end
+end
+
 function OnFixedUpdate(deltaTime)
+  if gameState ~= State.PLAYING then return end
+
   -- physics moving ball X,Y
   ball_rb:update(deltaTime)
   -- ball bounce off top wall
@@ -258,7 +279,8 @@ function OnFixedUpdate(deltaTime)
     -- play one-shot sound effect
     _G.PlayAudio(math.random(1, 15), false)
 
-    print("[Lua] collide!")
+    score = score + 1
+    print("[Lua] Hit! score = " .. score)
 
     ball_rb.vy = -ball_rb.vy
   end
@@ -267,7 +289,10 @@ function OnFixedUpdate(deltaTime)
   if ball.posY >= BALL_BOUNDS_Y then
     ball_rb.vy = -ball_rb.vy
 
-    print("[Lua] point loss.")
+    score = score - 1
+    print("[Lua] Miss. score = " .. score)
+    Ball__Reset(ball_rb)
+    TogglePause()
   end
 
   -- ball collision with side walls
@@ -289,9 +314,13 @@ function OnUpdate(deltaTime)
   -- on button press
   if b1 and not pressed then
     pressed = true
+
+    TogglePause()
   elseif not b1 and pressed then
     pressed = false
   end
+
+  --if gameState ~= State.PLAYING then return end
 
   -- apply joystick movement over time
   x = (FixJoyDrift(-x1) * PADDLE_SPEED * deltaTime)
