@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "Base.hpp"
+#include "Gamepad.hpp"
 #include "Logger.hpp"
 #include "SDL.hpp"
 
@@ -88,88 +89,104 @@ void Window::KeepAspectRatio(const u32 width, const u32 height) {
 }
 
 void Window::RenderLoop(
-    const int fps,
-    std::function<void(SDL_Event&)> sdl_callback,
-    std::function<void(float)> callback) {
-  auto startTime = std::chrono::high_resolution_clock::now();
-  auto lastRun = startTime;
-  auto lastMeasure = startTime;
-  const std::chrono::duration<double, std::milli> frameDelay(1000.0 / fps);
+    const int physicsFps,
+    const int renderFps,
+    std::function<void(const float)> physicsCallback,
+    std::function<void(const float)> renderCallback) {
+  const std::chrono::duration<double, std::milli> physicsInterval(1000.0f / physicsFps);
+  const std::chrono::duration<double, std::milli> renderInterval(1000.0f / renderFps);
+  auto lastPhysics = std::chrono::high_resolution_clock::now();
+  auto lastRender = std::chrono::high_resolution_clock::now();
+  auto currentTime = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double, std::milli> elapsedPhysics = currentTime - lastPhysics;
+  std::chrono::duration<double, std::milli> elapsedRender = currentTime - lastRender;
+
   float deltaTime = 0;
   u8 frameCount = 0;
   u8 fpsAvg = 0;
   char title[255];
-  u32 targetWidth, targetHeight;
   bool quit = false;
   SDL_Event e;
   while (!quit) {
-    auto frameStart = std::chrono::high_resolution_clock::now();
+    if (!v.minimized) {
+      // Physics update
+      currentTime = std::chrono::high_resolution_clock::now();
+      elapsedPhysics = currentTime - lastPhysics;
+      if (elapsedPhysics > physicsInterval) {
+        deltaTime =
+            std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastPhysics)
+                .count();
+        lastPhysics = currentTime;
 
-    // input handling
-    while (SDL_PollEvent(&e) > 0) {
-      switch (e.type) {
-        case SDL_WINDOWEVENT:
-          switch (e.window.event) {
-            case SDL_WINDOWEVENT_MINIMIZED:
-              v.minimized = true;
+        physicsCallback(deltaTime);
+      }
+
+      // Render update
+      currentTime = std::chrono::high_resolution_clock::now();
+      elapsedRender = currentTime - lastRender;
+      if (elapsedRender > renderInterval) {
+        // input handling
+        while (SDL_PollEvent(&e) > 0) {
+          switch (e.type) {
+            case SDL_WINDOWEVENT:
+              switch (e.window.event) {
+                case SDL_WINDOWEVENT_MINIMIZED:
+                  v.minimized = true;
+                  break;
+
+                case SDL_WINDOWEVENT_RESTORED:
+                  v.minimized = false;
+                  v.maximized = false;
+                  break;
+
+                case SDL_WINDOWEVENT_MAXIMIZED:
+                  v.maximized = true;
+                  break;
+
+                // case SDL_WINDOWEVENT_RESIZED:
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                  v.minimized = false;
+                  KeepAspectRatio(e.window.data1, e.window.data2);
+                  break;
+              }
               break;
 
-            case SDL_WINDOWEVENT_RESTORED:
-              v.minimized = false;
-              v.maximized = false;
-              break;
-
-            case SDL_WINDOWEVENT_MAXIMIZED:
-              v.maximized = true;
-              break;
-
-            // case SDL_WINDOWEVENT_RESIZED:
-            case SDL_WINDOWEVENT_SIZE_CHANGED:
-              v.minimized = false;
-              KeepAspectRatio(e.window.data1, e.window.data2);
+            case SDL_QUIT:
+              quit = true;
               break;
           }
-          break;
 
-        case SDL_QUIT:
-          quit = true;
-          break;
-      }
+          mks::Gamepad::OnInput(e);
 
-      sdl_callback(e);
+          // SDL_UpdateWindowSurface(window);
+        }
 
-      // SDL_UpdateWindowSurface(window);
-    }
+        // render
+        v.AwaitNextFrame();
 
-    // rendering
-    if (!v.minimized) {
-      v.AwaitNextFrame();
-      deltaTime =
-          std::chrono::duration<float, std::chrono::seconds::period>(frameStart - lastRun).count();
-      lastRun = frameStart;
-      callback(deltaTime);
-      v.DrawFrame();
-    }
-
-    // frame rate limiter
-    auto frameEnd = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> elapsedTime = frameEnd - frameStart;
-    frameCount++;
-    if (frameCount >= fps) {
-      if (!v.minimized) {
+        currentTime = std::chrono::high_resolution_clock::now();
         deltaTime =
-            std::chrono::duration<float, std::chrono::seconds::period>(frameEnd - lastMeasure)
+            std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastRender)
                 .count();
-        fpsAvg = 1 / (deltaTime / frameCount);
-        sprintf(title, "%s | avgFPS: %u", this->title, fpsAvg);
-        SDL_SetWindowTitle(window, title);
+        lastRender = currentTime;
+
+        renderCallback(deltaTime);
+        v.DrawFrame();
+
+        frameCount++;
+        if (frameCount >= renderFps) {
+          fpsAvg = 1 / (deltaTime / frameCount);
+          // if titlebar updates are tracking with the wall clock seconds hand, then loop is on-time
+          // the value shown is potential frames (ie. accounts for spare cycles)
+          sprintf(title, "%s | pFPS: %u", this->title, fpsAvg);
+          SDL_SetWindowTitle(window, title);
+          frameCount = 0;
+        }
       }
-      frameCount = 0;
-      lastMeasure = frameEnd;
     }
 
-    // wait remaining ms to target frame rate
-    std::this_thread::sleep_for(frameDelay - elapsedTime);
+    // sleep to control the frame rate
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }
 

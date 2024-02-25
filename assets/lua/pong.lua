@@ -245,75 +245,8 @@ function Math__clamp(value, min, max)
   return math.min(math.max(value, min), max)
 end
 
--- main draw loop
-local pressed = false
-local x, y, z = 0, 0, 0
-local u, v, w, h = 0, 0, 0, 0
-function OnUpdate(deltaTime)
-  -- read gamepad input
-  local x1, y1, x2, y2, b1, b2, b3, b4 = _G.GetGamepadInput(0)
-  -- on button press
-  if b1 and not pressed then
-    pressed = true
-    -- play one-shot sound effect
-    --_G.PlayAudio(math.random(1, 15), false)
-
-    -- rotate aspect ratio
-    -- if ASPECT_1_1 == world.aspect then
-    --   world.aspect = ASPECT_16_9
-    -- elseif ASPECT_16_9 == world.aspect then
-    --   world.aspect = ASPECT_4_3
-    -- elseif ASPECT_4_3 == world.aspect then
-    --   world.aspect = ASPECT_1_1
-    -- end
-    world:push()
-  elseif not b1 and pressed then
-    pressed = false
-  end
-
-  -- apply joystick movement over time
-  -- x = (FixJoyDrift(x1) * PADDLE_SPEED * deltaTime)
-  -- y = (FixJoyDrift(-y1) * PADDLE_SPEED * deltaTime)
-  -- z = (FixJoyDrift(-y2) * PADDLE_SPEED * deltaTime)
-  -- u = (FixJoyDrift(-x1) * PADDLE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  -- v = (FixJoyDrift(-y1) * PADDLE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  -- w = (FixJoyDrift(-x2) * PADDLE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  -- h = (FixJoyDrift(-y2) * PADDLE_SPEED * (slow and SLOW_SPEED or 1) * deltaTime)
-  x = (FixJoyDrift(-x1) * PADDLE_SPEED * deltaTime)
-  -- w = (FixJoyDrift(-x2) * BALL_SPEED * deltaTime)
-  -- h = (FixJoyDrift(y2) * BALL_SPEED * deltaTime)
-
-  -- if x ~= 0 or y ~= 0 or z ~= 0 then
-  -- if u ~= 0 or v ~= 0 or w ~= 0 or h ~= 0 then
-  if x ~= 0 then
-    -- by moving camera
-    -- world.camX = world.camX + x
-    -- world.camY = world.camY + y
-    -- world.camZ = world.camZ + z
-    -- print("[Lua] world.cam x " .. world.camX .. " y " .. world.camY .. " z " .. world.camZ)
-    -- world:push()
-
-    -- by moving texture UVs
-    -- world.user1X = world.user1X + u
-    -- world.user1Y = world.user1Y + v
-    -- world.user2X = world.user2X + w
-    -- world.user2Y = world.user2Y + h
-    -- print("[Lua] world.user" ..
-    --   " u " .. world.user1X ..
-    --   " v " .. world.user1Y ..
-    --   " w " .. world.user2X ..
-    --   " h " .. world.user2Y)
-    -- world:push()
-
-    -- player moving paddle X
-    paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS_X, PADDLE_BOUNDS_X)
-    paddle:push()
-
-    print("[Lua] paddle collider x " ..
-      paddle_collider.rb.inst.posX ..
-      " y " .. paddle_collider.rb.inst.posY .. " w " .. paddle_collider.width .. " h " .. paddle_collider.height)
-  end
-
+-- main loop
+function OnFixedUpdate(deltaTime)
   -- physics moving ball X,Y
   ball_rb:update(deltaTime)
   -- ball bounce off top wall
@@ -348,6 +281,32 @@ function OnUpdate(deltaTime)
   end
 
   ball:push()
+end
+
+local x1, y1, x2, y2 = 0, 0, 0, 0
+local b1, b2, b3, b4 = false, false, false, false
+local pressed = false
+local x = 0
+function OnUpdate(deltaTime)
+  -- read gamepad input
+  x1, y1, x2, y2, b1, b2, b3, b4 = _G.GetGamepadInput(0)
+  -- on button press
+  if b1 and not pressed then
+    pressed = true
+    -- play one-shot sound effect
+    _G.PlayAudio(math.random(1, 15), false)
+    world:push()
+  elseif not b1 and pressed then
+    pressed = false
+  end
+
+  -- apply joystick movement over time
+  x = (FixJoyDrift(-x1) * PADDLE_SPEED * deltaTime)
+  if x ~= 0 then
+    -- player moving paddle X
+    paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS_X, PADDLE_BOUNDS_X)
+    paddle:push()
+  end
 end
 
 print("[Lua] pong script done loading.")

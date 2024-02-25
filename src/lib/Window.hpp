@@ -27,9 +27,10 @@ class Window {
   DrawableArea GetDrawableAreaExtentBounds();
   void KeepAspectRatio(const u32 width, const u32 height);
   void RenderLoop(
-      const int fps,
-      std::function<void(SDL_Event&)> sdl_callback,
-      std::function<void(float)> callback);
+      const int physicsFps,
+      const int renderFps,
+      std::function<void(const float)> physicsCallback,
+      std::function<void(const float)> renderCallback);
   void End();
 
   SDL_Window* window;

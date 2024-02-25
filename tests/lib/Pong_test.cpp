@@ -18,7 +18,8 @@
 namespace {
 
 const char* WINDOW_TITLE = "Pong";
-const u8 MAX_FPS = 60;
+const u8 PHYSICS_FPS = 16;
+const u8 RENDER_FPS = 60;
 
 struct Mesh {
   glm::vec2 vertex;
@@ -285,12 +286,17 @@ int main(int argc, char* argv[]) {
     w.v.drawIndexCount = static_cast<u32>(indices.size());  // vertices per mesh (two triangles)
 
     w.RenderLoop(
-        MAX_FPS,
-        [&l](auto& e) { mks::Gamepad::OnInput(e); },
-        [&w, &ubo1, &l](float deltaTime) {
+        PHYSICS_FPS,
+        RENDER_FPS,
+        [&l](const float deltaTime) {
+          lua_getglobal(l.L, "OnFixedUpdate");
+          lua_pushnumber(l.L, deltaTime);
+          lua_pcall(l.L, 1, 0, 0);
+        },
+        [&w, &ubo1, &l](const float deltaTime) {
           lua_getglobal(l.L, "OnUpdate");
           lua_pushnumber(l.L, deltaTime);
-          int result = lua_pcall(l.L, 1, 0, 0);
+          lua_pcall(l.L, 1, 0, 0);
 
           if (isVBODirty) {
             isVBODirty = false;

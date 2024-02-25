@@ -23,7 +23,7 @@ class Gamepad {
   static void Enable();
   void Open();
   const char* GetControllerName();
-  static void OnInput(SDL_Event& event);
+  static void OnInput(const SDL_Event& event);
   void Close();
 };
 

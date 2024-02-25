@@ -38,7 +38,7 @@ const char* Gamepad::GetControllerName() {
   return SDL_JoystickNameForIndex(index);
 }
 
-void Gamepad::OnInput(SDL_Event& event) {
+void Gamepad::OnInput(const SDL_Event& event) {
   if (!enabled) {
     return;
   }
