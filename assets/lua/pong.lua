@@ -179,16 +179,15 @@ end
 -- Check collision between two rectangles
 ---@param other BoxCollider2d
 function BoxCollider2d:checkCollision(other)
-  return false
-  -- return self.rb.inst.posX + self.width >= other.rb.inst.posX and -- r1 right edge past r2 left
-  --     self.rb.inst.posX <= other.rb.inst.posX + other.width and   -- r1 left edge past r2 right
-  --     self.rb.inst.posY + self.height >= other.rb.inst.posY and   -- r1 top edge past r2 bottom
-  --     self.rb.inst.posY <= other.rb.inst.posY + other.height      -- r1 bottom edge past r2 top
+  return self.rb.inst.posX + self.width >= other.rb.inst.posX and -- r1 right edge past r2 left
+      self.rb.inst.posX <= other.rb.inst.posX + other.width and   -- r1 left edge past r2 right
+      self.rb.inst.posY + self.height >= other.rb.inst.posY and   -- r1 top edge past r2 bottom
+      self.rb.inst.posY <= other.rb.inst.posY + other.height      -- r1 bottom edge past r2 top
 end
 
-local PADDLE_START_Y = 720
-local PADDLE_W = 170
-local PADDLE_H = 45
+local PADDLE_START_Y = PixelsToUnits(720)
+local PADDLE_W = PixelsToUnits(170)
+local PADDLE_H = PixelsToUnits(45)
 local PADDLE_SPEED = 1.0 -- per sec
 local PADDLE_BOUNDS_X = PixelsToUnits(BACKGROUND_WH / 2)
 
@@ -196,9 +195,9 @@ local paddle = Instance.new()
 -- NOTICE: coordinate system is 0,0 == center of screen
 -- TODO: do I want 0,0 to be in a corner, instead?
 paddle.posX = 0
-paddle.posY = PixelsToUnits(PADDLE_START_Y) / 2
-paddle.scaleX = PixelsToUnits(PADDLE_W)
-paddle.scaleY = PixelsToUnits(PADDLE_H)
+paddle.posY = PADDLE_START_Y / 2
+paddle.scaleX = PADDLE_W
+paddle.scaleY = PADDLE_H
 paddle.texId = 1
 
 ---@type Rigidbody
@@ -208,15 +207,15 @@ local paddle_collider = BoxCollider2d.new(paddle_rb, PADDLE_W, PADDLE_H)
 
 paddle:push()
 
-local BALL_START_Y = 100
-local BALL_SIZE_WH = 45
+local BALL_START_Y = PixelsToUnits(100)
+local BALL_SIZE_WH = PixelsToUnits(45)
 local BALL_SPEED = 1.0 -- per sec
 local BALL_BOUNDS_X = PixelsToUnits(BACKGROUND_WH / 2)
 local BALL_BOUNDS_Y = PixelsToUnits(BACKGROUND_WH / 2)
 
 local ball = Instance.new()
-ball.scaleX = PixelsToUnits(BALL_SIZE_WH)
-ball.scaleY = PixelsToUnits(BALL_SIZE_WH)
+ball.scaleX = BALL_SIZE_WH
+ball.scaleY = BALL_SIZE_WH
 ball.texId = 2
 
 ---@type Rigidbody
@@ -226,8 +225,8 @@ local ball_collider = BoxCollider2d.new(ball_rb, BALL_SIZE_WH, BALL_SIZE_WH)
 
 ---@param rb Rigidbody
 function Ball__Reset(rb)
-  rb.inst.posX = PixelsToUnits(0)
-  rb.inst.posY = PixelsToUnits(BALL_START_Y / 2)
+  rb.inst.posX = 0
+  rb.inst.posY = BALL_START_Y / 2
   rb.vx = BALL_SPEED
   rb.vy = BALL_SPEED
 end
@@ -257,11 +256,8 @@ function OnFixedUpdate(deltaTime)
   -- ball collision w paddle
   if ball_collider:checkCollision(paddle_collider) then
     -- play one-shot sound effect
-    --_G.PlayAudio(math.random(1, 15), false)
+    _G.PlayAudio(math.random(1, 15), false)
 
-    print("[Lua] ball collider x " ..
-      ball_collider.rb.inst.posX ..
-      " y " .. ball_collider.rb.inst.posY .. " w " .. ball_collider.width .. " h " .. ball_collider.height)
     print("[Lua] collide!")
 
     ball_rb.vy = -ball_rb.vy
@@ -293,9 +289,6 @@ function OnUpdate(deltaTime)
   -- on button press
   if b1 and not pressed then
     pressed = true
-    -- play one-shot sound effect
-    _G.PlayAudio(math.random(1, 15), false)
-    world:push()
   elseif not b1 and pressed then
     pressed = false
   end
