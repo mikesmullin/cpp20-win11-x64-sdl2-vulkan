@@ -93,8 +93,9 @@ int lua_LoadAudioFile(lua_State* L) {
 int lua_PlayAudio(lua_State* L) {
   const int id = lua_tointeger(L, 1);
   const bool loop = lua_toboolean(L, 2);
-  a.playAudio(id, loop);
-  return 2;
+  const double gain = lua_tonumber(L, 3);
+  a.playAudio(id, loop, gain);
+  return 3;
 }
 
 int lua_GetGamepadInput(lua_State* L) {

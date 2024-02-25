@@ -20,7 +20,7 @@ class Audio {
 
   void init();
   void loadAudioFile(const char* path);
-  void playAudio(const int id, const bool loop) const;
+  void playAudio(const int id, const bool loop, const double gain) const;
   void shutdown();
 
  private:

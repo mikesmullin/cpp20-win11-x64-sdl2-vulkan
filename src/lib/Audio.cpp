@@ -81,10 +81,11 @@ void Audio::loadAudioFile(const char* path) {
   mks::Logger::Infof("Audio file loaded. idx: %u, path: %s", audioSources.size() - 1, path);
 }
 
-void Audio::playAudio(const int id, const bool loop) const {
+void Audio::playAudio(const int id, const bool loop, const double gain) const {
   if (cm_get_state(audioSources[id]) == CM_STATE_PLAYING) {
     cm_stop(audioSources[id]);
   }
+  cm_set_gain(audioSources[id], gain);
   cm_set_loop(audioSources[id], loop ? 1 : 0);
   cm_play(audioSources[id]);
   // mks::Logger::Infof("Playing sound: %u", id);

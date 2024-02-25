@@ -5,7 +5,7 @@ print("[Lua] pong script loading.")
 ---@field package LoadTexture fun(file: string): nil
 ---@field package LoadAudioFile fun(file: string): nil
 ---@field package LoadShader fun(file: string): nil
----@field package PlayAudio fun(id: number, loop: boolean): nil
+---@field package PlayAudio fun(id: number, loop: boolean, gain: number): nil
 ---@field package AddInstance fun(): number
 ---@field package GetGamepadInput fun(id: number): number, number, number, number, boolean, boolean, boolean, boolean
 ---@field package ReadInstanceVBO fun(id: number): number, number, number, number, number, number, number, number, number, number
@@ -123,7 +123,7 @@ _G.LoadShader("../assets/shaders/simple_shader.frag.spv")
 _G.LoadShader("../assets/shaders/simple_shader.vert.spv")
 
 -- play music on loop
-_G.PlayAudio(0, true)
+_G.PlayAudio(0, true, 2.0)
 
 -- position the camera
 world:set(ASPECT_1_1, 0, 0, 1, 0, 0, 0)
@@ -214,7 +214,7 @@ function BoxCollider2d:checkCollision(other)
       self.rb.inst.posY <= other.rb.inst.posY + other.height      -- r1 bottom edge past r2 top
 end
 
-local PADDLE_START_Y = PixelsToUnits(720)
+local PADDLE_START_Y = PixelsToUnits(720) / 2
 local PADDLE_W = PixelsToUnits(170)
 local PADDLE_H = PixelsToUnits(45)
 local PADDLE_SPEED = 1.0 -- per sec
@@ -224,7 +224,7 @@ local paddle = Instance.new()
 -- NOTICE: coordinate system is 0,0 == center of screen
 -- TODO: do I want 0,0 to be in a corner, instead?
 paddle.posX = 0
-paddle.posY = PADDLE_START_Y / 2
+paddle.posY = PADDLE_START_Y
 paddle.scaleX = PADDLE_W
 paddle.scaleY = PADDLE_H
 paddle.texId = 1
@@ -351,7 +351,7 @@ function OnFixedUpdate(deltaTime)
     -- ball collision w paddle
   elseif on_ball_hit_paddle then
     -- play one-shot sound effect
-    _G.PlayAudio(math.random(1, 15), false)
+    _G.PlayAudio(math.random(1, 15), false, 0.5)
 
     score = score + 1
     UpdateScore(score)
