@@ -10,8 +10,10 @@
 
 #include "Base.hpp"
 #include "Gamepad.hpp"
+#include "Keyboard.hpp"
 #include "Logger.hpp"
 #include "SDL.hpp"
+#include "SDL_events.h"
 
 namespace mks {
 
@@ -157,6 +159,7 @@ void Window::RenderLoop(
           }
 
           mks::Gamepad::OnInput(e);
+          mks::Keyboard::OnInput(e);
 
           // SDL_UpdateWindowSurface(window);
         }

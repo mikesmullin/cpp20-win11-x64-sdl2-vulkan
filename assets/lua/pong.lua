@@ -8,6 +8,7 @@ print("[Lua] pong script loading.")
 ---@field package PlayAudio fun(id: number, loop: boolean, gain: number): nil
 ---@field package AddInstance fun(): number
 ---@field package GetGamepadInput fun(id: number): number, number, number, number, boolean, boolean, boolean, boolean
+---@field package GetKeyboardInput fun(): boolean, boolean, boolean, boolean, boolean, number, number
 ---@field package ReadInstanceVBO fun(id: number): number, number, number, number, number, number, number, number, number, number
 ---@field package WriteInstanceVBO fun(id: number, posX: number, posY: number, posZ: number, rotX: number, rotY: number, rotZ: number, scaleX: number, scaleY: number, scaleZ: number, texId: number): nil
 ---@field package WriteWorldUBO fun(aspect: number, camX: number, camY: number, camZ: number, lookX: number, lookY: number, lookZ: number, user1X: number, user1Y: number, user2X: number, user2Y: number): nil
@@ -378,17 +379,90 @@ function OnFixedUpdate(deltaTime)
   ball:push()
 end
 
+function b(v)
+  return v and "true" or "false"
+end
+
 local x1, y1, x2, y2 = 0, 0, 0, 0
 local b1, b2, b3, b4 = false, false, false, false
 local pressed = false
+local code, location = 0, 0
+local keyPressed, alt, ctrl, shift, meta = false, false, false, false, false
+local keyState = false
+local left1, right1, left2, right2 = false, false, false, false
+local kbXAxis, xAxis = 0.0, 0.0
 local x = 0
+
 function OnUpdate(deltaTime)
   -- read gamepad input
   x1, y1, x2, y2, b1, b2, b3, b4 = _G.GetGamepadInput(0)
   -- on button press
   if b1 and not pressed then
     pressed = true
+  elseif not b1 and pressed then
+    pressed = false
+  end
 
+  --if gameState ~= State.PLAYING then return end
+
+  xAxis = 0.0
+
+  -- read keyboard input
+  keyPressed, alt, ctrl, shift, meta, code, location = _G.GetKeyboardInput()
+  if keyPressed and not keyState then -- KEYDOWN
+    keyState = true
+
+    if code == 26 then     -- W
+    elseif code == 82 then -- UP
+    elseif code == 4 then  -- A
+      left1 = true
+    elseif code == 80 then -- LEFT
+      left2 = true
+    elseif code == 22 then -- S
+    elseif code == 81 then -- DOWN
+    elseif code == 7 then  -- D
+      right1 = true
+    elseif code == 79 then -- RIGHT
+      right2 = true
+    elseif code == 44 then -- SPACE
+      pressed = true
+    end
+  elseif not keyPressed and keyState then -- KEYUP
+    keyState = false
+
+    if code == 26 then     -- W
+    elseif code == 82 then -- UP
+    elseif code == 4 then  -- A
+      left1 = false
+    elseif code == 80 then -- LEFT
+      left2 = false
+    elseif code == 22 then -- S
+    elseif code == 81 then -- DOWN
+    elseif code == 7 then  -- D
+      right1 = false
+    elseif code == 79 then -- RIGHT
+      right2 = false
+    elseif code == 44 then -- SPACE
+      pressed = false
+    end
+  end
+
+  kbXAxis = 0.0
+  if ((left1 or left2) and (right1 or right2)) then
+    kbXAxis = 0.0
+  elseif (left1 or left2) and (not (right1 or right2)) then
+    kbXAxis = -1.0
+  elseif (not (left1 or left2)) and (right1 or right2) then
+    kbXAxis = 1.0
+  end
+
+  if kbXAxis ~= 0.0 then
+    xAxis = kbXAxis
+  elseif x1 ~= 0.0 then
+    xAxis = x1
+  end
+
+  if pressed then
     if gameState == State.SCORE then
       gameState = State.PAUSED
       score = 0
@@ -400,14 +474,11 @@ function OnUpdate(deltaTime)
     elseif gameState == State.PLAYING then
       gameState = State.PAUSED
     end
-  elseif not b1 and pressed then
-    pressed = false
   end
 
-  --if gameState ~= State.PLAYING then return end
-
   -- apply joystick movement over time
-  x = (FixJoyDrift(x1) * math.abs(ball_rb.vx) * deltaTime)
+  x = (FixJoyDrift(xAxis) * math.abs(ball_rb.vx) * deltaTime)
+
   if x ~= 0 then
     -- player moving paddle X
     paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS_X, PADDLE_BOUNDS_X)

@@ -11,6 +11,7 @@
 #include "../../src/lib/Audio.hpp"
 #include "../../src/lib/Base.hpp"
 #include "../../src/lib/Gamepad.hpp"
+#include "../../src/lib/Keyboard.hpp"
 #include "../../src/lib/Logger.hpp"
 #include "../../src/lib/Lua.hpp"
 #include "../../src/lib/Window.hpp"
@@ -112,6 +113,18 @@ int lua_GetGamepadInput(lua_State* L) {
   return 8;
 }
 
+int lua_GetKeyboardInput(lua_State* L) {
+  auto kb = mks::Keyboard::state;
+  lua_pushboolean(L, kb.pressed);
+  lua_pushboolean(L, kb.altKey);
+  lua_pushboolean(L, kb.ctrlKey);
+  lua_pushboolean(L, kb.shiftKey);
+  lua_pushboolean(L, kb.metaKey);
+  lua_pushinteger(L, kb.code);
+  lua_pushinteger(L, kb.location);
+  return 7;
+}
+
 std::vector<std::string> textureFiles;
 int lua_LoadTexture(lua_State* L) {
   textureFiles.resize(1);
@@ -210,6 +223,7 @@ int main(int argc, char* argv[]) {
     lua_register(l.L, "LoadAudioFile", lua_LoadAudioFile);
     lua_register(l.L, "PlayAudio", lua_PlayAudio);
     lua_register(l.L, "GetGamepadInput", lua_GetGamepadInput);
+    lua_register(l.L, "GetKeyboardInput", lua_GetKeyboardInput);
     lua_register(l.L, "AddInstance", lua_AddInstance);
     lua_register(l.L, "LoadTexture", lua_LoadTexture);
     lua_register(l.L, "LoadShader", lua_LoadShader);
