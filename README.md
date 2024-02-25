@@ -95,5 +95,4 @@ Advanced:
 
 ## TODO
 
-- make pong demo
 - publish to mobile
