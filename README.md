@@ -28,6 +28,10 @@
 ## Screenshot
 ![screenshot](docs/imgs/screenshot1.png)
 
+## Video
+[![video](docs/video/2024-02-25_Pong_test.gif)](docs/video/2024-02-25_Pong_test.mp4)
+
+
 ## Test files:
 - [tests/lib/](tests/lib/)
 
