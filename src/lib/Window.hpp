@@ -33,6 +33,7 @@ class Window {
       std::function<void(const float)> renderCallback);
   void End();
 
+  bool quit = false;
   SDL_Window* window;
   const char* title;
   Vulkan v = {};

@@ -12,6 +12,7 @@ print("[Lua] pong script loading.")
 ---@field package ReadInstanceVBO fun(id: number): number, number, number, number, number, number, number, number, number, number
 ---@field package WriteInstanceVBO fun(id: number, posX: number, posY: number, posZ: number, rotX: number, rotY: number, rotZ: number, scaleX: number, scaleY: number, scaleZ: number, texId: number): nil
 ---@field package WriteWorldUBO fun(aspect: number, camX: number, camY: number, camZ: number, lookX: number, lookY: number, lookZ: number, user1X: number, user1Y: number, user2X: number, user2Y: number): nil
+---@field package Exit fun(): nil
 
 -- internal OOP
 
@@ -426,7 +427,17 @@ function OnUpdate(deltaTime)
       right2 = true
     elseif code == 44 then -- SPACE
       pressed = true
+    elseif code == 41 then -- ESC
+      _G.Exit()
     end
+
+    -- print("[Lua] keydown " ..
+    --   "code " .. code ..
+    --   " location " .. location ..
+    --   " alt " .. b(alt) ..
+    --   " ctrl " .. b(ctrl) ..
+    --   " shift " .. b(shift) ..
+    --   " meta " .. b(meta))
   elseif not keyPressed and keyState then -- KEYUP
     keyState = false
 

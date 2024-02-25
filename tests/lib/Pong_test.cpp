@@ -18,6 +18,7 @@
 
 namespace {
 
+mks::Window* ww = nullptr;
 const char* WINDOW_TITLE = "Pong";
 const u8 PHYSICS_FPS = 120;
 const u8 RENDER_FPS = 60;
@@ -208,6 +209,11 @@ int lua_WriteWorldUBO(lua_State* L) {
   return 11;
 }
 
+int lua_Exit(lua_State* L) {
+  ww->quit = true;
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -230,10 +236,12 @@ int main(int argc, char* argv[]) {
     lua_register(l.L, "ReadInstanceVBO", lua_ReadInstanceVBO);
     lua_register(l.L, "WriteInstanceVBO", lua_WriteInstanceVBO);
     lua_register(l.L, "WriteWorldUBO", lua_WriteWorldUBO);
+    lua_register(l.L, "Exit", lua_Exit);
 
     mks::Gamepad::Enable();
 
     auto w = mks::Window{};
+    ww = &w;
     w.Begin(WINDOW_TITLE, 800, 800);
     // w.v.aspectRatio = 1.0f / 1;  // ASPECT_SQUARE (default)
     // w.v.aspectRatio = 16.0f / 9; // ASPECT_WIDESCREEN

@@ -107,7 +107,6 @@ void Window::RenderLoop(
   u8 frameCount = 0;
   u8 fpsAvg = 0;
   char title[255];
-  bool quit = false;
   SDL_Event e;
   while (!quit) {
     if (!v.minimized) {
