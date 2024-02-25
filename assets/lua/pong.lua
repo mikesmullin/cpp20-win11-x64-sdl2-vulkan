@@ -211,10 +211,17 @@ end
 -- Check collision between two rectangles
 ---@param other BoxCollider2d
 function BoxCollider2d:checkCollision(other)
-  return self.rb.inst.posX + self.width >= other.rb.inst.posX and -- r1 right edge past r2 left
-      self.rb.inst.posX <= other.rb.inst.posX + other.width and   -- r1 left edge past r2 right
-      self.rb.inst.posY + self.height >= other.rb.inst.posY and   -- r1 top edge past r2 bottom
-      self.rb.inst.posY <= other.rb.inst.posY + other.height      -- r1 bottom edge past r2 top
+  local r1x = self.rb.inst.posX - self.width / 2
+  local r1y = self.rb.inst.posY - self.height / 2
+  local r2x = other.rb.inst.posX - other.width / 2
+  local r2y = other.rb.inst.posY - other.height / 2
+
+  local outcome = r1x + self.width >= r2x and -- r1 right edge past r2 left
+      r1x <= r2x + other.width and            -- r1 left edge past r2 right
+      r1y + self.height >= r2y and            -- r1 top edge past r2 bottom
+      r1y <= r2y + other.height               -- r1 bottom edge past r2 top
+
+  return outcome
 end
 
 local PADDLE_START_Y = PixelsToUnits(720) / 2
