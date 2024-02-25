@@ -291,10 +291,8 @@ function TogglePause()
   -- toggle game pause
   if gameState == State.PLAYING then
     gameState = State.PAUSED
-    print("[Lua] Paused.")
   else
     gameState = State.PLAYING
-    print("[Lua] Unpaused.")
   end
 end
 
@@ -360,7 +358,6 @@ function OnFixedUpdate(deltaTime)
 
     score = score + 1
     UpdateScore(score)
-    print("[Lua] Hit! score = " .. score)
 
     ball_rb.vy = -math.abs(ball_rb.vy)
 
@@ -373,7 +370,6 @@ function OnFixedUpdate(deltaTime)
     --score = score - 1
     score = 0
     UpdateScore(score)
-    print("[Lua] Miss. score = " .. score)
     Ball__Reset(ball_rb)
     TogglePause()
   end
