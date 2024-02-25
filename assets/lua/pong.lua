@@ -126,10 +126,10 @@ _G.LoadShader("../assets/shaders/simple_shader.vert.spv")
 _G.PlayAudio(0, true)
 
 -- position the camera
-world:set(ASPECT_1_1, 0, 0, -1, 0, 0, 0)
+world:set(ASPECT_1_1, 0, 0, 1, 0, 0, 0)
 world:push()
 
--- put three entities on screen
+-- put entities on screen
 
 local BACKGROUND_WH = 800
 local background = Instance.new()
@@ -140,6 +140,35 @@ local PIXELS_PER_UNIT = BACKGROUND_WH
 function PixelsToUnits(pixels)
   return pixels / PIXELS_PER_UNIT
 end
+
+-- render some pixel font glyphs
+
+local GLYPH_W = 4
+local GLYPH_H = 6
+function CreateGlyphs(x, y, scale, txt)
+  local glyphs = {}
+  local t
+  local char = ""
+  local code = 0
+  for i = 1, #txt do
+    local char = string.sub(txt, i, i)
+    local code = string.byte(char)
+
+    t = Instance.new()
+    t.posX = PixelsToUnits(x + (GLYPH_W * scale * i))
+    t.posY = PixelsToUnits(y)
+    t.scaleX = PixelsToUnits(GLYPH_W * scale)
+    t.scaleY = PixelsToUnits(GLYPH_H * scale)
+    print("[Lua] glyph code " .. code)
+    t.texId = code
+    t:push()
+
+    table.insert(glyphs, t)
+  end
+  return glyphs
+end
+
+local txtScore = CreateGlyphs(-100, (-BACKGROUND_WH + (GLYPH_H * 4)) / 2, 4, "Score: 0  ")
 
 ---@class Rigidbody
 ---@field public inst Instance
@@ -264,39 +293,82 @@ function TogglePause()
   end
 end
 
+---@param idx number
+---@param txt number
+---@return number
+function GetCharCodeAt(idx, txt)
+  local str = tostring(txt)
+  if idx > string.len(txt) then return 32 end
+  local char = string.sub(str, idx, idx)
+  local code = string.byte(char)
+  return code
+end
+
+---@param arr table
+---@param idx number
+---@param code number
+function UpdateGlyph(arr, idx, code)
+  if code > 31 and code < 128 then
+    arr[idx].texId = code
+    arr[idx]:push()
+  end
+end
+
+---@param score number
+function UpdateScore(score)
+  UpdateGlyph(txtScore, 8, GetCharCodeAt(1, score))
+  UpdateGlyph(txtScore, 9, GetCharCodeAt(2, score))
+  UpdateGlyph(txtScore, 10, GetCharCodeAt(3, score))
+end
+
+local ball_in_collission = false
+local on_ball_hit_paddle = false
 function OnFixedUpdate(deltaTime)
   if gameState ~= State.PLAYING then return end
 
+  local colliding = ball_collider:checkCollision(paddle_collider)
+  if colliding and ball_in_collission then
+    on_ball_hit_paddle = false
+    ball_in_collission = true
+  elseif not colliding and ball_in_collission then
+    on_ball_hit_paddle = false
+    ball_in_collission = false
+  elseif colliding and not ball_in_collission then
+    on_ball_hit_paddle = true
+    ball_in_collission = true
+  elseif not colliding and not ball_in_collission then
+    on_ball_hit_paddle = false
+    ball_in_collission = false
+  end
+
   -- physics moving ball X,Y
   ball_rb:update(deltaTime)
+
   -- ball bounce off top wall
   if ball.posY <= -BALL_BOUNDS_Y then
     ball_rb.vy = -ball_rb.vy
-  end
 
-  -- ball collision w paddle
-  if ball_collider:checkCollision(paddle_collider) then
+    -- ball collision w paddle
+  elseif on_ball_hit_paddle then
     -- play one-shot sound effect
     _G.PlayAudio(math.random(1, 15), false)
 
     score = score + 1
+    UpdateScore(score)
     print("[Lua] Hit! score = " .. score)
 
     ball_rb.vy = -ball_rb.vy
-  end
 
-  -- ball missed paddle
-  if ball.posY >= BALL_BOUNDS_Y then
-    ball_rb.vy = -ball_rb.vy
-
+    -- ball missed paddle
+  elseif ball.posY >= BALL_BOUNDS_Y then
     score = score - 1
+    UpdateScore(score)
     print("[Lua] Miss. score = " .. score)
     Ball__Reset(ball_rb)
     TogglePause()
-  end
 
-  -- ball collision with side walls
-  if ball.posX >= BALL_BOUNDS_X or
+    -- ball collision with side walls
+  elseif ball.posX >= BALL_BOUNDS_X or
       ball.posX <= -BALL_BOUNDS_X then
     ball_rb.vx = -ball_rb.vx
   end
@@ -323,7 +395,7 @@ function OnUpdate(deltaTime)
   --if gameState ~= State.PLAYING then return end
 
   -- apply joystick movement over time
-  x = (FixJoyDrift(-x1) * PADDLE_SPEED * deltaTime)
+  x = (FixJoyDrift(x1) * PADDLE_SPEED * deltaTime)
   if x ~= 0 then
     -- player moving paddle X
     paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS_X, PADDLE_BOUNDS_X)

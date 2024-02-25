@@ -28,9 +28,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      showgrid="false"
-     inkscape:zoom="1"
-     inkscape:cx="377"
-     inkscape:cy="517.5"
+     inkscape:zoom="5.6568542"
+     inkscape:cx="316.60706"
+     inkscape:cy="777.72907"
      inkscape:window-width="2205"
      inkscape:window-height="1460"
      inkscape:window-x="1491"
@@ -440,7 +440,28 @@
          width="7.6510539"
          height="7.4083338"
          x="29.603083"
-         y="232.30423" /></g></g><g
+         y="232.30423" /><image
+         width="33.602085"
+         height="4.7624998"
+         preserveAspectRatio="none"
+         xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAH8AAAASCAYAAABy1wGXAAAABHNCSVQICAgIfAhkiAAAAoBJREFU
+aIHtWMmuAyEMY+b//5l3ShX52U6ALoc2UsWwOSsh9JpzDqTruuac88rfqo01Y4yB4zjH8HGM7Wfj
+p6Tk78yxtbkNHso+eb7q7+jjxjP+3QVHQPwOBqjwquDKIEqBU6qw55xXlgn7jGJNxs/6oZOqPvJi
+/cwvfoGF9oy1pfPRqeobA8IpsBPRsR9btj4r7zDZXPf0uIBhfWefar8LDsQK5+IY40+dXznHnXxm
+2JN0jcHHgpFFtuK5en0ofTATIH8V7JV9mOwuOJhjq2CzJ79KqyoL5L5KOwovn+jKOZUxkSr+FUY2
+Zny74Fq9ppjzlI27wegO40OXSQq+H30H3WP4tMLuT3YScA7nFSZrFU/Xrqzr6Leqf8X3pK3syWRT
++ma6WUHlniAx7woKdQ+q/ZnYnb5KlTM7+nX1f4a8jtTrgBXabD3TJ6g8+RmgK7A76arfxd6R5xRP
+BcIJP8TLQcRqBndYnDwuOO+YqIq4FYXdyVf4Covx7Sq8Im+HZ5c/k7V6fbg03imAdwLyjo1uM4tM
+lkpzX+FVguKdVxmv4hcYyL+6dpTMwWv3JCoejqrMmTE7vnz8ftX+99JdRWk3nezisHE3xuqR0zv4
+lN7N39VMzB7qtXBjmlKbu8zVvLsWVApzY/laYLxRWaVPZayq/47WpfldO42RCj7crCrccKT6B4n1
+sa0KyiobdIoghc8KLDaPvNAuJ089xnvFmVXBnPVhT8Wgf3/vrhqWUcZgxvl0mj4h9b52tLJWHQQs
+uB1+14et//bRmTkNsVPEMPL87inJGCpNZhkUf5etuq8Rl16ZLCtPPba2cng1Ttd+otpfzS7PyEar
+2K/kuSvTs+kPi/uHLaWRXGYAAAAASUVORK5CYII=
+"
+         id="image462"
+         x="98.394753"
+         y="217.48756"
+         style="image-rendering:pixelated" /></g></g><g
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="Layer 2"

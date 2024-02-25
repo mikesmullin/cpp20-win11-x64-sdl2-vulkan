@@ -73,9 +73,14 @@ float pixelsToUnitsY(uint pixels) {
     return pixels / TEXTURE_WH.y;
 }
 
+uint GLYPH_X = 260;
+uint GLYPH_Y = 822;
+uint GLYPH_W = 4;
+uint GLYPH_H = 6;
+
 void main() {
     mat4 model = generateModelMatrix(pos, rot, scale);
-    gl_Position = ubo1.proj * ubo1.view * model * vec4(xy, 0.0, 1.0);
+    gl_Position = ubo1.proj * ubo1.view * model * vec4(-xy.x, xy.y, 0.0, 1.0);
 
     // hard-coded map of texId to uvwh coords in texture atlas
     vec4 uvwh;
@@ -87,6 +92,18 @@ void main() {
     }
     else if (2 == texId) { // ball 190x815 45x45
         uvwh = vec4(pixelsToUnitsX(190),pixelsToUnitsY(815),pixelsToUnitsX(45),pixelsToUnitsY(45));
+    }
+
+    // pixel font glyphs 260x822 4x6
+    else if (texId > 31 && texId < 128) {
+        uint x = (texId - 32);
+        uint y = (x / 32) - 1;
+        x = x % 32;
+        uvwh = vec4(
+            pixelsToUnitsX(GLYPH_X + (GLYPH_W * x)),
+            pixelsToUnitsY(GLYPH_Y + (GLYPH_H * y)),
+            pixelsToUnitsX(GLYPH_W),
+            pixelsToUnitsY(GLYPH_H));
     }
 
     if (xy.x == 0.5 && xy.y == -0.5) {
