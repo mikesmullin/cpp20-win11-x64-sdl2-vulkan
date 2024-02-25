@@ -249,7 +249,7 @@ paddle:push()
 local BALL_START_Y = PixelsToUnits(100)
 local BALL_SIZE_WH = PixelsToUnits(45)
 local BALL_SPEED = 1.0 -- per sec
-local BALL_SPEED_INC = 1.0 / 100
+local BALL_SPEED_INC = 1.0 / 50
 local BALL_BOUNDS_X = PixelsToUnits(BACKGROUND_WH / 2)
 local BALL_BOUNDS_Y = PixelsToUnits(BACKGROUND_WH / 2)
 
@@ -290,17 +290,9 @@ local score = 0
 local State = {
   PLAYING = 0,
   PAUSED = 1,
+  SCORE = 2,
 }
 local gameState = State.PAUSED
-
-function TogglePause()
-  -- toggle game pause
-  if gameState == State.PLAYING then
-    gameState = State.PAUSED
-  else
-    gameState = State.PLAYING
-  end
-end
 
 ---@param idx number
 ---@param txt number
@@ -373,11 +365,7 @@ function OnFixedUpdate(deltaTime)
 
     -- ball missed paddle
   elseif ball.posY >= BALL_BOUNDS_Y then
-    --score = score - 1
-    score = 0
-    UpdateScore(score)
-    Ball__Reset(ball_rb)
-    TogglePause()
+    gameState = State.SCORE
   end
 
   -- ball collision with side walls
@@ -401,7 +389,17 @@ function OnUpdate(deltaTime)
   if b1 and not pressed then
     pressed = true
 
-    TogglePause()
+    if gameState == State.SCORE then
+      gameState = State.PAUSED
+      score = 0
+      UpdateScore(score)
+      Ball__Reset(ball_rb)
+      ball:push()
+    elseif gameState == State.PAUSED then
+      gameState = State.PLAYING
+    elseif gameState == State.PLAYING then
+      gameState = State.PAUSED
+    end
   elseif not b1 and pressed then
     pressed = false
   end
