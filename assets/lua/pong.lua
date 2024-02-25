@@ -221,6 +221,7 @@ local PADDLE_START_Y = PixelsToUnits(720) / 2
 local PADDLE_W = PixelsToUnits(170)
 local PADDLE_H = PixelsToUnits(45)
 local PADDLE_SPEED = 1.0 -- per sec
+local PADDLE_SPEED_INC = 1.0 / 10
 local PADDLE_BOUNDS_X = PixelsToUnits(BACKGROUND_WH / 2)
 
 local paddle = Instance.new()
@@ -242,6 +243,7 @@ paddle:push()
 local BALL_START_Y = PixelsToUnits(100)
 local BALL_SIZE_WH = PixelsToUnits(45)
 local BALL_SPEED = 1.0 -- per sec
+local BALL_SPEED_INC = 1.0 / 100
 local BALL_BOUNDS_X = PixelsToUnits(BACKGROUND_WH / 2)
 local BALL_BOUNDS_Y = PixelsToUnits(BACKGROUND_WH / 2)
 
@@ -349,7 +351,7 @@ function OnFixedUpdate(deltaTime)
 
   -- ball bounce off top wall
   if ball.posY <= -BALL_BOUNDS_Y then
-    ball_rb.vy = -ball_rb.vy
+    ball_rb.vy = math.abs(ball_rb.vy)
 
     -- ball collision w paddle
   elseif on_ball_hit_paddle then
@@ -360,20 +362,27 @@ function OnFixedUpdate(deltaTime)
     UpdateScore(score)
     print("[Lua] Hit! score = " .. score)
 
-    ball_rb.vy = -ball_rb.vy
+    ball_rb.vy = -math.abs(ball_rb.vy)
+
+    -- incease ball velocity with each hit
+    ball_rb.vx = ball_rb.vx + (ball_rb.vx * BALL_SPEED_INC)
+    ball_rb.vy = ball_rb.vy + (ball_rb.vy * BALL_SPEED_INC)
 
     -- ball missed paddle
   elseif ball.posY >= BALL_BOUNDS_Y then
-    score = score - 1
+    --score = score - 1
+    score = 0
     UpdateScore(score)
     print("[Lua] Miss. score = " .. score)
     Ball__Reset(ball_rb)
     TogglePause()
+  end
 
-    -- ball collision with side walls
-  elseif ball.posX >= BALL_BOUNDS_X or
-      ball.posX <= -BALL_BOUNDS_X then
-    ball_rb.vx = -ball_rb.vx
+  -- ball collision with side walls
+  if ball.posX >= BALL_BOUNDS_X then
+    ball_rb.vx = -math.abs(ball_rb.vx)
+  elseif ball.posX <= -BALL_BOUNDS_X then
+    ball_rb.vx = math.abs(ball_rb.vx)
   end
 
   ball:push()
@@ -398,7 +407,7 @@ function OnUpdate(deltaTime)
   --if gameState ~= State.PLAYING then return end
 
   -- apply joystick movement over time
-  x = (FixJoyDrift(x1) * PADDLE_SPEED * deltaTime)
+  x = (FixJoyDrift(x1) * math.abs(ball_rb.vx) * deltaTime)
   if x ~= 0 then
     -- player moving paddle X
     paddle.posX = Math__clamp(paddle.posX + x, -PADDLE_BOUNDS_X, PADDLE_BOUNDS_X)
