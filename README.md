@@ -1,4 +1,17 @@
-# Vulkan Game
+# Game 5
+
+This is a prototype as I explore programming language, libraries, and tech stack viability for future game titles.
+
+My intent for this work is:
+- to achieve a high degree of control and autonomy over the entire tech stack
+- to further refine my skill and appreciation for the engine layers (system level software, and hardware)
+- to impart a path for differentiation through innovation and discovery in unusual and unconventional approaches
+- to manifest independent game production and portfolio expansion
+- to realize my desire to create, self-actualize, and contribute back to the industry that I love
+- to help others do the same
+
+Related work:
+- [**Game 6**](https://github.com/mikesmullin/c17-sdl2-vulkan) explores this topic in C17 language, instead of C++20.
 
 ## Prerequisites
 - Vulkan SDK (not-included)  
@@ -174,4 +187,4 @@ Advanced:
 
 ## TODO
 
-- publish to mobile
+- ~~publish to iOS and Android mobile~~ (although possible, GLES3 has better support; will probably end up with a wrapper)
