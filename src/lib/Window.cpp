@@ -107,6 +107,43 @@ void Window::RenderLoop(
   char title[255];
   SDL_Event e;
   while (!quit) {
+    // input handling
+    while (SDL_PollEvent(&e) > 0) {
+      switch (e.type) {
+        case SDL_WINDOWEVENT:
+          switch (e.window.event) {
+            case SDL_WINDOWEVENT_MINIMIZED:
+              v.minimized = true;
+              break;
+
+            case SDL_WINDOWEVENT_RESTORED:
+              v.minimized = false;
+              v.maximized = false;
+              break;
+
+            case SDL_WINDOWEVENT_MAXIMIZED:
+              v.maximized = true;
+              break;
+
+            // case SDL_WINDOWEVENT_RESIZED:
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+              v.minimized = false;
+              KeepAspectRatio(e.window.data1, e.window.data2);
+              break;
+          }
+          break;
+
+        case SDL_QUIT:
+          quit = true;
+          break;
+      }
+
+      mks::Gamepad::OnInput(e);
+      mks::Keyboard::OnInput(e);
+
+      // SDL_UpdateWindowSurface(window);
+    }
+
     if (!v.minimized) {
       // Physics update
       currentTime = std::chrono::high_resolution_clock::now();
@@ -124,43 +161,6 @@ void Window::RenderLoop(
       currentTime = std::chrono::high_resolution_clock::now();
       elapsedRender = currentTime - lastRender;
       if (elapsedRender > renderInterval) {
-        // input handling
-        while (SDL_PollEvent(&e) > 0) {
-          switch (e.type) {
-            case SDL_WINDOWEVENT:
-              switch (e.window.event) {
-                case SDL_WINDOWEVENT_MINIMIZED:
-                  v.minimized = true;
-                  break;
-
-                case SDL_WINDOWEVENT_RESTORED:
-                  v.minimized = false;
-                  v.maximized = false;
-                  break;
-
-                case SDL_WINDOWEVENT_MAXIMIZED:
-                  v.maximized = true;
-                  break;
-
-                // case SDL_WINDOWEVENT_RESIZED:
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
-                  v.minimized = false;
-                  KeepAspectRatio(e.window.data1, e.window.data2);
-                  break;
-              }
-              break;
-
-            case SDL_QUIT:
-              quit = true;
-              break;
-          }
-
-          mks::Gamepad::OnInput(e);
-          mks::Keyboard::OnInput(e);
-
-          // SDL_UpdateWindowSurface(window);
-        }
-
         // render
         v.AwaitNextFrame();
 
