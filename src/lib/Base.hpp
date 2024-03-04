@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include <iostream>  // IWYU pragma: keep
@@ -90,7 +91,7 @@
 
 #define Min(a, b) (((a) < (b)) ? (a) : (b))
 #define Max(a, b) (((a) > (b)) ? (a) : (b))
-#define Clamp(min, n, max) (((n) < (min)) ? (min) : ((max) < (n)) ? (max) : (x))
+#define Clamp(min, n, max) (((n) < (min)) ? (min) : ((max) < (n)) ? (max) : (n))
 
 // Scalars
 
