@@ -144,6 +144,8 @@ Beginner:
   https://github.com/Overv/VulkanTutorial/tree/main/code
 - Official Vulkan Sample Code  
   https://github.com/KhronosGroup/Vulkan-Samples
+- Vulkan in 30 Minutes by RenderDoc  
+  https://renderdoc.org/vulkan-in-30-minutes.html
 - Vulkan API Discussion  
   https://www.youtube.com/watch?v=gZ9lSzI_Geg&list=PLNhdAzzsGnqPLeu7Doln4cFrpq-P_ZKsh
 - Custom cross-platform C std lib | YouTube Mr. 4th Programming  
