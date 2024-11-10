@@ -10,8 +10,10 @@ My intent for this work is:
 - to realize my desire to create, self-actualize, and contribute back to the industry that I love
 - to help others do the same
 
-Related work:
-- [**Game 6**](https://github.com/mikesmullin/c17-sdl2-vulkan) explores this topic in C17 language, instead of C++20.
+my related Game prototypes: 
+[6](https://github.com/mikesmullin/c17-sdl2-vulkan)
+[7](https://github.com/mikesmullin/game7)
+[8](https://github.com/mikesmullin/game8)
 
 ## Prerequisites
 - Vulkan SDK (not-included)  
